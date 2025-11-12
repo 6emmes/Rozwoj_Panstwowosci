@@ -8,6 +8,8 @@ class Miasto:
         self.nazwa: str = nazwa
         self.panstwo: "Panstwo | None" = None
         self.obywatele: List[Obywatel] = []
+        self.tablicaWag: List[object] = []
+        self.wartoscReligijna: object = None
 
     def add_obywatel(self, obywatel) -> None:
         obywatel.miasto = self
@@ -17,6 +19,15 @@ class Miasto:
         obywatel = Obywatel()
         self.add_obywatel(obywatel)
         return obywatel
+    
+    def rozbudowa(self):
+        pass
+
+    def podatek(self):
+        pass
+
+    def tworzObywateli(self):
+        pass
 
     def akcja(self):
         print(f"    Akcje w mieście: {self.nazwa}")
