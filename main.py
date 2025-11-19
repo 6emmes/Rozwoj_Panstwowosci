@@ -1,4 +1,3 @@
-
 from panstwo import Panstwo
 from miasto import Miasto
 from obywatel import Obywatel
@@ -18,4 +17,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-

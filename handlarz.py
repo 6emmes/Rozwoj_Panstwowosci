@@ -3,17 +3,17 @@ from obywatel import Obywatel
 
 class Handlarz(Obywatel):
 
-    def sprzedajZasoby(self):
+    def sprzedaj_zasoby(self):
         pass
 
-    def kupujZasoby(self):
+    def kupuj_zasoby(self):
         pass
 
-    def transportujZasoby(self):
+    def transportuj_zasoby(self):
         pass
 
-    def budujDroge(self):
+    def buduj_droge(self):
         pass
 
-    def mieszajKulture(self):
+    def mieszaj_kulture(self):
         pass

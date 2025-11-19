@@ -10,5 +10,5 @@ class Armia:
     def mobilizuj(self):
         pass
 
-    def spotkajWroga(self):
+    def spotkaj_wroga(self):
         pass

@@ -9,7 +9,7 @@ class Panstwo:
         self.armie: List["Armia | None"] = []
         self.cele: List[object] = []
         self.wladca: object = None
-        self.tablicaDyplomacji: List[object] = []
+        self.tablica_dyplomacji: List[object] = []
 
     def add_miasto(self, miasto) -> None:
         miasto.panstwo = self
@@ -27,8 +27,8 @@ class Panstwo:
     def podatek(self):
         pass
 
-    def wypowiedzWojne(self):
+    def wypowiedz_wojne(self):
         pass
 
-    def homogenizujKulture(self):
+    def homogenizuj_kulture(self):
         pass
