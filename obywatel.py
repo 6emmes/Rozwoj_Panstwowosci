@@ -1,3 +1,6 @@
+# from miasto import Miasto
+
+
 class Obywatel:
 
     def __init__(self) -> None:
@@ -7,13 +10,11 @@ class Obywatel:
 
     def debug_print(self) -> None:
         city_name = self.miasto.nazwa if self.miasto else None
-        print(
-            f"        Obywatel, miasto: {city_name}"
-        )
+        print(f"        Obywatel, miasto: {city_name}")
 
     def akcja(self):
         self.debug_print()
-    
+
     def migruj(self):
         pass
 

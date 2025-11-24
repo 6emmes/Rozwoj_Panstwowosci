@@ -1,20 +1,18 @@
-from panstwo import Panstwo
-from miasto import Miasto
-from obywatel import Obywatel
+from osadnik import Osadnik
 from swiat import Swiat
 
 
 def main() -> None:
     europa = Swiat()
-    polska = Panstwo("Polska")
-    warszawa = Miasto("Warszawa")
-    jan = Obywatel()
+    osadnik = Osadnik(100, 100, 10)
+    europa.miasta.append(osadnik.zaloz_miasto("Warszawa"))
+    # jan = Obywatel()
 
-    polska.add_miasto(warszawa)
-    warszawa.create_obywatel()
-    warszawa.add_obywatel(jan)
+    # polska.add_miasto(warszawa)
+    # warszawa.create_obywatel()
+    # warszawa.add_obywatel(jan)
 
-    polska.akcja()
+    # polska.akcja()
 
 
 if __name__ == "__main__":
