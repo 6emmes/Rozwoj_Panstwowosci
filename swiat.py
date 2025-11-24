@@ -66,3 +66,5 @@ class Swiat:
         self.temperature = red
         self.heightmap = green
         self.humidity = blue
+
+        print(f"Wczytano mapę {width} x {height}")
