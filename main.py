@@ -4,7 +4,7 @@ from swiat import Swiat
 
 def main() -> None:
     europa = Swiat()
-    osadnik = Osadnik(100, 100, 10)
+    osadnik = Osadnik(10, 10, 10)
     europa.miasta.append(osadnik.zaloz_miasto("Warszawa"))
     # jan = Obywatel()
 
