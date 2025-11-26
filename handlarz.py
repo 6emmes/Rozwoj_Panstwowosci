@@ -1,6 +1,10 @@
-from miasto import Miasto
+from __future__ import annotations
+from typing import TYPE_CHECKING
 from obywatel import Obywatel
 from collections.abc import Callable
+
+if TYPE_CHECKING:
+    from miasto import Miasto
 
 class Handlarz(Obywatel):
 
@@ -11,6 +15,9 @@ class Handlarz(Obywatel):
         # self.y: int = super().miasto.y # wymagałoby wykonania algorytmu znajdowania drogogi na razie działam na odległosciach
         self.odleglosc_do_miasta_docelowego: int = 0
         self.odleglosc_od_miasta_macierzystego: int = 0
+        self.zasob_do_kupienia: str
+        self.ilosc_zasobu_do_kupienia: int
+        self.miasto_docelowe: Miasto | None = None
         self.predkosc: int = 10  # jednostki na turę
 
     def akcja(self):
@@ -22,18 +29,22 @@ class Handlarz(Obywatel):
 
     def kup_jak_najszybciej(self, zasob_do_kupienia: str, ilosc: int) -> tuple[Miasto, str]:
         # na razie przeszukanie różnych miast w obrębie państwa, potem po odległości byłoby to wskazane
-        for miasto in self.miasto.panstwo.miasta:
+        for miasto in self.miasto.swiat.miasta:
             if miasto == self.miasto:
                 continue
             # TODO duże uproszczenie że kupuje tylko jak miasto ma tyle zasobu ile potrzeba domyślnie powinien albo zwiedzać tyle miast aż kupi zadaną ilość albo kupić tyle ile jest dostępne i wracać
             for zasob in miasto.zasoby:
                 ilosc_w_miescie, cena = miasto.zasoby[zasob]
                 if zasob == zasob_do_kupienia and ilosc_w_miescie >= ilosc:
-                    self.kupuj_zasoby(zasob, ilosc, cena, miasto)
+                    self.miasto_docelowe = miasto
+                    self.zasob_do_kupienia = zasob
+                    self.ilosc_zasobu_do_kupienia = ilosc
+                    self.planuj_podroze()
                     return miasto, zasob
         return None, None
 
-    def przelicz_cene_zasobu(self, zasob: str, miasto: object) -> float:
+    @staticmethod
+    def przelicz_cene_zasobu(zasob: str, miasto: Miasto) -> float:
         ilosc, _ = miasto.zasoby[zasob]
         suma_wszystkich = sum([miasto.zasoby[z][0] for z in miasto.zasoby])
         if suma_wszystkich == 0:
@@ -43,50 +54,68 @@ class Handlarz(Obywatel):
         miasto.zasoby[zasob] = (ilosc, nowa_cena)
         return nowa_cena
 
-    def akcja_handlarza(self, funkcja: Callable):
+    def akcja_handlarza(self) -> bool:
         # TODO do poprawy
-        while self.odleglosc_do_miasta_docelowego > 0:
+        if self.miasto_docelowe is None:
+            return False
+        if self.odleglosc_do_miasta_docelowego > 0:
             self.idz_do_miasta_docelowego()
-        funkcja()
-        while self.odleglosc_od_miasta_macierzystego > 0:
+        elif self.odleglosc_od_miasta_macierzystego > 0 and self.odleglosc_do_miasta_docelowego < 0:
+            self.kupuj_zasoby()
+        elif self.odleglosc_od_miasta_macierzystego > 0:
             self.wracaj_do_miasta_macierzystego()
+        else:
+            self.zdeponuj_zasoby()
+            self.reset_handlarza()
+            return True
+        return False
 
     def idz_do_miasta_docelowego(self):
         self.odleglosc_od_miasta_macierzystego += self.predkosc
         self.odleglosc_do_miasta_docelowego -= self.predkosc
 
     def wracaj_do_miasta_macierzystego(self):
-        self.odleglosc_do_miasta_docelowego -= self.predkosc
         self.odleglosc_od_miasta_macierzystego -= self.predkosc
 
-    def oblicz_koszty_podrozy(self, miasto_docelowe: Miasto) -> int:
-        dx = miasto_docelowe.x - self.miasto.x
-        dy = miasto_docelowe.y - self.miasto.y
+    def oblicz_odleglosc_podrozy(self) -> int:
+        dx = self.miasto_docelowe.x - self.miasto.x
+        dy = self.miasto_docelowe.y - self.miasto.y
         odleglosc = pow(pow(dx, 2) + pow(dy, 2), 0.5)
         return int(odleglosc)
 
-    def oblicz_koszt_podrozy(self, miasto_docelowe: Miasto) -> int:
-        odleglosc = self.oblicz_koszty_podrozy(miasto_docelowe)
+    def oblicz_koszt_podrozy(self) -> int:
+        odleglosc = self.oblicz_odleglosc_podrozy()
         koszt = odleglosc * self.KOSZT_NA_JEDNOSTKE
         return koszt
 
-    def planuj_podroze(self, miasto_docelowe: Miasto) -> None:
-        odleglosc = self.oblicz_koszty_podrozy(miasto_docelowe)
+    def planuj_podroze(self) -> None:
+        odleglosc = self.oblicz_odleglosc_podrozy()
         self.odleglosc_do_miasta_docelowego = odleglosc
         self.odleglosc_od_miasta_macierzystego = 0
 
     def sprzedaj_zasoby(self): # Handlarz nie sprzedaje zasobów, tylko kupuje od miasta
         pass
 
-    def kupuj_zasoby(self, zasob: str, ilosc: int, cena: float, miasto_sprzedajace: object) -> None:
-        aktualne = self.miasto.zasoby[zasob]
-        aktualne_sprzedajace = miasto_sprzedajace.zasoby[zasob]
+    def kupuj_zasoby(self) -> None:
+        ilosc_s, cena_s = self.miasto_docelowe.zasoby[self.zasob_do_kupienia]
+        self.miasto_docelowe.zasoby[self.zasob_do_kupienia] = (ilosc_s - self.ilosc_zasobu_do_kupienia, cena_s)
+        self.odleglosc_do_miasta_docelowego = 0
+        self.przelicz_cene_zasobu(self.zasob_do_kupienia, self.miasto_docelowe)
 
-        self.miasto.zasoby[zasob] = (aktualne[0] + ilosc, aktualne[1])
-        miasto_sprzedajace.zasoby[zasob] = (aktualne_sprzedajace[0] - ilosc, aktualne_sprzedajace[1])
 
-        self.przelicz_cene_zasobu(zasob, self.miasto)
-        self.przelicz_cene_zasobu(zasob, miasto_sprzedajace)
+    def zdeponuj_zasoby(self):
+        ilosc_m, cena_m = self.miasto.zasoby[self.zasob_do_kupienia]
+        self.miasto.zasoby[self.zasob_do_kupienia] = (ilosc_m + self.ilosc_zasobu_do_kupienia, cena_m)
+        self.przelicz_cene_zasobu(self.zasob_do_kupienia, self.miasto)
+
+        
+    def reset_handlarza(self):
+        self.odleglosc_do_miasta_docelowego = 0
+        self.odleglosc_od_miasta_macierzystego = 0
+        self.czy_w_podrozy = False
+        self.zasob_do_kupienia = ""
+        self.ilosc_zasobu_do_kupienia = 0
+        self.miasto_docelowe = None
 
     def transportuj_zasoby(self):
         pass

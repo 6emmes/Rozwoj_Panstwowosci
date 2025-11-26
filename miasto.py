@@ -1,11 +1,16 @@
-from typing import List
+from __future__ import annotations
+from typing import TYPE_CHECKING
 from obywatel import Obywatel
 from handlarz import Handlarz
 import random
 
+if TYPE_CHECKING:
+    from swiat import Swiat
+
+
 class Miasto:
 
-    def __init__(self, x: int, y: int, nazwa: str) -> None:
+    def __init__(self, x: int, y: int, nazwa: str, swiat: Swiat) -> None:
         self.x: int = x
         self.y: int = y
         self.nazwa: str = nazwa
@@ -15,6 +20,7 @@ class Miasto:
         self.zasoby: dict = {}
         self.wartosc_religijna: object = None
         self.zasoby: dict = {} # nie jestem przekonany do trzymania tego w dictcie ale na razie nie wiem jak to dobrze załatwić klasą
+        self.swiat: Swiat = swiat  # placeholder attribute
         self._losuj_zasoby_startowe() #Do celów testowych
 
     def _losuj_zasoby_startowe(self):
@@ -24,10 +30,6 @@ class Miasto:
         for zasob in mozliwe_zasoby:
             # format zasoby[zasob] = (ilosc, cena)
             self.zasoby[zasob] = (random.randint(0, max_zasobu), random.uniform(1.0, 10.0))
-
-
-        self._inicjuj_zasoby()
-
         print(f"Miasto {self.nazwa} zostało założone")
 
     def _inicjuj_zasoby(self):
