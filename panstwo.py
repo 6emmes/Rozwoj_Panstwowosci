@@ -11,11 +11,11 @@ class Panstwo:
         self.wladca: object = None
         self.tablica_dyplomacji: list[object] = []
 
-    def add_miasto(self, miasto) -> None:
-        miasto.panstwo = self
+    def add_miasto(self, miasto: Miasto) -> None:
+        # miasto.panstwo = self
         self.miasta.append(miasto)
 
-    def add_armia(self, armia) -> None:
+    def add_armia(self, armia: Armia) -> None:
         self.armie.append(armia)
 
     def akcja(self):
