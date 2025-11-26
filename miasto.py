@@ -5,17 +5,19 @@ import random
 
 class Miasto:
 
-    def __init__(self, nazwa: str) -> None:
+    def __init__(self, nazwa: str, x: int, y: int) -> None:
         self.nazwa: str = nazwa
+        self.x: int = x
+        self.y: int = y
         self.panstwo: "Panstwo | None" = None
-        self.obywatele: List[Obywatel] = []
-        self.tablica_wag: List[object] = []
+        self.obywatele: list[Obywatel] = []
+        self.tablica_wag: list[object] = []
         self.wartosc_religijna: object = None
-        self.zasoby: dict = {}
+        self.zasoby: dict = {} # nie jestem przekonany do trzymania tego w dictcie ale na razie nie wiem jak to dobrze załatwić klasą
         self._losuj_zasoby_startowe() #Do celów testowych
 
     def _losuj_zasoby_startowe(self):
-        mozliwe_zasoby = ['jedzenie', 'drewno', 'kamien', 'metal']
+        mozliwe_zasoby = ['jedzenie', 'drewno', 'kamien']
         max_zasobu = 100
         zasoby = {}
         for zasob in mozliwe_zasoby:
@@ -33,8 +35,11 @@ class Miasto:
         return obywatel
 
     def create_handlarz(self):
+        try:
+            self.obywatele.pop()
+        except IndexError:
+            raise IndexError("Brak obywateli do przekształcenia w handlarza")
         handlarz = Handlarz()
-        handlarz.miasto = self
         self.add_obywatel(handlarz)
         return handlarz
 

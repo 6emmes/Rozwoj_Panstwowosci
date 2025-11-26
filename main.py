@@ -7,9 +7,9 @@ from swiat import Swiat
 def main() -> None:
     europa = Swiat()
     polska = Panstwo("Polska")
-    warszawa = Miasto("Warszawa")
-    wroclaw = Miasto("Wrocław")
-    poznan = Miasto("Poznań")
+    warszawa = Miasto("Warszawa", 52, 21)
+    wroclaw = Miasto("Wrocław", 30, 15)
+    poznan = Miasto("Poznań", 100, 200)
     jan = Obywatel()
 
     polska.add_miasto(warszawa)
