@@ -44,19 +44,19 @@ class Swiat:
             depth = 3
         assert depth == 3 or depth == 4
 
-        width = bi_width
-        height = bi_height
+        self.width = bi_width
+        self.height = bi_height
 
-        row_padded = (width * depth + 3) & ~3
+        row_padded = (self.width * depth + 3) & ~3
 
-        red = [[0] * width for _ in range(height)]
-        green = [[0] * width for _ in range(height)]
-        blue = [[0] * width for _ in range(height)]
+        red = [[0] * self.width for _ in range(self.height)]
+        green = [[0] * self.width for _ in range(self.height)]
+        blue = [[0] * self.width for _ in range(self.height)]
 
-        for row in range(height):
-            src_row = height - 1 - row
+        for row in range(self.height):
+            src_row = self.height - 1 - row
             start = bf_off_bits + src_row * row_padded
-            for col in range(width):
+            for col in range(self.width):
                 offset = start + col * depth
 
                 blue[row][col] = data[offset]
@@ -64,7 +64,10 @@ class Swiat:
                 red[row][col] = data[offset + 2]
 
         self.temperature = red
+        # print(f"min: {min(self.temperature)}, max: {max(self.temperature)}")
         self.heightmap = green
+        # print(f"min: {min(self.heightmap)}, max: {max(self.heightmap)}")
         self.humidity = blue
+        # print(f"min: {min(self.humidity)}, max: {max(self.humidity)}")
 
-        print(f"Wczytano mapę {width} x {height}")
+        print(f"Wczytano mapę {self.width} x {self.height}")
