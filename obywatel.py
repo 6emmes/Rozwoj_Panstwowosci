@@ -15,7 +15,9 @@ class Obywatel:
         city_name = self.miasto.nazwa if self.miasto else None
         print(f"        Obywatel, miasto: {city_name}")
 
-    def zbierz_zasoby(self, sqr_temperature: int, sqr_height: int, sqr_humidity: int):
+    def zbierz_zasoby(
+        self, sqr_temperature: int, sqr_height: int, sqr_humidity: int
+    ) -> tuple[str, float]:
         resource = random.choice([zasoby.WOOD, zasoby.FOOD, zasoby.STONE])
         return (
             resource,

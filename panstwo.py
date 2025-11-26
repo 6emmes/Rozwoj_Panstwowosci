@@ -6,7 +6,7 @@ class Panstwo:
     def __init__(self, nazwa: str) -> None:
         self.nazwa: str = nazwa
         self.miasta: list[Miasto] = []
-        self.armie: list[Armia | None] = []
+        self.armie: list[Armia] = []
         self.cele: list[object] = []
         self.wladca: object = None
         self.tablica_dyplomacji: list[object] = []
