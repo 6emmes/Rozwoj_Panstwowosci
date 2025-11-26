@@ -14,11 +14,15 @@ def main() -> None:
     ]
     nazwy_miast = ["Warszawa", "Krakow", "Berlin", "Madryt", "Londyn"]
 
+    # Założenie miast początkowych
     for o, n in zip(poczatkowi_osacnicy, nazwy_miast):
         europa.miasta.append(o.zaloz_miasto(n))
 
     tury = 1_000
+
+    # Główna pętla symulacji
     for i in range(tury):
+        # Wypisz debug o zasobach co 50 tur; tylko do dema
         if i % 50 == 0:
             print(f"Zasoby w turze {i}")
             for miasto in europa.miasta:
