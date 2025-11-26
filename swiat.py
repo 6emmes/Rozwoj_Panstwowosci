@@ -71,3 +71,13 @@ class Swiat:
         # print(f"min: {min(self.humidity)}, max: {max(self.humidity)}")
 
         print(f"Wczytano mapę {self.width} x {self.height}")
+
+    def turn(self):
+        for miasto in self.miasta:
+            for obywatel in miasto.obywatele:
+                res, ammount = obywatel.zbierz_zasoby(
+                    self.temperature[miasto.x][miasto.y],
+                    self.heightmap[miasto.x][miasto.y],
+                    self.humidity[miasto.x][miasto.y],
+                )
+                miasto.zasoby[res] += ammount

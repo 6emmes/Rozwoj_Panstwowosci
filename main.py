@@ -2,17 +2,6 @@ from osadnik import Osadnik
 from swiat import Swiat
 
 
-def turn(swiat: Swiat):
-    for miasto in swiat.miasta:
-        for obywatel in miasto.obywatele:
-            res, ammount = obywatel.zbierz_zasoby(
-                swiat.temperature[miasto.x][miasto.y],
-                swiat.heightmap[miasto.x][miasto.y],
-                swiat.humidity[miasto.x][miasto.y],
-            )
-            miasto.zasoby[res] += ammount
-
-
 def main() -> None:
     europa = Swiat()
 
@@ -34,7 +23,7 @@ def main() -> None:
             print(f"Zasoby w turze {i}")
             for miasto in europa.miasta:
                 miasto.debug_zasoby()
-        turn(europa)
+        europa.turn()
 
 
 if __name__ == "__main__":
