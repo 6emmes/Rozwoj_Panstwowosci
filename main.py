@@ -1,20 +1,33 @@
-from panstwo import Panstwo
-from miasto import Miasto
-from obywatel import Obywatel
+from osadnik import Osadnik
 from swiat import Swiat
 
 
 def main() -> None:
     europa = Swiat()
-    polska = Panstwo("Polska")
-    warszawa = Miasto("Warszawa")
-    jan = Obywatel()
 
-    polska.add_miasto(warszawa)
-    warszawa.create_obywatel()
-    warszawa.add_obywatel(jan)
+    poczatkowi_osacnicy = [
+        Osadnik(10, 10, 5),
+        Osadnik(20, 5, 5),
+        Osadnik(15, 15, 5),
+        Osadnik(30, 2, 5),
+        Osadnik(5, 20, 5),
+    ]
+    nazwy_miast = ["Warszawa", "Krakow", "Berlin", "Madryt", "Londyn"]
 
-    polska.akcja()
+    # Założenie miast początkowych
+    for o, n in zip(poczatkowi_osacnicy, nazwy_miast):
+        europa.miasta.append(o.zaloz_miasto(n))
+
+    tury = 1_000
+
+    # Główna pętla symulacji
+    for i in range(tury):
+        # Wypisz debug o zasobach co 50 tur; tylko do dema
+        if i % 50 == 0:
+            print(f"Zasoby w turze {i}")
+            for miasto in europa.miasta:
+                miasto.debug_zasoby()
+        europa.next_turn()
 
 
 if __name__ == "__main__":
