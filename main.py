@@ -23,7 +23,7 @@ def main() -> None:
             print(f"Zasoby w turze {i}")
             for miasto in europa.miasta:
                 miasto.debug_zasoby()
-        europa.turn()
+        europa.next_turn()
 
 
 if __name__ == "__main__":

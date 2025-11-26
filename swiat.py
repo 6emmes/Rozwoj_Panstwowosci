@@ -72,7 +72,7 @@ class Swiat:
 
         print(f"Wczytano mapę {self.width} x {self.height}")
 
-    def turn(self):
+    def next_turn(self):
         for miasto in self.miasta:
             for obywatel in miasto.obywatele:
                 res, ammount = obywatel.zbierz_zasoby(
