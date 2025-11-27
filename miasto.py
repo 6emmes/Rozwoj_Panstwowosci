@@ -26,7 +26,6 @@ class Miasto:
     def _losuj_zasoby_startowe(self):
         mozliwe_zasoby = ['jedzenie', 'drewno', 'kamien']
         max_zasobu = 100
-        zasoby = {}
         for zasob in mozliwe_zasoby:
             # format zasoby[zasob] = (ilosc, cena)
             self.zasoby[zasob] = (random.randint(0, max_zasobu), random.uniform(1.0, 10.0))

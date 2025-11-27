@@ -34,7 +34,7 @@ class Handlarz(Obywatel):
                 continue
             # TODO duże uproszczenie że kupuje tylko jak miasto ma tyle zasobu ile potrzeba domyślnie powinien albo zwiedzać tyle miast aż kupi zadaną ilość albo kupić tyle ile jest dostępne i wracać
             for zasob in miasto.zasoby:
-                ilosc_w_miescie, cena = miasto.zasoby[zasob]
+                ilosc_w_miescie, _ = miasto.zasoby[zasob]
                 if zasob == zasob_do_kupienia and ilosc_w_miescie >= ilosc:
                     self.miasto_docelowe = miasto
                     self.zasob_do_kupienia = zasob

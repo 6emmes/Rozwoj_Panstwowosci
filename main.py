@@ -43,13 +43,5 @@ def main() -> None:
         if handlarz.akcja_handlarza():
             print(f"Handlarz wrócił w {i} turze")
 
-    for miasto in polska.miasta:
-        print(f"Zasoby miasta {miasto.nazwa}: {miasto.zasoby}")
-
-    print(handlarz.kup_jak_najszybciej("jedzenie", 60))
-
-    for miasto in polska.miasta:
-        print(f"Zasoby miasta {miasto.nazwa}: {miasto.zasoby}")
-
 if __name__ == "__main__":
     main()
