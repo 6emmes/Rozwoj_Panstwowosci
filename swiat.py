@@ -80,4 +80,6 @@ class Swiat:
                     self.heightmap[miasto.x][miasto.y],
                     self.humidity[miasto.x][miasto.y],
                 )
-                miasto.zasoby[res] += ammount
+                zasoby, cena = miasto.zasoby[res]
+                # TODO przeliczanie ceny po każdej iteracji
+                miasto.zasoby[res] = (zasoby + ammount, cena)
