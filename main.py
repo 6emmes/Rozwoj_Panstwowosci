@@ -1,7 +1,6 @@
 from osadnik import Osadnik
 from swiat import Swiat
 from panstwo import Panstwo
-from miasto import Miasto
 from obywatel import Obywatel
 
 

@@ -1,7 +1,6 @@
 from __future__ import annotations
 from typing import TYPE_CHECKING
 from obywatel import Obywatel
-from collections.abc import Callable
 
 if TYPE_CHECKING:
     from miasto import Miasto
@@ -15,8 +14,8 @@ class Handlarz(Obywatel):
         # self.y: int = super().miasto.y # wymagałoby wykonania algorytmu znajdowania drogogi na razie działam na odległosciach
         self.odleglosc_do_miasta_docelowego: int = 0
         self.odleglosc_od_miasta_macierzystego: int = 0
-        self.zasob_do_kupienia: str
-        self.ilosc_zasobu_do_kupienia: int
+        self.zasob_do_kupienia: str = ""
+        self.ilosc_zasobu_do_kupienia: int = 0
         self.miasto_docelowe: Miasto | None = None
         self.predkosc: int = 10  # jednostki na turę
 
@@ -45,6 +44,7 @@ class Handlarz(Obywatel):
 
     @staticmethod
     def przelicz_cene_zasobu(zasob: str, miasto: Miasto) -> float:
+        # TODO lepszy sposób przepiczania dodatkowo nie wiem czy jest to kwestia handlarza czy miasta
         ilosc, _ = miasto.zasoby[zasob]
         suma_wszystkich = sum([miasto.zasoby[z][0] for z in miasto.zasoby])
         if suma_wszystkich == 0:
@@ -55,7 +55,6 @@ class Handlarz(Obywatel):
         return nowa_cena
 
     def akcja_handlarza(self) -> bool:
-        # TODO do poprawy
         if self.miasto_docelowe is None:
             return False
         if self.odleglosc_do_miasta_docelowego > 0:
@@ -112,13 +111,10 @@ class Handlarz(Obywatel):
     def reset_handlarza(self):
         self.odleglosc_do_miasta_docelowego = 0
         self.odleglosc_od_miasta_macierzystego = 0
-        self.czy_w_podrozy = False
         self.zasob_do_kupienia = ""
         self.ilosc_zasobu_do_kupienia = 0
         self.miasto_docelowe = None
 
-    def transportuj_zasoby(self):
-        pass
 
     def buduj_droge(self):
         pass

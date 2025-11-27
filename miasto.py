@@ -17,11 +17,10 @@ class Miasto:
         # self.panstwo: Panstwo | None = None
         self.obywatele: list[Obywatel] = []
         self.tablica_wag: list[object] = []
-        self.zasoby: dict = {}
         self.wartosc_religijna: object = None
         self.zasoby: dict = {} # nie jestem przekonany do trzymania tego w dictcie ale na razie nie wiem jak to dobrze załatwić klasą
         self.swiat: Swiat = swiat  # placeholder attribute
-        self._losuj_zasoby_startowe() #Do celów testowych
+        self._losuj_zasoby_startowe() # Do celów testowych
 
     def _losuj_zasoby_startowe(self):
         mozliwe_zasoby = ['jedzenie', 'drewno', 'kamien']
@@ -40,7 +39,9 @@ class Miasto:
 
     def debug_zasoby(self):
         rounded_resources = {
-            key: round(value, 2) if isinstance(value, (int, float)) else value
+            key: (round(value[0], 2), round(value[1], 2))
+            if isinstance(value[0], (int, float)) and isinstance(value[1], (int, float))
+            else value
             for key, value in self.zasoby.items()
         }
         print(f"{self.nazwa}: {rounded_resources}")
