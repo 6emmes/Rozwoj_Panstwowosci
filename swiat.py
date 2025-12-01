@@ -1,5 +1,6 @@
 import os
 import struct
+import tifffile
 
 from miasto import Miasto
 
@@ -13,13 +14,45 @@ class Swiat:
         self.zasoby_drzewa: list[object] = []
         self.zyznosc: object = None
         self.rzeki: list[object] = []
-        self.load_stara_map(path="StaraMapa_s.bmp")
+        self.kompatybilnosc(self.load_nowa_mapa("NowaMapa.tiff"))
 
         # TODO: zamienić to na państwa po skończeniu dema
         self.miasta: list[Miasto] = []
 
     def akcja(self):
         pass
+
+    def kompatybilnosc(self, layers):
+        self.heightmap = layers["heightMap"]
+        self.temperature = layers["tempMap"]
+        self.humidity = layers["humidityMap"]
+        self.rzeki = layers["riverMap"]
+
+    def load_nowa_mapa(name):
+
+        MAX = 2**31 - 1
+
+        layers = {}
+
+        with tifffile.TiffFile(name) as tif:
+            for i, page in enumerate(tif.pages):
+
+                page_name = page.tags.get('PageName')
+                if page_name is not None:
+                    page_name = page_name.value
+                else:
+                    page_name = f"page_{i}"
+
+                data = page.asarray()
+
+                normalized = data / MAX
+                layers[page_name] = normalized
+        for name, arr in layers.items():
+            print(f"Layer '{name}' has shape {arr.shape}")
+        return layers
+
+    
+
 
     def load_stara_map(self, path) -> None:
         script_dir = os.path.dirname(__file__)
