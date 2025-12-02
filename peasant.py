@@ -1,4 +1,4 @@
-from obywatel import Citizen
+from citizen import Citizen
 
 
 class Peasant(Citizen):

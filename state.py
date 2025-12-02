@@ -1,5 +1,5 @@
-from armia import Army
-from miasto import City
+from army import Army
+from city import City
 
 
 class State:

@@ -1,5 +1,5 @@
-from miasto import City
-from swiat import World
+from city import City
+from world import World
 
 
 class Settler:

@@ -2,10 +2,10 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from obywatel import Citizen
+from citizen import Citizen
 
 if TYPE_CHECKING:
-    from miasto import City
+    from city import City
 
 
 class Trader(Citizen):

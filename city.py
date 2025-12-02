@@ -3,11 +3,11 @@ from __future__ import annotations
 import random
 from typing import TYPE_CHECKING
 
+from citizen import Citizen
 from handlarz import Trader
-from obywatel import Citizen
 
 if TYPE_CHECKING:
-    from swiat import World
+    from world import World
 
 
 class City:
@@ -83,4 +83,3 @@ class City:
 
     def __repr__(self):
         return f"Miasto({self.name})"
-

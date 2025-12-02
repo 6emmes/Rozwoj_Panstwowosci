@@ -3,7 +3,7 @@ import struct
 
 import tifffile
 
-from miasto import City
+from city import City
 
 
 class World:

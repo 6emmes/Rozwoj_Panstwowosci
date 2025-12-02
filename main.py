@@ -1,7 +1,7 @@
-from obywatel import Citizen
-from osadnik import Settler
-from panstwo import State
-from swiat import World
+from citizen import Citizen
+from settler import Settler
+from state import State
+from world import World
 
 
 def main() -> None:
