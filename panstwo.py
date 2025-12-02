@@ -1,33 +1,33 @@
-from armia import Armia
-from miasto import Miasto
+from armia import Army
+from miasto import City
 
 
-class Panstwo:
-    def __init__(self, nazwa: str) -> None:
-        self.nazwa: str = nazwa
-        self.miasta: list[Miasto] = []
-        self.armie: list[Armia] = []
-        self.cele: list[object] = []
-        self.wladca: object = None
-        self.tablica_dyplomacji: list[object] = []
+class State:
+    def __init__(self, name: str) -> None:
+        self.name: str = name
+        self.cities: list[City] = []
+        self.armies: list[Army] = []
+        self.objectives: list[object] = []
+        self.ruler: object = None
+        self.diplomacy: list[object] = []
 
-    def add_miasto(self, miasto: Miasto) -> None:
+    def add_city(self, city: City) -> None:
         # miasto.panstwo = self
-        self.miasta.append(miasto)
+        self.cities.append(city)
 
-    def add_armia(self, armia: Armia) -> None:
-        self.armie.append(armia)
+    def add_army(self, army: Army) -> None:
+        self.armies.append(army)
 
-    def akcja(self):
-        print(f"Akcje w państwie: {self.nazwa}")
-        for m in self.miasta:
-            m.akcja()
+    def action(self):
+        print(f"Akcje w państwie: {self.name}")
+        for m in self.cities:
+            m.action()
 
-    def podatek(self):
+    def tax(self):
         pass
 
-    def wypowiedz_wojne(self):
+    def declare_war(self):
         pass
 
-    def homogenizuj_kulture(self):
+    def unify_culture(self):
         pass

@@ -1,21 +1,25 @@
 # from miasto import Miasto
 import random
+from typing import TYPE_CHECKING
 
 import zasoby
 
+if TYPE_CHECKING:
+    from miasto import City
 
-class Obywatel:
+
+class Citizen:
 
     def __init__(self) -> None:
-        self.miasto: "Miasto | None" = None
+        self.city: City | None = None
         # placeholder attribute
-        self.kultura: object = None
+        self.culture: object = None
 
     def debug_print(self) -> None:
-        city_name = self.miasto.nazwa if self.miasto else None
+        city_name = self.city.name if self.city else None
         print(f"        Obywatel, miasto: {city_name}")
 
-    def zbierz_zasoby(
+    def gather_resources(
         self, sqr_temperature: int, sqr_height: int, sqr_humidity: int
     ) -> tuple[str, float]:
         resource = random.choice([zasoby.WOOD, zasoby.FOOD, zasoby.STONE])
@@ -30,11 +34,11 @@ class Obywatel:
             ),
         )
 
-    def akcja(self):
+    def action(self):
         self.debug_print()
 
-    def migruj(self):
+    def migrate(self):
         pass
 
-    def pielgrzymkuj(self):
+    def go_for_pilgrimage(self):
         pass

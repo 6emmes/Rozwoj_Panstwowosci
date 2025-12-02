@@ -1,6 +1,6 @@
-from obywatel import Obywatel
+from obywatel import Citizen
 
 
-class Chlop(Obywatel):
-    def kop(self):
+class Peasant(Citizen):
+    def dig(self):
         pass

@@ -1,34 +1,35 @@
 import os
 import struct
+
 import tifffile
 
-from miasto import Miasto
+from miasto import City
 
 
-class Swiat:
+class World:
 
     def __init__(self) -> None:
-        self.tablica_drog: list[object] = []
+        self.roads: list[object] = []
         self.heightmap: object = None
-        self.zasoby_kopalne: list[object] = []
-        self.zasoby_drzewa: list[object] = []
-        self.zyznosc: object = None
-        self.rzeki: list[object] = []
-        self.kompatybilnosc(self.load_nowa_mapa("NowaMapa.tiff"))
+        self.mining_resources: list[object] = []
+        self.wood_resources: list[object] = []
+        self.fertility: object = None
+        self.rivers: list[object] = []
+        self.compatibility(self.load_new_map("NowaMapa.tiff"))
 
         # TODO: zamienić to na państwa po skończeniu dema
-        self.miasta: list[Miasto] = []
+        self.cities: list[City] = []
 
-    def akcja(self):
+    def action(self):
         pass
 
-    def kompatybilnosc(self, layers):
+    def compatibility(self, layers):
         self.heightmap = layers["heightMap"]
         self.temperature = layers["tempMap"]
         self.humidity = layers["humidityMap"]
-        self.rzeki = layers["riverMap"]
+        self.rivers = layers["riverMap"]
 
-    def load_nowa_mapa(name):
+    def load_new_map(name):
 
         MAX = 2**31 - 1
 
@@ -37,7 +38,7 @@ class Swiat:
         with tifffile.TiffFile(name) as tif:
             for i, page in enumerate(tif.pages):
 
-                page_name = page.tags.get('PageName')
+                page_name = page.tags.get("PageName")
                 if page_name is not None:
                     page_name = page_name.value
                 else:
@@ -51,10 +52,7 @@ class Swiat:
             print(f"Layer '{name}' has shape {arr.shape}")
         return layers
 
-    
-
-
-    def load_stara_map(self, path) -> None:
+    def load_old_map(self, path) -> None:
         script_dir = os.path.dirname(__file__)
         total_path = os.path.join(script_dir, path)
         with open(total_path, "rb") as f:
@@ -97,22 +95,19 @@ class Swiat:
                 red[row][col] = data[offset + 2]
 
         self.temperature = red
-        # print(f"min: {min(self.temperature)}, max: {max(self.temperature)}")
         self.heightmap = green
-        # print(f"min: {min(self.heightmap)}, max: {max(self.heightmap)}")
         self.humidity = blue
-        # print(f"min: {min(self.humidity)}, max: {max(self.humidity)}")
 
         print(f"Wczytano mapę {self.width} x {self.height}")
 
     def next_turn(self):
-        for miasto in self.miasta:
-            for obywatel in miasto.obywatele:
-                res, ammount = obywatel.zbierz_zasoby(
-                    self.temperature[miasto.x][miasto.y],
-                    self.heightmap[miasto.x][miasto.y],
-                    self.humidity[miasto.x][miasto.y],
+        for city in self.cities:
+            for citizen in city.citizens:
+                res, ammount = citizen.gather_resources(
+                    self.temperature[city.x][city.y],
+                    self.heightmap[city.x][city.y],
+                    self.humidity[city.x][city.y],
                 )
-                zasoby, cena = miasto.zasoby[res]
+                resources, price = city.resources[res]
                 # TODO przeliczanie ceny po każdej iteracji
-                miasto.zasoby[res] = (zasoby + ammount, cena)
+                city.resources[res] = (resources + ammount, price)

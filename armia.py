@@ -1,14 +1,14 @@
 from typing import List
 
 
-class Armia:
+class Army:
 
     def __init__(self) -> None:
-        self.sila: int = 0
-        self.rekruci: List[object] = []
+        self.strength: int = 0
+        self.recruits: List[object] = []
 
-    def mobilizuj(self):
+    def mobilize(self):
         pass
 
-    def spotkaj_wroga(self):
+    def encounter_enemy(self):
         pass

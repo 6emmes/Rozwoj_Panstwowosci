@@ -1,18 +1,18 @@
-from miasto import Miasto
-from swiat import Swiat
+from miasto import City
+from swiat import World
 
 
-class Osadnik:
-    def __init__(self, x: int, y: int, l_obywateli: int, swiat: Swiat) -> None:
+class Settler:
+    def __init__(self, x: int, y: int, no_citizens: int, world: World) -> None:
         self.x = x
         self.y = y
-        self.l_obywateli = l_obywateli
+        self.no_citizens = no_citizens
         # na potrzeby linka
-        self.swiat: Swiat = swiat
+        self.world: World = world
 
-    def zaloz_miasto(self, nazwa_miasta: str):
+    def settle(self, city_name: str):
         # TODO: dodać sprawdzanie czy miasto nie jest za blisko innego miasta
-        city = Miasto(self.x, self.y, nazwa_miasta, self.swiat)
-        for _ in range(self.l_obywateli):
-            city.create_obywatel()
+        city = City(self.x, self.y, city_name, self.world)
+        for _ in range(self.no_citizens):
+            city.create_citizen()
         return city
