@@ -1,46 +1,46 @@
-from osadnik import Osadnik
-from swiat import Swiat
-from panstwo import Panstwo
-from obywatel import Obywatel
+from citizen import Citizen
+from settler import Settler
+from state import State
+from world import World
 
 
 def main() -> None:
-    europa = Swiat()
-    polska = Panstwo("Polska")
+    europe = World()
+    poland = State("Polska")
 
-    jan = Obywatel()
+    jan = Citizen()
 
-    poczatkowi_osacnicy = [
-        Osadnik(10, 10, 5, europa),
-        Osadnik(20, 5, 5, europa),
-        Osadnik(15, 15, 5, europa),
-        Osadnik(30, 2, 5, europa),
-        Osadnik(5, 20, 5, europa),
+    initial_settlers = [
+        Settler(10, 10, 5, europe),
+        Settler(20, 5, 5, europe),
+        Settler(15, 15, 5, europe),
+        Settler(30, 2, 5, europe),
+        Settler(5, 20, 5, europe),
     ]
-    nazwy_miast = ["Warszawa", "Krakow", "Berlin", "Madryt", "Londyn"]
-
+    city_names = ["Warszawa", "Krakow", "Berlin", "Madryt", "Londyn"]
 
     # Założenie miast początkowych
-    for o, n in zip(poczatkowi_osacnicy, nazwy_miast):
-        europa.miasta.append(o.zaloz_miasto(n))
+    for o, n in zip(initial_settlers, city_names):
+        europe.cities.append(o.settle(n))
 
-    handlarz = europa.miasta[0].create_handlarz()
+    trader = europe.cities[0].create_trader()
 
-    tury = 1_000
+    turns = 1_000
     # Główna pętla symulacji
-    for i in range(tury):
+    for i in range(turns):
         # Wypisz debug o zasobach co 50 tur; tylko do dema
         if i % 50 == 0:
             print(f"Zasoby w turze {i}")
-            for miasto in europa.miasta:
-                miasto.debug_zasoby()
+            for city in europe.cities:
+                city.debug_resources()
         if i == 200:
             print("Kupowanie przez handlarza 60 jedzenia")
-            handlarz.kup_jak_najszybciej("jedzenie", 60)
+            trader.kup_jak_najszybciej("jedzenie", 60)
             print(f"Tura startu kupna: {i}")
-        europa.next_turn()
-        if handlarz.akcja_handlarza():
+        europe.next_turn()
+        if trader.akcja_handlarza():
             print(f"Handlarz wrócił w {i} turze")
+
 
 if __name__ == "__main__":
     main()
