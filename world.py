@@ -15,7 +15,7 @@ class World:
         self.wood_resources: list[object] = []
         self.fertility: object = None
         self.rivers: list[object] = []
-        self.compatibility(self.load_new_map("NowaMapa.tiff"))
+        self.compatibility(self.load_new_map('NowaMapa.tiff'))
 
         # TODO: zamienić to na państwa po skończeniu dema
         self.cities: list[City] = []
@@ -29,6 +29,7 @@ class World:
         self.humidity = layers["humidityMap"]
         self.rivers = layers["riverMap"]
 
+    @staticmethod
     def load_new_map(name):
 
         MAX = 2**31 - 1
