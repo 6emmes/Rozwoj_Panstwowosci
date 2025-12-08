@@ -103,6 +103,7 @@ class World:
 
     def next_turn(self):
         for city in self.cities:
+            accumulation_rate = {name: 0 for name in city.resources.keys()}
             for citizen in city.citizens:
                 res, ammount = citizen.gather_resources(
                     self.temperature[city.x][city.y],
@@ -112,3 +113,6 @@ class World:
                 resources, price = city.resources[res]
                 # TODO przeliczanie ceny po każdej iteracji
                 city.resources[res] = (resources + ammount, price)
+                accumulation_rate[res] += ammount
+            city.accumulation_rate = accumulation_rate
+            city.use_resources()

@@ -24,23 +24,15 @@ def main() -> None:
         europe.cities.append(o.settle(n))
 
     trader = europe.cities[0].create_trader()
+    europe.cities[0].calcualte_use_rate()
 
-    turns = 1_000
-    # Główna pętla symulacji
-    for i in range(turns):
-        # Wypisz debug o zasobach co 50 tur; tylko do dema
-        if i % 50 == 0:
-            print(f"Zasoby w turze {i}")
-            for city in europe.cities:
-                city.debug_resources()
-        if i == 200:
-            print("Kupowanie przez handlarza 60 jedzenia")
-            trader.buy_asap("jedzenie", 60)
-            print(f"Tura startu kupna: {i}")
-        europe.next_turn()
-        if trader.trader_action():
-            print(f"Handlarz wrócił w {i} turze")
-
+    # turns = 1_000
+    # # Główna pętla symulacji
+    # for i in range(turns):
+    #     # Wypisz debug o zasobach co 50 tur; tylko do dema
+    #     print(europe.cities[0].calculate_trade_priorities())
+    #     europe.next_turn()
+    print(europe.cities[0].citizens)
 
 if __name__ == "__main__":
     main()

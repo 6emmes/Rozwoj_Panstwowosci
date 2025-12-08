@@ -30,6 +30,9 @@ class Trader(Citizen):
     def find_trade_partner(self):
         pass
 
+    def is_available(self):
+        return self.target_city is None
+
     def buy_asap(
         self, good: str, amount: int
     ) -> tuple[City, str]:
