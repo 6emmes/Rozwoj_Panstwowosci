@@ -34,7 +34,7 @@ def _cost(world: World, x: int, y: int) -> float:
     if world.heightmap[x][y] < 0.4 * MAX_HEIGHT:
         return float("inf")
     river_buff = world.rivers[x][y]
-    return world.heightmap[x][y] / MAX_HEIGHT - 0.4 + river_buff
+    return world.heightmap[x][y] / MAX_HEIGHT - 0.4 + river_buff - world.roads[x][y]
 
 
 # TODO: optimise for multiple goals

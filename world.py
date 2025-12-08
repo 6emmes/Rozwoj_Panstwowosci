@@ -5,19 +5,22 @@ import tifffile
 
 from city import City
 
+type Point = tuple[int, int]
+type Grid[T] = list[list[T]]
+
 
 class World:
 
     def __init__(self) -> None:
-        self.roads: list[object] = []
         self.mining_resources: list[object] = []
         self.wood_resources: list[object] = []
         self.fertility: object = None
-        self.rivers: list[list[int]] = []
+        self.rivers: Grid[int] = []
         self.compatibility(self.load_new_map("NowaMapa.tiff"))
 
         # TODO: zamienić to na państwa po skończeniu dema
         self.cities: list[City] = []
+        self.roads: Grid[float] = [[0.0] * self.width for _ in range(self.height)]
 
     def action(self):
         pass
@@ -99,6 +102,10 @@ class World:
         self.humidity = blue
 
         print(f"Wczytano mapę {self.width} x {self.height}")
+
+    def build_path(self, path: list[Point], value=0.05):
+        for x, y in path:
+            self.roads[x][y] += value
 
     def next_turn(self):
         for city in self.cities:
