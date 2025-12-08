@@ -10,12 +10,11 @@ class World:
 
     def __init__(self) -> None:
         self.roads: list[object] = []
-        self.heightmap: object = None
         self.mining_resources: list[object] = []
         self.wood_resources: list[object] = []
         self.fertility: object = None
-        self.rivers: list[object] = []
-        self.compatibility(self.load_new_map('NowaMapa.tiff'))
+        self.rivers: list[list[int]] = []
+        self.compatibility(self.load_new_map("NowaMapa.tiff"))
 
         # TODO: zamienić to na państwa po skończeniu dema
         self.cities: list[City] = []
