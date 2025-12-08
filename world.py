@@ -103,7 +103,7 @@ class World:
 
         print(f"Wczytano mapę {self.width} x {self.height}")
 
-    def build_path(self, path: list[Point], value=0.05):
+    def build_road(self, path: list[Point], value=0.05):
         for x, y in path:
             self.roads[x][y] += value
 
