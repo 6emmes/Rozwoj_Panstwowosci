@@ -4,7 +4,7 @@ import random
 from typing import TYPE_CHECKING
 
 from citizen import Citizen
-from handlarz import Trader
+from trader import Trader
 
 if TYPE_CHECKING:
     from world import World

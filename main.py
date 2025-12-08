@@ -35,10 +35,10 @@ def main() -> None:
                 city.debug_resources()
         if i == 200:
             print("Kupowanie przez handlarza 60 jedzenia")
-            trader.kup_jak_najszybciej("jedzenie", 60)
+            trader.buy_asap("jedzenie", 60)
             print(f"Tura startu kupna: {i}")
         europe.next_turn()
-        if trader.akcja_handlarza():
+        if trader.trader_action():
             print(f"Handlarz wrócił w {i} turze")
 
 
