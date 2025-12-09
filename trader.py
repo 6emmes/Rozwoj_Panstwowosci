@@ -112,7 +112,8 @@ class Trader(Citizen):
 
     def buy_good(self) -> None:
         amount_s, price_s = self.target_city.resources[self.good_to_buy]
-        amount = min(amount_s*price_s / self.gold, self.amount_of_good_to_buy)
+        print(amount_s, price_s)
+        amount = min(self.gold/price_s, self.amount_of_good_to_buy)
         self.target_city.resources[self.good_to_buy] = (
             amount_s - amount, price_s,
         )
