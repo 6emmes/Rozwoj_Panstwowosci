@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import math
+import random
 from typing import TYPE_CHECKING
 
 from citizen import Citizen
@@ -20,8 +22,12 @@ class Trader(Citizen):
         self.home_city_distance: int = 0
         self.good_to_buy: str = ""
         self.amount_of_good_to_buy: int = 0
+        self.gold = 0
+        self.capacity = random.randint(30, 50)
         self.target_city: City | None = None
         self.speed: int = 10  # jednostki na turę
+        self.trade_partners: dict = {} # tablica miast odwiedzonych przez handlarza zmniejsza fog, czyli znajomość ceny w dnaym mieście
+        self.risk_factor = random.random() #TODO dobrze zrobić na jakiś rozkład np normalny
 
     def action(self):
         self.debug_print()
@@ -33,35 +39,30 @@ class Trader(Citizen):
     def is_available(self):
         return self.target_city is None
 
-    def buy_asap(
-        self, good: str, amount: int
-    ) -> tuple[City, str]:
+    def buy_asap(self, good: str, amount: int) -> tuple[float, float]:
         # na razie przeszukanie różnych miast w obrębie państwa, potem po odległości byłoby to wskazane
         for city in self.city.world.cities:
             if city == self.city:
                 continue
             # TODO duże uproszczenie że kupuje tylko jak city ma tyle zasobu ile potrzeba domyślnie powinien albo zwiedzać tyle miast aż kupi zadaną ilość albo kupić tyle ile jest dostępne i wracać
-            for resource in city.resources:
-                city_amount, _ = city.resources[resource]
-                if resource == good and city_amount >= amount:
-                    self.target_city = city
-                    self.good_to_buy = resource
-                    self.amount_of_good_to_buy = amount
-                    self.plan_travel()
-                    return city, resource
-        return None, None
+            if city in self.trade_partners:
+                fog = self.trade_partners[city]
+                city_amount, price = city.get_resource(good, fog)
+            else:
+                city_amount, price = city.get_resource(good)
 
-    @staticmethod
-    def recalculate_good_price(good: str, city: City) -> float:
-        # TODO lepszy sposób przepiczania dodatkowo nie wiem czy jest to kwestia handlarza czy miasta
-        amount, _ = city.resources[good]
-        sum_of_all = sum([city.resources[z][0] for z in city.resources])
-        if sum_of_all == 0:
-            city.resources[good] = (amount, 10.0)
-            return 10.0
-        new_price = min((sum_of_all / amount), 10)
-        city.resources[good] = (amount, new_price)
-        return new_price
+            city_amount = math.floor(amount[0] + (amount[1] - amount[0]) * self.risk_factor)
+            price = math.floor(price[1] - (price[1] - price[0]) * self.risk_factor)
+
+            if city_amount >= amount:
+                amount_to_buy = min(self.capacity, amount)
+                self.target_city = city
+                self.good_to_buy = good
+                self.amount_of_good_to_buy = amount_to_buy
+                self.gold = self.city.get_gold(price*amount)
+                self.plan_travel()
+                return amount_to_buy, price
+        return None, None
 
     def trader_action(self) -> bool:
         if self.target_city is None:
@@ -109,11 +110,16 @@ class Trader(Citizen):
 
     def buy_good(self) -> None:
         amount_s, price_s = self.target_city.resources[self.good_to_buy]
+        amount = min(amount_s*price_s / self.gold, self.amount_of_good_to_buy)
         self.target_city.resources[self.good_to_buy] = (
-            amount_s - self.amount_of_good_to_buy, price_s,
+            amount_s - amount, price_s,
         )
+        paid = amount * price_s
+        self.target_city.gold += paid
+        self.gold -= paid
         self.target_city_distance = 0
-        self.recalculate_good_price(self.good_to_buy, self.target_city)
+        self.amount_of_good_to_buy = amount
+        self.target_city.recalculate_good_price(self.good_to_buy)
 
     def unpack_good(self):
         amount_m, price_m = self.city.resources[self.good_to_buy]
@@ -121,7 +127,9 @@ class Trader(Citizen):
             amount_m + self.amount_of_good_to_buy,
             price_m,
         )
-        self.recalculate_good_price(self.good_to_buy, self.city)
+        self.city.gold += self.gold
+        self.gold = 0
+        self.city.recalculate_good_price(self.good_to_buy)
 
     def reset_trader(self):
         self.target_city_distance = 0

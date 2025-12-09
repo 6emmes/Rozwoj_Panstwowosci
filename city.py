@@ -15,6 +15,8 @@ RESOURCE_CRUCIALITY = {
     "kamien": 40
 }
 
+MAX_PRICE = 10.0
+
 class City:
 
     def __init__(self, x: int, y: int, name: str, world: World) -> None:
@@ -26,7 +28,8 @@ class City:
         self.traders: list[Trader] = [] # Trader to też citizen ale jeżeli będzie wielu citizenów to każdorazowe filtrowanie ich listy żeby traderów wyciagnąć będzie kosztowneg
         self.table_of_weights: list[object] = []
         self.religious_value: object = None
-        self.resources: dict =  {}  # nie jestem przekonany do trzymania tego w dictcie ale na razie nie wiem jak to dobrze załatwić klasą
+        self.gold: int = 500
+        self.resources: dict = {}  # nie jestem przekonany do trzymania tego w dictcie ale na razie nie wiem jak to dobrze załatwić klasą
         self.accumulation_rate: dict = {name: 0 for name in ["jedzenie", "drewno", "kamien"]}
         self.use_rate: dict = {name: 0 for name in ["jedzenie", "drewno", "kamien"]}
         self.trade_efficiency: dict = {name: 0 for name in ["jedzenie", "drewno", "kamien"]}
@@ -107,9 +110,9 @@ class City:
         return priority / trip_cost
 
     def calcualte_use_rate(self):
-        self.use_rate["jedzenie"] = len(self.citizens) * 1.0
-        self.use_rate["drewno"] = len(self.citizens) * 0.2
-        self.use_rate["kamien"] = len(self.citizens) * 0.2
+        self.use_rate["jedzenie"] = len(self.citizens) * 0.1
+        self.use_rate["drewno"] = len(self.citizens) * 0.05
+        self.use_rate["kamien"] = len(self.citizens) * 0.05
 
     def calculate_trade_priorities(self) -> dict[str, float]:
         priorities = {}
@@ -125,6 +128,29 @@ class City:
             if amount < 0:
                 amount = 0
             self.resources[resource] = (amount, price)
+
+    def recalculate_good_price(self, good: str) -> float:
+        # TODO lepszy sposób przepiczania dodatkowo nie wiem czy jest to kwestia handlarza czy miasta
+        amount, _ = self.resources[good]
+        sum_of_all = sum([self.resources[z][0] for z in self.resources])
+        if sum_of_all == 0:
+            self.resources[good] = (amount, MAX_PRICE)
+            return MAX_PRICE
+        new_price = min((sum_of_all / amount), 10)
+        self.resources[good] = (amount, new_price)
+        return new_price
+
+    def get_resource(self, resource: str, fog_rage: int = 15) -> tuple[tuple[int, int], tuple[int, int]]:
+        # Wraz z wycieraniem szlaku przez handlarza do miasta fog się zmniejszy, początkowo powinien być zależny od odległości
+        amount, price = self.resources[resource]
+        amount_min, amount_max = (random.randint(0, fog_rage), random.randint(0, fog_rage))
+        price_min, price_max = (random.randint(0, fog_rage), random.randint(0, fog_rage))
+        return (amount - amount_min, amount + amount_max), (price_min - price_min, price + price_max)
+
+    def get_gold(self, amount):
+        amount_to_get = min(amount, self.gold)
+        self.gold -= amount_to_get
+        return amount
 
     def tax(self):
         pass

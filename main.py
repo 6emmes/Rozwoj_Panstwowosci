@@ -26,13 +26,14 @@ def main() -> None:
     trader = europe.cities[0].create_trader()
     europe.cities[0].calcualte_use_rate()
 
-    # turns = 1_000
-    # # Główna pętla symulacji
-    # for i in range(turns):
-    #     # Wypisz debug o zasobach co 50 tur; tylko do dema
-    #     print(europe.cities[0].calculate_trade_priorities())
-    #     europe.next_turn()
-    print(europe.cities[0].citizens)
+    turns = 100
+    # Główna pętla symulacji
+    for i in range(turns):
+        # Wypisz debug o zasobach co 50 tur; tylko do dema
+        print(europe.cities[0].calculate_trade_priorities())
+        print(europe.cities[0].recalculate_good_price('kamien'))
+        europe.next_turn()
+    print(europe.cities[0].traders)
 
 if __name__ == "__main__":
     main()
