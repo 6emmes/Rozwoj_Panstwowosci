@@ -2,7 +2,9 @@ from citizen import Citizen
 from settler import Settler
 from state import State
 from world import World
-
+import seaborn as sns
+import matplotlib.pyplot as plt
+import pandas as pd
 
 def main() -> None:
     europe = World()
@@ -24,16 +26,68 @@ def main() -> None:
         europe.cities.append(o.settle(n))
 
     trader = europe.cities[0].create_trader()
-    europe.cities[0].calcualte_use_rate()
+    for city in europe.cities:
+        city.calcualte_use_rate()
+
+    priorities = []
+    use_rates = []
+    production_rates = []
+    gold = []
+    resources = []
 
     turns = 100
     # Główna pętla symulacji
     for i in range(turns):
         # Wypisz debug o zasobach co 50 tur; tylko do dema
-        print(europe.cities[0].calculate_trade_priorities())
-        print(europe.cities[0].recalculate_good_price('kamien'))
+        priorities.append(europe.cities[0].calculate_trade_priorities())
+        use_rates.append(europe.cities[0].use_rate)
+        production_rates.append(europe.cities[0].accumulation_rate)
+        gold.append(europe.cities[0].gold)
+        resources.append(europe.cities[0].resources)
+
         europe.next_turn()
-    print(europe.cities[0].traders)
+
+    # Wizualizacja per produkt
+    plt.subplots(2, 3, figsize=(20, 12))
+
+    for i, resource in enumerate(["jedzenie", "drewno", "kamien"]):
+        priority_data = [p[resource] for p in priorities]
+        use_rate_data = [u[resource] for u in use_rates]
+        production_rate_data = [pr[resource] for pr in production_rates]
+
+        df = pd.DataFrame({
+            'Tura': range(turns),
+            'Priorytet': priority_data,
+            'Wskaźnik zużycia': use_rate_data,
+            'Wskaźnik produkcji': production_rate_data
+        })
+
+        plt.subplot(2, 3, i+1)
+        sns.lineplot(data=df, x='Tura', y='Priorytet', label='Priorytet')
+        sns.lineplot(data=df, x='Tura', y='Wskaźnik zużycia', label='Wskaźnik zużycia')
+        sns.lineplot(data=df, x='Tura', y='Wskaźnik produkcji', label='Wskaźnik produkcji')
+        plt.title(f'Zmiany priorytetu i wskaźników dla zasobu: {resource}')
+        plt.xlabel('Tura')
+        plt.ylabel('Wartość')
+        plt.legend()
+
+    plt.subplot(2, 3, 4)
+    sns.lineplot(x=range(turns), y=gold, label='Złoto', color='gold')
+    plt.title('Zmiany ilości złota w mieście')
+    plt.xlabel('Tura')
+    plt.ylabel('Ilość złota')
+    plt.legend()
+
+    plt.subplot(2, 3, 5)
+    for resource in ["jedzenie", "drewno", "kamien"]:
+        resource_data = [resources[t][resource][0] for t in range(turns)]
+        sns.lineplot(x=range(turns), y=resource_data, label=resource)
+    plt.title('Zmiany ilości zasobów w mieście')
+    plt.xlabel('Tura')
+    plt.ylabel('Ilość zasobu')
+    plt.legend()
+
+    plt.show()
 
 if __name__ == "__main__":
     main()

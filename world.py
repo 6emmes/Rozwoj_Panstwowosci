@@ -115,4 +115,6 @@ class World:
                 city.resources[res] = (resources + ammount, price)
                 accumulation_rate[res] += ammount
             city.accumulation_rate = accumulation_rate
-            city.use_resources()
+            city.turn()
+            for trader in city.traders:
+                trader.trader_action()

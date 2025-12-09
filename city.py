@@ -37,12 +37,12 @@ class City:
         self._randomize_initial_recources()  # Do celów testowych
 
     def _randomize_initial_recources(self):
-        mozliwe_zasoby = ["jedzenie", "drewno", "kamien"]
-        max_zasobu = 100
-        for zasob in mozliwe_zasoby:
+        possible_resources = ["jedzenie", "drewno", "kamien"]
+        max_resource = 100
+        for zasob in possible_resources:
             # format zasoby[zasob] = (ilosc, cena)
             self.resources[zasob] = (
-                random.randint(0, max_zasobu),
+                random.randint(0, max_resource),
                 random.uniform(1.0, 10.0),
             )
         print(f"Miasto {self.name} zostało założone")
@@ -122,6 +122,7 @@ class City:
         return priorities
 
     def use_resources(self):
+
         for resource, rate in self.use_rate.items():
             amount, price = self.resources[resource]
             amount -= rate
@@ -140,17 +141,33 @@ class City:
         self.resources[good] = (amount, new_price)
         return new_price
 
-    def get_resource(self, resource: str, fog_rage: int = 15) -> tuple[tuple[int, int], tuple[int, int]]:
+    def get_resource(self, resource: str, fog_range: int = 15) -> tuple[tuple[int, int], tuple[int, int]]:
         # Wraz z wycieraniem szlaku przez handlarza do miasta fog się zmniejszy, początkowo powinien być zależny od odległości
         amount, price = self.resources[resource]
-        amount_min, amount_max = (random.randint(0, fog_rage), random.randint(0, fog_rage))
-        price_min, price_max = (random.randint(0, fog_rage), random.randint(0, fog_rage))
-        return (amount - amount_min, amount + amount_max), (price_min - price_min, price + price_max)
+        amount_min, amount_max = (random.randint(0, fog_range), random.randint(0, fog_range))
+        price_min, price_max = (random.randint(0, fog_range), random.randint(0, fog_range))
+        return (amount - amount_min, amount + amount_max), (max(price - price_min, 1), price + price_max)
 
     def get_gold(self, amount):
         amount_to_get = min(amount, self.gold)
         self.gold -= amount_to_get
         return amount
+
+    def turn(self):
+        self.use_resources()
+        self.calculate_trade_priorities()
+        priorities = self.calculate_trade_priorities()
+        for resource, priority in priorities.items():
+            if priority > 1.0:
+                trader = None
+                for t in self.traders:
+                    if t.is_available():
+                        trader = t
+                        break
+                if trader is not None:
+                    amount, price = trader.buy_asap(resource, 50)
+                    if amount is not None:
+                        print(f"    Miasto {self.name} wysyła handlarza kupić {amount} {resource} po cenie {price}")
 
     def tax(self):
         pass

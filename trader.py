@@ -51,7 +51,7 @@ class Trader(Citizen):
             else:
                 city_amount, price = city.get_resource(good)
 
-            city_amount = math.floor(amount[0] + (amount[1] - amount[0]) * self.risk_factor)
+            city_amount = math.floor(city_amount[0] + (city_amount[1] - city_amount[0]) * self.risk_factor)
             price = math.floor(price[1] - (price[1] - price[0]) * self.risk_factor)
 
             if city_amount >= amount:
@@ -61,6 +61,8 @@ class Trader(Citizen):
                 self.amount_of_good_to_buy = amount_to_buy
                 self.gold = self.city.get_gold(price*amount)
                 self.plan_travel()
+                self.trade_efficiency = math.ceil(amount_to_buy / (self.target_city_distance / self.speed))
+                self.city.trade_efficiency[good] += self.trade_efficiency
                 return amount_to_buy, price
         return None, None
 
@@ -129,7 +131,9 @@ class Trader(Citizen):
         )
         self.city.gold += self.gold
         self.gold = 0
+        self.city.trade_efficiency[self.good_to_buy] -= self.trade_efficiency
         self.city.recalculate_good_price(self.good_to_buy)
+        print(f"    Handlarz dostarczył {self.amount_of_good_to_buy} {self.good_to_buy} do miasta {self.city.name}")
 
     def reset_trader(self):
         self.target_city_distance = 0
