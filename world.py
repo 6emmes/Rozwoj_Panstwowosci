@@ -4,9 +4,7 @@ import struct
 import tifffile
 
 from city import City
-
-type Point = tuple[int, int]
-type Grid[T] = list[list[T]]
+from utils.definitions import Grid, Point
 
 
 class World:
@@ -15,7 +13,7 @@ class World:
         self.mining_resources: list[object] = []
         self.wood_resources: list[object] = []
         self.fertility: object = None
-        self.rivers: Grid[int] = []
+        self.rivers: Grid[float] = []
         self.compatibility(self.load_new_map("NowaMapa.tiff"))
 
         # TODO: zamienić to na państwa po skończeniu dema

@@ -2,10 +2,8 @@ import heapq
 
 import numpy as np
 
+from utils.definitions import Grid, Point
 from world import World
-
-type Point = tuple[int, int]
-type Grid[T] = list[list[T]]
 
 A = 5
 B = 4.6
