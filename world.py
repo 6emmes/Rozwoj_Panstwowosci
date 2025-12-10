@@ -15,6 +15,7 @@ class World:
         self.wood_resources: list[object] = []
         self.fertility: object = None
         self.rivers: list[object] = []
+        self.turn = 0
         self.compatibility(self.load_new_map('NowaMapa.tiff'))
 
         # TODO: zamienić to na państwa po skończeniu dema
@@ -116,5 +117,8 @@ class World:
                 accumulation_rate[res] += ammount
             city.accumulation_rate = accumulation_rate
             city.turn()
+            if self.turn % 10 == 0:
+                city.recalculate_goods_prices()
             for trader in city.traders:
                 trader.trader_action()
+        self.turn += 1

@@ -16,6 +16,7 @@ RESOURCE_CRUCIALITY = {
 }
 
 MAX_PRICE = 10.0
+MAX_FOG = 5
 
 class City:
 
@@ -134,14 +135,19 @@ class City:
         # TODO lepszy sposób przepiczania dodatkowo nie wiem czy jest to kwestia handlarza czy miasta
         amount, _ = self.resources[good]
         sum_of_all = sum([self.resources[z][0] for z in self.resources])
-        if sum_of_all == 0:
+        if amount == 0:
             self.resources[good] = (amount, MAX_PRICE)
             return MAX_PRICE
         new_price = min((sum_of_all / amount), 10)
         self.resources[good] = (amount, new_price)
         return new_price
 
-    def get_resource(self, resource: str, fog_range: int = 15) -> tuple[tuple[int, int], tuple[int, int]]:
+    def recalculate_goods_prices(self):
+        goods = self.resources.keys()
+        for good in goods:
+            self.recalculate_good_price(good)
+
+    def get_resource(self, resource: str, fog_range: int = MAX_FOG) -> tuple[tuple[int, int], tuple[int, int]]:
         # Wraz z wycieraniem szlaku przez handlarza do miasta fog się zmniejszy, początkowo powinien być zależny od odległości
         amount, price = self.resources[resource]
         amount_min, amount_max = (random.randint(0, fog_range), random.randint(0, fog_range))

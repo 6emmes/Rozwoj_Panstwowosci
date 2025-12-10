@@ -25,7 +25,9 @@ def main() -> None:
     for o, n in zip(initial_settlers, city_names):
         europe.cities.append(o.settle(n))
 
-    trader = europe.cities[0].create_trader()
+    europe.cities[0].create_trader()
+    europe.cities[0].create_trader()
+
     for city in europe.cities:
         city.calcualte_use_rate()
 
@@ -33,9 +35,10 @@ def main() -> None:
     use_rates = []
     production_rates = []
     gold = []
-    resources = []
+    resources = {key: [] for key in europe.cities[0].resources}
+    prices = {key: [] for key in europe.cities[0].resources}
 
-    turns = 100
+    turns = 200
     # Główna pętla symulacji
     for i in range(turns):
         # Wypisz debug o zasobach co 50 tur; tylko do dema
@@ -43,12 +46,15 @@ def main() -> None:
         use_rates.append(europe.cities[0].use_rate)
         production_rates.append(europe.cities[0].accumulation_rate)
         gold.append(europe.cities[0].gold)
-        resources.append(europe.cities[0].resources)
+        res = europe.cities[0].resources
+        for key in res:
+            resources[key].append(res[key][0])
+            prices[key].append(res[key][1])
 
         europe.next_turn()
 
     # Wizualizacja per produkt
-    plt.subplots(2, 3, figsize=(20, 12))
+    plt.subplots(2, 3, figsize=(12, 6))
 
     for i, resource in enumerate(["jedzenie", "drewno", "kamien"]):
         priority_data = [p[resource] for p in priorities]
@@ -79,12 +85,17 @@ def main() -> None:
     plt.legend()
 
     plt.subplot(2, 3, 5)
-    for resource in ["jedzenie", "drewno", "kamien"]:
-        resource_data = [resources[t][resource][0] for t in range(turns)]
-        sns.lineplot(x=range(turns), y=resource_data, label=resource)
+    sns.lineplot(resources)
     plt.title('Zmiany ilości zasobów w mieście')
     plt.xlabel('Tura')
     plt.ylabel('Ilość zasobu')
+    plt.legend()
+
+    plt.subplot(2, 3, 6)
+    sns.lineplot(prices)
+    plt.title('Zmiany cen zasobu w czasie')
+    plt.xlabel('Tura')
+    plt.ylabel('Cena')
     plt.legend()
 
     plt.show()
