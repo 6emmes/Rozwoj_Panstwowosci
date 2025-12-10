@@ -30,9 +30,9 @@ class World:
         self.temperature = layers["tempMap"]
         self.humidity = layers["humidityMap"]
         self.rivers = layers["riverMap"]
+        self.water = layers["waterMap"]
 
-    @staticmethod
-    def load_new_map(name):
+    def load_new_map(self, name):
 
         MAX = 2**31 - 1
 
@@ -53,6 +53,7 @@ class World:
                 layers[page_name] = normalized
         for name, arr in layers.items():
             print(f"Layer '{name}' has shape {arr.shape}")
+            self.width, self.height = arr.shape
         return layers
 
     def load_old_map(self, path) -> None:
