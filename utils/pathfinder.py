@@ -1,22 +1,24 @@
 import heapq
-from typing import TYPE_CHECKING
 
-if TYPE_CHECKING:
-    from world import World
+import numpy as np
 
-MAX_HEIGHT = 255
+from world import World
+
 type Point = tuple[int, int]
 type Grid[T] = list[list[T]]
 
+A = 5
+B = 4.6
 
-def _neighbours(world: World, x: int, y: int) -> list[Point]:
-    neighbours = [(x - 1, y), (x + 1, y), (x, y - 1), (x, y - 1)]
-    for dx, dy in neighbours:
-        if 0 <= dx <= world.width and 0 <= dy <= world.height:
-            pass
-        else:
-            neighbours.remove((dx, dy))
-    return neighbours
+heigit_eff = lambda x: np.exp(x)
+river_eff = lambda x: np.exp(-B * x)
+
+
+def _cost(world: World, x: int, y: int) -> float:
+    if world.water[x][y] == 0:
+        return float("inf")
+    river = A * river_eff(world.heightmap[x][y]) if world.rivers[x][y] > 0 else 0
+    return heigit_eff(world.heightmap[x][y]) + river - world.roads[x][y]
 
 
 def _reconstruct_path(parents: Grid[Point], start: Point, end: Point) -> list[Point]:
@@ -28,13 +30,6 @@ def _reconstruct_path(parents: Grid[Point], start: Point, end: Point) -> list[Po
             break
         current = parents[current[0]][current[1]]
     return path
-
-
-def _cost(world: World, x: int, y: int) -> float:
-    if world.heightmap[x][y] < 0.4 * MAX_HEIGHT:
-        return float("inf")
-    river_buff = world.rivers[x][y]
-    return 1 + world.heightmap[x][y] / MAX_HEIGHT + river_buff - world.roads[x][y]
 
 
 # TODO: optimise for multiple goals
@@ -56,14 +51,14 @@ def find_path(world: World, start: Point, end: Point) -> tuple[list[Point], floa
             path = _reconstruct_path(parents, start, end)
             return path, current_cost
 
-        if current_cost > _cost(world, x, y):
-            continue
-
-        for dx, dy in _neighbours(world, x, y):
-            p_cost = _cost(world, dx, dy)
+        neighbours = [(x - 1, y), (x + 1, y), (x, y - 1), (x, y + 1)]
+        for nx, ny in neighbours:
+            if not (0 <= nx < world.width and 0 <= ny < world.height):
+                continue
+            p_cost = _cost(world, nx, ny)
             new_cost = current_cost + p_cost
-            if new_cost < min_distance[dx][dy]:
-                min_distance[dx][dy] = new_cost
-                parents[dx][dy] = (x, y)
-                heapq.heappush(pq, (new_cost, dx, dy))
+            if new_cost < min_distance[nx][ny]:
+                min_distance[nx][ny] = new_cost
+                parents[nx][ny] = (x, y)
+                heapq.heappush(pq, (new_cost, nx, ny))
     return [], 0
