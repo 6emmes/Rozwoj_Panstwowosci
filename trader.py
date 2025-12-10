@@ -112,17 +112,24 @@ class Trader(Citizen):
 
     def buy_good(self) -> None:
         amount_s, price_s = self.target_city.resources[self.good_to_buy]
-        print(amount_s, price_s)
         amount = min(math.floor(self.gold/price_s), self.amount_of_good_to_buy, amount_s)
         self.target_city.resources[self.good_to_buy] = (
             amount_s - amount, price_s,
         )
         paid = amount * price_s
+        if paid < 0:
+            print(f"amout: {amount}, price_s: {price_s}, gold: {self.gold}")
         self.target_city.gold += paid
         self.gold -= paid
         self.target_city_distance = 0
         self.amount_of_good_to_buy = amount
         self.target_city.recalculate_good_price(self.good_to_buy)
+
+    def strengthen_trade_partner(self):
+        if self.target_city in self.trade_partners:
+            self.trade_partners[self.target_city] = max(0, self.trade_partners[self.target_city] - 1)
+        else:
+            self.trade_partners[self.target_city] = 4
 
     def unpack_good(self):
         amount_m, price_m = self.city.resources[self.good_to_buy]
@@ -134,6 +141,7 @@ class Trader(Citizen):
         self.gold = 0
         self.city.trade_efficiency[self.good_to_buy] -= self.trade_efficiency
         self.city.recalculate_good_price(self.good_to_buy)
+        self.strengthen_trade_partner()
         print(f"    Handlarz dostarczył {self.amount_of_good_to_buy} {self.good_to_buy} do miasta {self.city.name}")
 
     def reset_trader(self):

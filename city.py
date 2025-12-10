@@ -123,7 +123,6 @@ class City:
         return priorities
 
     def use_resources(self):
-
         for resource, rate in self.use_rate.items():
             amount, price = self.resources[resource]
             amount -= rate
