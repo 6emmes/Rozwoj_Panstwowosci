@@ -6,6 +6,7 @@ from citizen import Citizen
 
 if TYPE_CHECKING:
     from city import City
+    from utils.definitions import Point
 
 
 class Trader(Citizen):
@@ -22,6 +23,7 @@ class Trader(Citizen):
         self.amount_of_good_to_buy: int = 0
         self.target_city: City | None = None
         self.speed: int = 10  # jednostki na turę
+        self.last_path: list[Point] = []
 
     def action(self):
         self.debug_print()
@@ -30,9 +32,7 @@ class Trader(Citizen):
     def find_trade_partner(self):
         pass
 
-    def buy_asap(
-        self, good: str, amount: int
-    ) -> tuple[City, str]:
+    def buy_asap(self, good: str, amount: int) -> tuple[City, str]:
         # na razie przeszukanie różnych miast w obrębie państwa, potem po odległości byłoby to wskazane
         for city in self.city.world.cities:
             if city == self.city:
@@ -65,10 +65,7 @@ class Trader(Citizen):
             return False
         if self.target_city_distance > 0:
             self.go_to_target_city()
-        elif (
-                self.home_city_distance > 0
-                and self.target_city_distance < 0
-        ):
+        elif self.home_city_distance > 0 and self.target_city_distance < 0:
             self.buy_good()
         elif self.home_city_distance > 0:
             self.go_to_home_city()
@@ -97,8 +94,16 @@ class Trader(Citizen):
         return cost
 
     def plan_travel(self) -> None:
-        distance = self.calculate_travel_distance()
-        self.target_city_distance = distance
+        from utils.pathfinder import find_path
+
+        home_x = self.city.x
+        home_y = self.city.y
+        target_x = self.city.x
+        target_y = self.city.y
+        path, cost = find_path(self.city.world, (home_x, home_y), (target_x, target_y))
+
+        self.last_path = path
+        self.target_city_distance = int(cost)
         self.home_city_distance = 0
 
     def sell_good(self):  # Handlarz nie sprzedaje zasobów, tylko kupuje od miasta
@@ -107,7 +112,8 @@ class Trader(Citizen):
     def buy_good(self) -> None:
         amount_s, price_s = self.target_city.resources[self.good_to_buy]
         self.target_city.resources[self.good_to_buy] = (
-            amount_s - self.amount_of_good_to_buy, price_s,
+            amount_s - self.amount_of_good_to_buy,
+            price_s,
         )
         self.target_city_distance = 0
         self.recalculate_good_price(self.good_to_buy, self.target_city)
@@ -119,6 +125,7 @@ class Trader(Citizen):
             price_m,
         )
         self.recalculate_good_price(self.good_to_buy, self.city)
+        self.city.world.build_road(self.last_path)
 
     def reset_trader(self):
         self.target_city_distance = 0
