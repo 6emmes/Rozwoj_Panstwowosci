@@ -34,7 +34,7 @@ def main():
     rgb_arr = land_palette[height_map]
     is_water = water_arr == 0
     rgb_arr[is_water] = BLUE
-    rgb_array = np.swapaxes(rgb_arr, 0, 1)
+    rgb_arr = np.swapaxes(rgb_arr, 0, 1)
     terrain_surface = pygame.surfarray.make_surface(rgb_arr)
 
     pygame.init()
