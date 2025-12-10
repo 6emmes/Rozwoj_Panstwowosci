@@ -61,7 +61,7 @@ def main():
             c1 = cities_pos[i]
             c2 = cities_pos[j]
             path, cost = find_path(world, c1, c2)
-            print(f"Path from {c1} to {c2}: ({cost}): {len(path)}")
+            print(f"Droga z {c1} do {c2}: koszt {round(cost, 4)}; {len(path)} kroków")
             for x, y in path:
                 rgb_arr[x, y] = PUPRLE
 
