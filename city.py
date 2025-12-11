@@ -17,6 +17,7 @@ RESOURCE_CRUCIALITY = {
 
 MAX_PRICE = 10.0
 MAX_FOG = 5
+RESOURCES = ["jedzenie", "drewno", "kamien"]
 
 class City:
 
@@ -31,14 +32,14 @@ class City:
         self.religious_value: object = None
         self.gold: int = 500
         self.resources: dict = {}  # nie jestem przekonany do trzymania tego w dictcie ale na razie nie wiem jak to dobrze załatwić klasą
-        self.accumulation_rate: dict = {name: 0 for name in ["jedzenie", "drewno", "kamien"]}
-        self.use_rate: dict = {name: 0 for name in ["jedzenie", "drewno", "kamien"]}
-        self.trade_efficiency: dict = {name: 0 for name in ["jedzenie", "drewno", "kamien"]}
+        self.accumulation_rate: dict = {name: 0 for name in RESOURCES}
+        self.use_rate: dict = {name: 0 for name in RESOURCES}
+        self.trade_efficiency: dict = {name: 0 for name in RESOURCES}
         self.world: World = world  # placeholder attribute
         self._randomize_initial_recources()  # Do celów testowych
 
     def _randomize_initial_recources(self):
-        possible_resources = ["jedzenie", "drewno", "kamien"]
+        possible_resources = RESOURCES
         max_resource = 100
         for zasob in possible_resources:
             # format zasoby[zasob] = (ilosc, cena)
