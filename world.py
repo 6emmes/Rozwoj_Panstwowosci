@@ -14,6 +14,7 @@ class World:
         self.wood_resources: list[object] = []
         self.fertility: object = None
         self.rivers: Grid[float] = []
+        self.turn = 0
         self.compatibility(self.load_new_map("NowaMapa.tiff"))
 
         # TODO: zamienić to na państwa po skończeniu dema
@@ -108,6 +109,7 @@ class World:
 
     def next_turn(self):
         for city in self.cities:
+            accumulation_rate = {name: 0 for name in city.resources.keys()}
             for citizen in city.citizens:
                 res, ammount = citizen.gather_resources(
                     self.temperature[city.x][city.y],
@@ -117,3 +119,11 @@ class World:
                 resources, price = city.resources[res]
                 # TODO przeliczanie ceny po każdej iteracji
                 city.resources[res] = (resources + ammount, price)
+                accumulation_rate[res] += ammount
+            city.accumulation_rate = accumulation_rate
+            city.turn()
+            if self.turn % 10 == 0:
+                city.recalculate_goods_prices()
+            for trader in city.traders:
+                trader.trader_action()
+        self.turn += 1

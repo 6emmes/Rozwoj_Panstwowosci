@@ -42,3 +42,6 @@ class Citizen:
 
     def go_for_pilgrimage(self):
         pass
+
+    def __repr__(self) -> str:
+        return self.__class__.__name__

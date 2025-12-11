@@ -1,3 +1,5 @@
 tifffile==2025.10.16
 numpy==2.3.5
 pygame==2.6.1
+seaborn==0.13.2
+pandas==2.3.3
