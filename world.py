@@ -4,22 +4,22 @@ import struct
 import tifffile
 
 from city import City
+from utils.definitions import Grid, Point
 
 
 class World:
 
     def __init__(self) -> None:
-        self.roads: list[object] = []
-        self.heightmap: object = None
         self.mining_resources: list[object] = []
         self.wood_resources: list[object] = []
         self.fertility: object = None
-        self.rivers: list[object] = []
+        self.rivers: Grid[float] = []
         self.turn = 0
-        self.compatibility(self.load_new_map('NowaMapa.tiff'))
+        self.compatibility(self.load_new_map("NowaMapa.tiff"))
 
         # TODO: zamienić to na państwa po skończeniu dema
         self.cities: list[City] = []
+        self.roads: Grid[float] = [[0.0] * self.width for _ in range(self.height)]
 
     def action(self):
         pass
@@ -29,9 +29,9 @@ class World:
         self.temperature = layers["tempMap"]
         self.humidity = layers["humidityMap"]
         self.rivers = layers["riverMap"]
+        self.water = layers["waterMap"]
 
-    @staticmethod
-    def load_new_map(name):
+    def load_new_map(self, name):
 
         MAX = 2**31 - 1
 
@@ -52,6 +52,7 @@ class World:
                 layers[page_name] = normalized
         for name, arr in layers.items():
             print(f"Layer '{name}' has shape {arr.shape}")
+            self.width, self.height = arr.shape
         return layers
 
     def load_old_map(self, path) -> None:
@@ -101,6 +102,10 @@ class World:
         self.humidity = blue
 
         print(f"Wczytano mapę {self.width} x {self.height}")
+
+    def build_road(self, path: list[Point], value=0.05):
+        for x, y in path:
+            self.roads[x][y] += value
 
     def next_turn(self):
         for city in self.cities:

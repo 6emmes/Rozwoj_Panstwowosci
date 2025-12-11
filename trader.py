@@ -8,6 +8,7 @@ from citizen import Citizen
 
 if TYPE_CHECKING:
     from city import City
+    from utils.definitions import Point
 
 
 class Trader(Citizen):
@@ -26,8 +27,13 @@ class Trader(Citizen):
         self.capacity = random.randint(30, 50)
         self.target_city: City | None = None
         self.speed: int = 10  # jednostki na turę
-        self.trade_partners: dict = {} # tablica miast odwiedzonych przez handlarza zmniejsza fog, czyli znajomość ceny w dnaym mieście
-        self.risk_factor = random.random() #TODO dobrze zrobić na jakiś rozkład np normalny
+        self.last_path: list[Point] = []
+        self.trade_partners: dict = (
+            {}
+        )  # tablica miast odwiedzonych przez handlarza zmniejsza fog, czyli znajomość ceny w dnaym mieście
+        self.risk_factor = (
+            random.random()
+        )  # TODO dobrze zrobić na jakiś rozkład np normalny
 
     def action(self):
         self.debug_print()
@@ -51,7 +57,9 @@ class Trader(Citizen):
             else:
                 city_amount, price = city.get_resource(good)
 
-            city_amount = math.floor(city_amount[0] + (city_amount[1] - city_amount[0]) * self.risk_factor)
+            city_amount = math.floor(
+                city_amount[0] + (city_amount[1] - city_amount[0]) * self.risk_factor
+            )
             price = math.floor(price[1] - (price[1] - price[0]) * self.risk_factor)
 
             if city_amount >= amount:
@@ -59,9 +67,11 @@ class Trader(Citizen):
                 self.target_city = city
                 self.good_to_buy = good
                 self.amount_of_good_to_buy = amount_to_buy
-                self.gold = self.city.get_gold(price*amount)
+                self.gold = self.city.get_gold(price * amount)
                 self.plan_travel()
-                self.trade_efficiency = math.ceil(amount_to_buy / (self.target_city_distance / self.speed))
+                self.trade_efficiency = math.ceil(
+                    amount_to_buy / (self.target_city_distance / self.speed)
+                )
                 self.city.trade_efficiency[good] += self.trade_efficiency
                 return amount_to_buy, price
         return None, None
@@ -71,10 +81,7 @@ class Trader(Citizen):
             return False
         if self.target_city_distance > 0:
             self.go_to_target_city()
-        elif (
-                self.home_city_distance > 0
-                and self.target_city_distance < 0
-        ):
+        elif self.home_city_distance > 0 and self.target_city_distance < 0:
             self.buy_good()
         elif self.home_city_distance > 0:
             self.go_to_home_city()
@@ -103,8 +110,16 @@ class Trader(Citizen):
         return cost
 
     def plan_travel(self) -> None:
-        distance = self.calculate_travel_distance()
-        self.target_city_distance = distance
+        from utils.pathfinder import find_path
+
+        home_x = self.city.x
+        home_y = self.city.y
+        target_x = self.city.x
+        target_y = self.city.y
+        path, cost = find_path(self.city.world, (home_x, home_y), (target_x, target_y))
+
+        self.last_path = path
+        self.target_city_distance = int(cost)
         self.home_city_distance = 0
 
     def sell_good(self):  # Handlarz nie sprzedaje zasobów, tylko kupuje od miasta
@@ -112,9 +127,12 @@ class Trader(Citizen):
 
     def buy_good(self) -> None:
         amount_s, price_s = self.target_city.resources[self.good_to_buy]
-        amount = min(math.floor(self.gold/price_s), self.amount_of_good_to_buy, amount_s)
+        amount = min(
+            math.floor(self.gold / price_s), self.amount_of_good_to_buy, amount_s
+        )
         self.target_city.resources[self.good_to_buy] = (
-            amount_s - amount, price_s,
+            amount_s - amount,
+            price_s,
         )
         paid = amount * price_s
         if paid < 0:
@@ -127,7 +145,9 @@ class Trader(Citizen):
 
     def strengthen_trade_partner(self):
         if self.target_city in self.trade_partners:
-            self.trade_partners[self.target_city] = max(0, self.trade_partners[self.target_city] - 1)
+            self.trade_partners[self.target_city] = max(
+                0, self.trade_partners[self.target_city] - 1
+            )
         else:
             self.trade_partners[self.target_city] = 4
 
@@ -137,12 +157,15 @@ class Trader(Citizen):
             amount_m + self.amount_of_good_to_buy,
             price_m,
         )
+        self.city.world.build_road(self.last_path)
         self.city.gold += self.gold
         self.gold = 0
         self.city.trade_efficiency[self.good_to_buy] -= self.trade_efficiency
         self.city.recalculate_good_price(self.good_to_buy)
         self.strengthen_trade_partner()
-        print(f"    Handlarz dostarczył {self.amount_of_good_to_buy} {self.good_to_buy} do miasta {self.city.name}")
+        print(
+            f"    Handlarz dostarczył {self.amount_of_good_to_buy} {self.good_to_buy} do miasta {self.city.name}"
+        )
 
     def reset_trader(self):
         self.target_city_distance = 0
