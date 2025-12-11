@@ -59,4 +59,20 @@ def find_path(world: World, start: Point, end: Point) -> tuple[list[Point], floa
                 min_distance[nx][ny] = new_cost
                 parents[nx][ny] = (x, y)
                 heapq.heappush(pq, (new_cost, nx, ny))
+
+        neighbours_diag = [
+            (x - 1, y - 1),
+            (x - 1, y + 1),
+            (x + 1, y - 1),
+            (x + 1, y + 1),
+        ]
+        for nx, ny in neighbours_diag:
+            if not (0 <= nx < world.width and 0 <= ny < world.height):
+                continue
+            p_cost = SQRT_2 * _cost(world, nx, ny)
+            new_cost = current_cost + p_cost
+            if new_cost < min_distance[nx][ny]:
+                min_distance[nx][ny] = new_cost
+                parents[nx][ny] = (x, y)
+                heapq.heappush(pq, (new_cost, nx, ny))
     return [], 0
