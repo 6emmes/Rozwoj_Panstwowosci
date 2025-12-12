@@ -5,17 +5,19 @@ import numpy as np
 from utils.definitions import Grid, Point
 from world import World
 
+SQRT_2 = np.sqrt(2)
+H = 3
 A = 5
 B = 4.6
 
-heigit_eff = lambda x: np.exp(x)
-river_eff = lambda x: np.exp(-B * x)
+heigit_eff = lambda x: H * (np.exp(x) - 1) + 1
+river_eff = lambda x: A * np.exp(-B * x)
 
 
 def _cost(world: World, x: int, y: int) -> float:
     if world.water[x][y] == 0:
         return float("inf")
-    river = A * river_eff(world.heightmap[x][y]) if world.rivers[x][y] > 0 else 0
+    river = river_eff(world.heightmap[x][y]) if world.rivers[x][y] > 0 else 0
     return heigit_eff(world.heightmap[x][y]) + river - world.roads[x][y]
 
 
