@@ -1,9 +1,14 @@
 import math
+from enum import Enum
 
 MAX_VAL = 255
-STONE = "kamien"
-WOOD = "drewno"
-FOOD = "jedzenie"
+
+
+class Resource(Enum):
+    STONE = "kamien"
+    WOOD = "drewno"
+    FOOD = "jedzenie"
+    METAL = "metal"
 
 
 def _normal(x: int, std_dev=50, mean=MAX_VAL / 2) -> float:
@@ -11,31 +16,37 @@ def _normal(x: int, std_dev=50, mean=MAX_VAL / 2) -> float:
     return math.exp(e)
 
 
-def height_efficiency(res: str, h: int) -> float:
-    if res == STONE:
-        return 0.1 + h / MAX_VAL
-    elif res == WOOD:
-        return 1.0
-    elif res == FOOD:
-        return 1.1 - h / MAX_VAL
-    return 1.0
+def height_efficiency(res: Resource, h: int) -> float:
+    match res:
+        case Resource.STONE:
+            return 0.1 + h / MAX_VAL
+        case Resource.WOOD:
+            return 1.0
+        case Resource.FOOD:
+            return 1.1 - h / MAX_VAL
+        case _:
+            return 1.0
 
 
-def humidity_efficiency(res: str, h: int) -> float:
-    if res == STONE:
-        return 1.0
-    elif res == WOOD:
-        return 0.1 + h / MAX_VAL
-    elif res == FOOD:
-        return _normal(h, 80)
-    return 1.0
+def humidity_efficiency(res: Resource, h: int) -> float:
+    match res:
+        case Resource.STONE:
+            return 1.0
+        case Resource.WOOD:
+            return 0.1 + h / MAX_VAL
+        case Resource.FOOD:
+            return _normal(h, 80)
+        case _:
+            return 1.0
 
 
-def temp_efficiency(res: str, t: int) -> float:
-    if res == STONE:
-        return 1.0
-    elif res == WOOD:
-        return _normal(t)
-    elif res == FOOD:
-        return _normal(t)
-    return 1.0
+def temp_efficiency(res: Resource, t: int) -> float:
+    match res:
+        case Resource.STONE:
+            return 1.0
+        case Resource.WOOD:
+            return _normal(t)
+        case Resource.FOOD:
+            return _normal(t)
+        case _:
+            return 1.0

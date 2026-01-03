@@ -2,7 +2,7 @@
 import random
 from typing import TYPE_CHECKING
 
-import resources
+from resources import Resource, height_efficiency, humidity_efficiency, temp_efficiency
 
 if TYPE_CHECKING:
     from city import City
@@ -22,14 +22,14 @@ class Citizen:
     def gather_resources(
         self, sqr_temperature: int, sqr_height: int, sqr_humidity: int
     ) -> tuple[str, float]:
-        resource = random.choice([resources.WOOD, resources.FOOD, resources.STONE])
+        resource = random.choice([Resource.WOOD, Resource.FOOD, Resource.STONE])
         return (
-            resource,
+            resource.value,
             round(
                 10
-                * resources.height_efficiency(resource, sqr_height)
-                * resources.temp_efficiency(resource, sqr_temperature)
-                * resources.humidity_efficiency(resource, sqr_humidity),
+                * height_efficiency(resource, sqr_height)
+                * temp_efficiency(resource, sqr_temperature)
+                * humidity_efficiency(resource, sqr_humidity),
                 2,
             ),
         )
