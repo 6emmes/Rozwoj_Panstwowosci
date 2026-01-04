@@ -2,13 +2,18 @@ from citizen import Citizen
 from settler import Settler
 from state import State
 from world import World
+from shmemory import SharedMemoryGrid
+from shmemory import SharedControlBlock
 import seaborn as sns
 import matplotlib.pyplot as plt
 import pandas as pd
+import time
 
 def main() -> None:
     europe = World()
     poland = State("Polska")
+    shmctrl = SharedControlBlock("control")
+    shmgrid = SharedMemoryGrid("road_grid", europe.width, europe.height, shmctrl)
 
     jan = Citizen()
 
@@ -50,6 +55,13 @@ def main() -> None:
         for key in res:
             resources[key].append(res[key][0])
             prices[key].append(res[key][1])
+
+        if shmgrid.is_ready():
+            shmgrid.sync_from_python_grid(europe.roads)
+            shmgrid.set_ready_flag()
+            print("send")
+        #time.sleep(1)
+        print(i)
 
         europe.next_turn()
 
