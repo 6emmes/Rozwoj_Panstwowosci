@@ -18,11 +18,11 @@ def main() -> None:
     jan = Citizen()
 
     initial_settlers = [
-        Settler(10, 10, 5, europe),
-        Settler(20, 5, 5, europe),
-        Settler(15, 15, 5, europe),
-        Settler(30, 2, 5, europe),
-        Settler(5, 20, 5, europe),
+        Settler(100, 100, 5, europe),
+        Settler(120, 105, 5, europe),
+        Settler(150, 150, 5, europe),
+        Settler(130, 102, 5, europe),
+        Settler(105, 120, 5, europe),
     ]
     city_names = ["Warszawa", "Krakow", "Berlin", "Madryt", "Londyn"]
 

@@ -50,6 +50,7 @@ class SharedMemoryGrid:
 
         FloatArray = ctypes.c_float * self.count
         self.data = FloatArray.from_buffer(self.buf)
+        self.set_ready_flag()
 
     # -----------------------------
     # Grid <-> Python sync
