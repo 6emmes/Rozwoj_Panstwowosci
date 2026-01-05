@@ -1,10 +1,14 @@
+import matplotlib.pyplot as plt
+import pandas as pd
+import seaborn as sns
+
+import resources
 from citizen import Citizen
+from resources import Resource
 from settler import Settler
 from state import State
 from world import World
-import seaborn as sns
-import matplotlib.pyplot as plt
-import pandas as pd
+
 
 def main() -> None:
     europe = World()
@@ -41,7 +45,6 @@ def main() -> None:
     turns = 200
     # Główna pętla symulacji
     for i in range(turns):
-        # Wypisz debug o zasobach co 50 tur; tylko do dema
         priorities.append(europe.cities[0].calculate_trade_priorities())
         use_rates.append(europe.cities[0].use_rate)
         production_rates.append(europe.cities[0].accumulation_rate)
@@ -56,7 +59,7 @@ def main() -> None:
     # Wizualizacja per produkt
     plt.subplots(2, 3, figsize=(12, 6))
 
-    for i, resource in enumerate(["jedzenie", "drewno", "kamien"]):
+    for i, resource in enumerate(list(Resource)):
         priority_data = [p[resource] for p in priorities]
         use_rate_data = [u[resource] for u in use_rates]
         production_rate_data = [pr[resource] for pr in production_rates]
