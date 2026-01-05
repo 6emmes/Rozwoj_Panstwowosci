@@ -70,7 +70,7 @@ class Trader(Citizen):
                 self.gold = self.city.get_gold(price * amount)
                 self.plan_travel()
                 self.trade_efficiency = math.ceil(
-                    amount_to_buy / (self.target_city_distance / self.speed)
+                    amount_to_buy / ((self.target_city_distance / self.speed) + 1e-3)
                 )
                 self.city.trade_efficiency[good] += self.trade_efficiency
                 return amount_to_buy, price
