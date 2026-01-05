@@ -159,6 +159,21 @@ class City:
         self.gold -= amount_to_get
         return amount
 
+    def _gather_resource(
+        self,
+        resource: Resource,
+        sqr_temperature: int,
+        sqr_height: int,
+        sqr_humidity: int,
+    ) -> float:
+        return round(
+            10
+            * height_efficiency(resource, sqr_height)
+            * temp_efficiency(resource, sqr_temperature)
+            * humidity_efficiency(resource, sqr_humidity),
+            2,
+        )
+
     def turn(self):
         self.use_resources()
         self.calculate_trade_priorities()

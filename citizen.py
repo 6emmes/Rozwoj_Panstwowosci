@@ -1,8 +1,5 @@
 # from miasto import Miasto
-import random
 from typing import TYPE_CHECKING
-
-from resources import Resource, height_efficiency, humidity_efficiency, temp_efficiency
 
 if TYPE_CHECKING:
     from city import City
@@ -18,21 +15,6 @@ class Citizen:
     def debug_print(self) -> None:
         city_name = self.city.name if self.city else None
         print(f"        Obywatel, miasto: {city_name}")
-
-    def gather_resources(
-        self, sqr_temperature: int, sqr_height: int, sqr_humidity: int
-    ) -> tuple[str, float]:
-        resource = random.choice([Resource.WOOD, Resource.FOOD, Resource.STONE])
-        return (
-            resource.value,
-            round(
-                10
-                * height_efficiency(resource, sqr_height)
-                * temp_efficiency(resource, sqr_temperature)
-                * humidity_efficiency(resource, sqr_humidity),
-                2,
-            ),
-        )
 
     def action(self):
         self.debug_print()
