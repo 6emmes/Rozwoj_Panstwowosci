@@ -86,8 +86,9 @@ class World:
         return abs(x1 - x2) + abs(y1 - y2)
 
 
-    def spawn_settlers(self, names, no_citizens):
-        NEIGHBOR_OFFSETS = [ (0, -1), (-1, 0), (1, 0), (0, 1)] 
+    def spawn_settlers(self, names, no_citizens, seed=10):
+        NEIGHBOR_OFFSETS = [ (0, -1), (-1, 0), (1, 0), (0, 1)]
+        random.seed(seed)
         contflag = 0           
         for n in names:
             while True:
