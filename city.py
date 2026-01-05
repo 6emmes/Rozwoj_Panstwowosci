@@ -94,13 +94,17 @@ class City:
     def _get_resource_delta(self, resource: Resource) -> float:
         # Wartość zaamortyzowana w praktyce zasób dostępnt dopiero popowrocie do miasta handlarza, ale
         # żeby nie wysyłać w nieskończoność handlarzy na to samo zadanie jest dodawany
-        return self.accumulation_rate[resource] + self.trade_efficiency[resource] - self.use_rate[resource]
+        return (
+            self.accumulation_rate[resource]
+            + self.trade_efficiency[resource]
+            - self.use_rate[resource]
+        )
 
     def _get_turns_left(self, resource: Resource) -> float:
         amount, _ = self.resources[resource]
         delta = self._get_resource_delta(resource)
         if delta >= 0:
-            return float('inf')
+            return float("inf")
         return amount / -delta
 
     def _get_cost_of_trade(self) -> float:
@@ -108,7 +112,7 @@ class City:
 
     def _calculate_trade_priority(self, resource: Resource) -> float:
         days_left = self._get_turns_left(resource)
-        if days_left == float('inf'):
+        if days_left == float("inf"):
             return 0.0
 
         cruciality = RESOURCE_CRUCIALITY[resource]
@@ -155,12 +159,23 @@ class City:
         for good in goods:
             self.recalculate_good_price(good)
 
-    def get_resource(self, resource: str, fog_range: int = MAX_FOG) -> tuple[tuple[int, int], tuple[int, int]]:
+    def get_resource(
+        self, resource: str, fog_range: int = MAX_FOG
+    ) -> tuple[tuple[int, int], tuple[int, int]]:
         # Wraz z wycieraniem szlaku przez handlarza do miasta fog się zmniejszy, początkowo powinien być zależny od odległości
         amount, price = self.resources[resource]
-        amount_min, amount_max = (random.randint(0, fog_range), random.randint(0, fog_range))
-        price_min, price_max = (random.randint(0, fog_range), random.randint(0, fog_range))
-        return (amount - amount_min, amount + amount_max), (max(price - price_min, 1), price + price_max)
+        amount_min, amount_max = (
+            random.randint(0, fog_range),
+            random.randint(0, fog_range),
+        )
+        price_min, price_max = (
+            random.randint(0, fog_range),
+            random.randint(0, fog_range),
+        )
+        return (amount - amount_min, amount + amount_max), (
+            max(price - price_min, 1),
+            price + price_max,
+        )
 
     def get_gold(self, amount):
         amount_to_get = min(amount, self.gold)
