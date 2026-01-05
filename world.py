@@ -56,7 +56,6 @@ class World:
             self.width, self.height = arr.shape
         return self.layers
     
-
     def build_road(self, path: list[Point], value=0.05):
         for x, y in path:
             self.roads[x][y] += value
