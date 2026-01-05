@@ -61,44 +61,49 @@ def main() -> None:
         use_rate_data = [u[resource] for u in use_rates]
         production_rate_data = [pr[resource] for pr in production_rates]
 
-        df = pd.DataFrame({
-            'Tura': range(turns),
-            'Priorytet': priority_data,
-            'Wskaźnik zużycia': use_rate_data,
-            'Wskaźnik produkcji': production_rate_data
-        })
+        df = pd.DataFrame(
+            {
+                "Tura": range(turns),
+                "Priorytet": priority_data,
+                "Wskaźnik zużycia": use_rate_data,
+                "Wskaźnik produkcji": production_rate_data,
+            }
+        )
 
-        plt.subplot(2, 3, i+1)
-        sns.lineplot(data=df, x='Tura', y='Priorytet', label='Priorytet')
-        sns.lineplot(data=df, x='Tura', y='Wskaźnik zużycia', label='Wskaźnik zużycia')
-        sns.lineplot(data=df, x='Tura', y='Wskaźnik produkcji', label='Wskaźnik produkcji')
-        plt.title(f'Zmiany priorytetu i wskaźników dla zasobu: {resource}')
-        plt.xlabel('Tura')
-        plt.ylabel('Wartość')
+        plt.subplot(2, 3, i + 1)
+        sns.lineplot(data=df, x="Tura", y="Priorytet", label="Priorytet")
+        sns.lineplot(data=df, x="Tura", y="Wskaźnik zużycia", label="Wskaźnik zużycia")
+        sns.lineplot(
+            data=df, x="Tura", y="Wskaźnik produkcji", label="Wskaźnik produkcji"
+        )
+        plt.title(f"Zmiany priorytetu i wskaźników dla zasobu: {resource}")
+        plt.xlabel("Tura")
+        plt.ylabel("Wartość")
         plt.legend()
 
     plt.subplot(2, 3, 4)
-    sns.lineplot(x=range(turns), y=gold, label='Złoto', color='gold')
-    plt.title('Zmiany ilości złota w mieście')
-    plt.xlabel('Tura')
-    plt.ylabel('Ilość złota')
+    sns.lineplot(x=range(turns), y=gold, label="Złoto", color="gold")
+    plt.title("Zmiany ilości złota w mieście")
+    plt.xlabel("Tura")
+    plt.ylabel("Ilość złota")
     plt.legend()
 
     plt.subplot(2, 3, 5)
     sns.lineplot(resources)
-    plt.title('Zmiany ilości zasobów w mieście')
-    plt.xlabel('Tura')
-    plt.ylabel('Ilość zasobu')
+    plt.title("Zmiany ilości zasobów w mieście")
+    plt.xlabel("Tura")
+    plt.ylabel("Ilość zasobu")
     plt.legend()
 
     plt.subplot(2, 3, 6)
     sns.lineplot(prices)
-    plt.title('Zmiany cen zasobu w czasie')
-    plt.xlabel('Tura')
-    plt.ylabel('Cena')
+    plt.title("Zmiany cen zasobu w czasie")
+    plt.xlabel("Tura")
+    plt.ylabel("Cena")
     plt.legend()
 
-    plt.show()
+    plt.savefig("visualization/prices.png")
+
 
 if __name__ == "__main__":
     main()
