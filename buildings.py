@@ -5,7 +5,7 @@ from typing import Callable
 from resources import Resource
 
 
-@dataclass
+@dataclass(frozen=True)
 class _Building:
     build_cost: dict[Resource, int]
     effect: Callable[[float], float]
