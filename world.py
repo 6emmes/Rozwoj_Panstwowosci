@@ -15,6 +15,7 @@ class World:
         self.fertility: object = None
         self.rivers: Grid[float] = []
         self.turn = 0
+        self.layers = {}
         self.compatibility(self.load_new_map8("NowaMapa8.tiff"))
 
         # TODO: zamienić to na państwa po skończeniu dema
@@ -35,7 +36,7 @@ class World:
 
         MAX = 255
 
-        layers = {}
+
 
         with tifffile.TiffFile(name) as tif:
             for i, page in enumerate(tif.pages):
@@ -49,12 +50,13 @@ class World:
                 data = page.asarray()
 
                 normalized = data / MAX
-                layers[page_name] = normalized
-        for name, arr in layers.items():
+                self.layers[page_name] = normalized
+        for name, arr in self.layers.items():
             print(f"Layer '{name}' has shape {arr.shape}")
             self.width, self.height = arr.shape
-        return layers
-
+        return self.layers
+    
+    
     def build_road(self, path: list[Point], value=0.05):
         for x, y in path:
             self.roads[x][y] += value
