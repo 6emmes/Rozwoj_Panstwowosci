@@ -1,6 +1,5 @@
 from dataclasses import dataclass
 from enum import Enum
-from typing import Callable
 
 from resources import Resource
 
@@ -8,14 +7,14 @@ from resources import Resource
 @dataclass(frozen=True)
 class _Building:
     build_cost: dict[Resource, int]
-    effect: Callable[[float], float]
+    multiplier: float
     build_time: int
 
 
 class Building(Enum):
-    MINE = _Building({Resource.WOOD: 40, Resource.STONE: 10}, lambda x: 2.2 * x, 6)
-    FARM = _Building({Resource.WOOD: 20, Resource.STONE: 10}, lambda x: 1.8 * x, 4)
-    WOODCUTTER = _Building({Resource.WOOD: 10}, lambda x: 1.1 * x, 2)
+    MINE = _Building({Resource.WOOD: 40, Resource.STONE: 10}, 2.2, 6)
+    FARM = _Building({Resource.WOOD: 20, Resource.STONE: 10}, 1.8, 4)
+    WOODCUTTER = _Building({Resource.WOOD: 10}, 1.1, 2)
 
     @property
     def cost(self) -> dict[Resource, int]:
@@ -26,5 +25,12 @@ class Building(Enum):
         return self.value.build_time
 
     @property
-    def multiplier(self) -> Callable[[float], float]:
-        return self.value.effect
+    def multiplier(self) -> float:
+        return self.value.multiplier
+
+
+RES_TO_BUILDING = {
+    Resource.FOOD: Building.FARM,
+    Resource.STONE: Building.MINE,
+    Resource.WOOD: Building.WOODCUTTER,
+}
