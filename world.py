@@ -1,14 +1,14 @@
 import os
 import struct
-
+import random
 import tifffile
 
 from city import City
 from utils.definitions import Grid, Point
+SETTLERSTEPCOUNT = 32
 
 
 class World:
-
     def __init__(self) -> None:
         self.mining_resources: list[object] = []
         self.wood_resources: list[object] = []
@@ -79,3 +79,17 @@ class World:
             for trader in city.traders:
                 trader.trader_action()
         self.turn += 1
+
+    def manhattan(x1, y1, x2, y2):
+        return abs(x1 - x2) + abs(y1 - y2)
+
+
+    def settle(self, names):
+        for n in names:
+            while True:
+                x_curr = random.uniform(0, self.width)
+                y_curr = random.uniform(0, self.height)
+                if self.water[x_curr][y_curr] == 0:
+                    continue
+                for _ in range(SETTLERSTEPCOUNT):
+                    
