@@ -114,8 +114,8 @@ class Trader(Citizen):
 
         home_x = self.city.x
         home_y = self.city.y
-        target_x = self.city.x
-        target_y = self.city.y
+        target_x = self.target_city.x
+        target_y = self.target_city.y
         path, cost = find_path(self.city.world, (home_x, home_y), (target_x, target_y))
 
         self.last_path = path

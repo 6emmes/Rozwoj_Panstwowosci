@@ -12,6 +12,10 @@ class Settler:
 
     def settle(self, city_name: str):
         # TODO: dodać sprawdzanie czy miasto nie jest za blisko innego miasta
+        if self.world.water[self.x][self.y] == 0:
+            print("Miasto tonie!")
+            return None
+            #raise Exception("Miasto tonie!")
         city = City(self.x, self.y, city_name, self.world)
         for _ in range(self.no_citizens):
             city.create_citizen()

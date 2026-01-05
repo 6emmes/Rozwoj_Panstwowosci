@@ -2,36 +2,23 @@ from citizen import Citizen
 from settler import Settler
 from state import State
 from world import World
-from shmemory import SharedMemoryGrid
-from shmemory import SharedControlBlock
 import seaborn as sns
 import matplotlib.pyplot as plt
 import pandas as pd
-import time
 
 def main() -> None:
     europe = World()
     poland = State("Polska")
-    shmctrl = SharedControlBlock("control")
-    shmgrid = SharedMemoryGrid("road_grid", europe.width, europe.height, shmctrl)
 
     jan = Citizen()
-
-    initial_settlers = [
-        Settler(100, 100, 5, europe),
-        Settler(120, 105, 5, europe),
-        Settler(150, 150, 5, europe),
-        Settler(130, 102, 5, europe),
-        Settler(105, 120, 5, europe),
-    ]
     city_names = ["Warszawa", "Krakow", "Berlin", "Madryt", "Londyn"]
 
-    # Założenie miast początkowych
-    for o, n in zip(initial_settlers, city_names):
-        europe.cities.append(o.settle(n))
-
+    europe.spawn_settlers(city_names, 5)
     europe.cities[0].create_trader()
     europe.cities[0].create_trader()
+    europe.cities[1].create_trader()
+    europe.cities[2].create_trader()
+    europe.cities[3].create_trader()
 
     for city in europe.cities:
         city.calcualte_use_rate()
@@ -55,13 +42,6 @@ def main() -> None:
         for key in res:
             resources[key].append(res[key][0])
             prices[key].append(res[key][1])
-
-        if shmgrid.is_ready():
-            shmgrid.sync_from_python_grid(europe.roads)
-            shmgrid.set_ready_flag()
-            print("send")
-        #time.sleep(1)
-        print(i)
 
         europe.next_turn()
 
