@@ -8,7 +8,7 @@ class Resource(Enum):
     STONE = "kamien"
     WOOD = "drewno"
     FOOD = "jedzenie"
-    METAL = "metal"
+    # METAL = "metal"
 
 
 def _normal(x: int, std_dev=50, mean=MAX_VAL / 2) -> float:
