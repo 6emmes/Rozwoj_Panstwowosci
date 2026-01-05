@@ -3,6 +3,7 @@ from __future__ import annotations
 import random
 from typing import TYPE_CHECKING
 
+from buildings import RES_TO_BUILDING, Building
 from citizen import Citizen
 from resources import Resource, height_efficiency, humidity_efficiency, temp_efficiency
 from trader import Trader
@@ -201,7 +202,7 @@ class City:
         self.use_resources()
         self.calculate_trade_priorities()
         priorities = self.calculate_trade_priorities()
-        for resource, priority in priorities.items():
+        for res, priority in priorities.items():
             if priority > 1.0:
                 trader = None
                 for t in self.traders:
@@ -209,9 +210,68 @@ class City:
                         trader = t
                         break
                 if trader is not None:
-                    amount, price = trader.buy_asap(resource, 50)
+                    amount, price = trader.buy_asap(res, 50)
                     if amount is not None:
-                        print(f"    Miasto {self.name} wysyła handlarza kupić {amount} {resource} po cenie {price}")
+                        print(
+                            f"\tMiasto {self.name} wysyła handlarza kupić {amount} {res} po cenie {price}"
+                        )
+
+        # Gathering resources
+        res_deltas = {res: self._get_resource_delta(res) for res in RESOURCES}
+        max_d = max(res_deltas.values())
+        weights_map = {res: (max_d - d + 1) for res, d in res_deltas.items()}
+        choices = random.choices(
+            population=list(weights_map.keys()),
+            weights=list(weights_map.values()),
+            k=len(self.citizens),
+        )
+
+        self.accumulation_rate = {name: 0 for name in self.resources.keys()}
+        available_buildings = self.buildings.copy()
+        for res in choices:
+            ammount = self._gather_resource(
+                res,
+                self.world.temperature[self.x][self.y],
+                self.world.heightmap[self.x][self.y],
+                self.world.humidity[self.x][self.y],
+            )
+            building = RES_TO_BUILDING[res]
+            if available_buildings[building] > 0:
+                ammount *= building.multiplier
+                available_buildings[building] -= 1
+
+            resources, price = self.resources[res]
+            # TODO przeliczanie ceny po każdej iteracji
+            self.resources[res] = (resources + ammount, price)
+            self.accumulation_rate[res] += ammount
+
+        # Planning building
+        BUFFER = 10.0
+        for res in sorted(RESOURCES, key=self._get_resource_delta):
+            building = RES_TO_BUILDING[res]
+            cost_satisfied = all(
+                self.resources[r][0] >= build_cost + BUFFER
+                for r, build_cost in building.cost.items()
+            )
+            if cost_satisfied:
+                for r, build_cost in building.cost.items():
+                    amount, price = self.resources[r]
+                    self.resources[r] = (amount - build_cost, price)
+                self.building_queue.append((building, building.build_time))
+                break
+
+        # Building
+        for building, i in self.building_queue:
+            if i == 0:
+                self.building_queue.remove((building, i))
+                self.buildings[building] += 1
+            else:
+                i -= 1
+
+        # Population control
+        POP_GROWTH_COST = 50.0
+        if self.resources[Resource.FOOD][0] >= POP_GROWTH_COST + BUFFER:
+            self.create_citizen()
 
     def tax(self):
         pass
