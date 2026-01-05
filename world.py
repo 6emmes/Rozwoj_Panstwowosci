@@ -57,6 +57,7 @@ class World:
         return self.layers
     
     def build_road(self, path: list[Point], value=0.05):
+        print("road length: "+str(len(path)))
         for x, y in path:
             self.roads[x][y] += value
 

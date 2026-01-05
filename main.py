@@ -1,7 +1,9 @@
+import time
 from citizen import Citizen
 from settler import Settler
 from state import State
 from world import World
+from shmemory import SharedMemoryGrid, SharedControlBlock
 import seaborn as sns
 import matplotlib.pyplot as plt
 import pandas as pd
@@ -9,7 +11,8 @@ import pandas as pd
 def main() -> None:
     europe = World()
     poland = State("Polska")
-
+    shmctrl = SharedControlBlock("control")
+    shmgrid = SharedMemoryGrid("road_grid", europe.width, europe.height, control_block=shmctrl)
     jan = Citizen()
     city_names = ["Warszawa", "Krakow", "Berlin", "Madryt", "Londyn"]
 
@@ -30,7 +33,8 @@ def main() -> None:
     resources = {key: [] for key in europe.cities[0].resources}
     prices = {key: [] for key in europe.cities[0].resources}
 
-    turns = 200
+    turns = 500
+    sendflag = 0
     # Główna pętla symulacji
     for i in range(turns):
         # Wypisz debug o zasobach co 50 tur; tylko do dema
@@ -42,6 +46,19 @@ def main() -> None:
         for key in res:
             resources[key].append(res[key][0])
             prices[key].append(res[key][1])
+
+        if shmgrid.is_ready() and sendflag > 2:
+            shmgrid.sync_from_python_grid(europe.roads)
+            shmgrid.set_ready_flag()
+            # print("send")
+            sendflag = 0
+            # sum =0
+            # for r in europe.roads:
+            #     for v in r:
+            #         sum += v
+            # print("road sum: "+str(sum))
+        sendflag += 1
+        time.sleep(0.01)
 
         europe.next_turn()
 

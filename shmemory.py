@@ -85,4 +85,4 @@ class SharedMemoryGrid:
     def is_ready(self, flag_name="roads_ready"):
         if self.control is None:
             raise RuntimeError("No control block attached")
-        return getattr(self.control.ctrl, flag_name) != 0
+        return getattr(self.control.ctrl, flag_name) == 0
