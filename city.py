@@ -4,20 +4,18 @@ import random
 from typing import TYPE_CHECKING
 
 from citizen import Citizen
+from resources import Resource, height_efficiency, humidity_efficiency, temp_efficiency
 from trader import Trader
 
 if TYPE_CHECKING:
     from world import World
 
-RESOURCE_CRUCIALITY = {
-    "jedzenie": 100,
-    "drewno": 40,
-    "kamien": 40
-}
+RESOURCE_CRUCIALITY = {Resource.FOOD: 100, Resource.WOOD: 40, Resource.STONE: 40}
 
 MAX_PRICE = 10.0
 MAX_FOG = 5
-RESOURCES = ["jedzenie", "drewno", "kamien"]
+RESOURCES = list(Resource)
+
 
 class City:
 
@@ -27,14 +25,24 @@ class City:
         self.name: str = name
         # self.panstwo: Panstwo | None = None
         self.citizens: list[Citizen] = []
-        self.traders: list[Trader] = [] # Trader to też citizen ale jeżeli będzie wielu citizenów to każdorazowe filtrowanie ich listy żeby traderów wyciagnąć będzie kosztowneg
+        self.buildings: dict[Building, int] = {
+            Building.FARM: 0,
+            Building.MINE: 0,
+            Building.WOODCUTTER: 0,
+        }
+        self.building_queue: list[tuple[Building, int]] = []
+        self.traders: list[Trader] = (
+            []
+        )  # Trader to też citizen ale jeżeli będzie wielu citizenów to każdorazowe filtrowanie ich listy żeby traderów wyciagnąć będzie kosztowneg
         self.table_of_weights: list[object] = []
         self.religious_value: object = None
         self.gold: int = 500
-        self.resources: dict = {}  # nie jestem przekonany do trzymania tego w dictcie ale na razie nie wiem jak to dobrze załatwić klasą
-        self.accumulation_rate: dict = {name: 0 for name in RESOURCES}
-        self.use_rate: dict = {name: 0 for name in RESOURCES}
-        self.trade_efficiency: dict = {name: 0 for name in RESOURCES}
+        self.resources: dict = (
+            {}
+        )  # nie jestem przekonany do trzymania tego w dictcie ale na razie nie wiem jak to dobrze załatwić klasą
+        self.accumulation_rate: dict = {resource: 0 for resource in RESOURCES}
+        self.use_rate: dict[Resource, float] = {resource: 0 for resource in RESOURCES}
+        self.trade_efficiency: dict = {resource: 0 for resource in RESOURCES}
         self.world: World = world  # placeholder attribute
         self._randomize_initial_recources()  # Do celów testowych
 
@@ -83,12 +91,12 @@ class City:
     def condtruction(self):
         pass
 
-    def _get_resource_delta(self, resource: str) -> float:
+    def _get_resource_delta(self, resource: Resource) -> float:
         # Wartość zaamortyzowana w praktyce zasób dostępnt dopiero popowrocie do miasta handlarza, ale
         # żeby nie wysyłać w nieskończoność handlarzy na to samo zadanie jest dodawany
         return self.accumulation_rate[resource] + self.trade_efficiency[resource] - self.use_rate[resource]
 
-    def _get_turns_left(self, resource: str) -> float:
+    def _get_turns_left(self, resource: Resource) -> float:
         amount, _ = self.resources[resource]
         delta = self._get_resource_delta(resource)
         if delta >= 0:
@@ -98,7 +106,7 @@ class City:
     def _get_cost_of_trade(self) -> float:
         return 1.0
 
-    def _calculate_trade_priority(self, resource: str) -> float:
+    def _calculate_trade_priority(self, resource: Resource) -> float:
         days_left = self._get_turns_left(resource)
         if days_left == float('inf'):
             return 0.0
@@ -112,9 +120,9 @@ class City:
         return priority / trip_cost
 
     def calcualte_use_rate(self):
-        self.use_rate["jedzenie"] = len(self.citizens) * 0.1
-        self.use_rate["drewno"] = len(self.citizens) * 0.05
-        self.use_rate["kamien"] = len(self.citizens) * 0.05
+        self.use_rate[Resource.FOOD] = len(self.citizens) * 1
+        self.use_rate[Resource.WOOD] = len(self.citizens) * 0.05
+        self.use_rate[Resource.STONE] = len(self.citizens) * 0.05
 
     def calculate_trade_priorities(self) -> dict[str, float]:
         priorities = {}
