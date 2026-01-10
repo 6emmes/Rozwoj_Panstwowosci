@@ -16,7 +16,7 @@ class World:
         self.rivers: Grid[float] = []
         self.turn = 0
         self.layers = {}
-        self.compatibility(self.load_new_map8("NowaMapa8.tiff"))
+        self.compatibility(self.load_new_map8("temperate8.tiff"))
 
         # TODO: zamienić to na państwa po skończeniu dema
         self.cities: list[City] = []
