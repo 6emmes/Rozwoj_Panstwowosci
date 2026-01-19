@@ -11,22 +11,14 @@ def main() -> None:
     poland = State("Polska")
 
     jan = Citizen()
-
-    initial_settlers = [
-        Settler(10, 10, 5, europe),
-        Settler(20, 5, 5, europe),
-        Settler(15, 15, 5, europe),
-        Settler(30, 2, 5, europe),
-        Settler(5, 20, 5, europe),
-    ]
     city_names = ["Warszawa", "Krakow", "Berlin", "Madryt", "Londyn"]
 
-    # Założenie miast początkowych
-    for o, n in zip(initial_settlers, city_names):
-        europe.cities.append(o.settle(n))
-
+    europe.spawn_settlers(city_names, 5)
     europe.cities[0].create_trader()
     europe.cities[0].create_trader()
+    europe.cities[1].create_trader()
+    europe.cities[2].create_trader()
+    europe.cities[3].create_trader()
 
     for city in europe.cities:
         city.calcualte_use_rate()
