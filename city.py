@@ -37,6 +37,7 @@ class City:
         self.trade_efficiency: dict = {name: 0 for name in RESOURCES}
         self.world: World = world  # placeholder attribute
         print("land id: "+str(self.land_id))
+        self.id_init()
         self._randomize_initial_recources()  # Do celów testowych
 
     def _randomize_initial_recources(self):
