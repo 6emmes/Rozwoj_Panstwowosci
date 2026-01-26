@@ -13,7 +13,7 @@ BLUE = np.array([0, 105, 150])  # Water
 GREEN = np.array([100, 220, 100])  # Land low
 BROWN = np.array([120, 70, 20])  # Land high
 RED = np.array([250, 0, 0])  # City
-PUPRLE = np.array([80, 0, 130])  # Path
+GRAY = np.array([40, 40, 40]) # Path
 
 gradient = np.linspace(GREEN, BROWN, MAX_LAND_HEIGHT).astype(np.int8)
 
@@ -63,7 +63,7 @@ def main():
             path, cost = find_path(world, c1, c2)
             print(f"Droga z {c1} do {c2}: koszt {round(cost, 4)}; {len(path)} kroków")
             for x, y in path:
-                rgb_arr[x, y] = PUPRLE
+                rgb_arr[x, y] = GRAY
 
     r = 2
     for x, y in cities_pos:
