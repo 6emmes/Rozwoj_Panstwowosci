@@ -34,9 +34,11 @@ def main() -> None:
     resources = {key: [] for key in europe.cities[0].resources}
     prices = {key: [] for key in europe.cities[0].resources}
 
-    turns = 200
+    turns = 2000
     # Główna pętla symulacji
     for i in range(turns):
+        if i%100==0:
+            print("tura: "+str(i))
         priorities.append(europe.cities[0].calculate_trade_priorities())
         use_rates.append(europe.cities[0].use_rate)
         production_rates.append(europe.cities[0].accumulation_rate)

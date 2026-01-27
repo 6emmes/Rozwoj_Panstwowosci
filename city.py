@@ -45,19 +45,19 @@ class City:
         self.use_rate: dict[Resource, float] = {resource: 0 for resource in RESOURCES}
         self.trade_efficiency: dict = {resource: 0 for resource in RESOURCES}
         self.world: World = world  # placeholder attribute
-        print("land id: "+str(self.land_id))
         self.id_init()
+        print("land id: "+str(self.land_id))
         self._randomize_initial_recources()  # Do celów testowych
         if self.world.layers['height_map'][self.x][self.y] == 0:
             print("Miasto tonie!")
 
     def _randomize_initial_recources(self):
         possible_resources = RESOURCES
-        max_resource = 100
+        max_resource = 10000
         for zasob in possible_resources:
             # format zasoby[zasob] = (ilosc, cena)
             self.resources[zasob] = (
-                random.randint(0, max_resource),
+                random.randint(110, max_resource),
                 random.uniform(1.0, 10.0),
             )
         print(f"Miasto {self.name} zostało założone w ({self.x}, {self.y})")

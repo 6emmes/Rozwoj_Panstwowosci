@@ -123,6 +123,9 @@ class World:
                 new_city = City(x_curr, y_curr, n, self)
                 for _ in range(no_citizens):
                     new_city.create_citizen()
+                    new_city.create_citizen()
+                    new_city.create_citizen()
+                    new_city.create_citizen()
                 self.cities.append(new_city)
                 break
                     
