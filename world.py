@@ -138,3 +138,16 @@ class World:
                 self.cities.append(new_city)
                 break
                     
+
+    def find_ocean(self, pos:Point):
+        RADIUS = 5
+        for x in range(-RADIUS, RADIUS+1):
+            for y in range(-RADIUS, RADIUS+1):
+                if (abs(x)<RADIUS and abs(y)<RADIUS):
+                    continue
+                cur_pos = (pos[0]+x, pos[1]+y)
+                if (cur_pos[0]<0 or cur_pos[0]>=self.width or cur_pos[1]<0 or cur_pos[1]>=self.height):
+                    continue
+                if self.heightmap[cur_pos[0]][cur_pos[1]] == 0.0:
+                    return self.layers["id_map"][cur_pos[0]][cur_pos[1]]
+        return None
