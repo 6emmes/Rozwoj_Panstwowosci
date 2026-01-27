@@ -3,21 +3,20 @@ from __future__ import annotations
 import random
 from typing import TYPE_CHECKING
 
+from buildings import RES_TO_BUILDING, Building
 from citizen import Citizen
+from resources import Resource, height_efficiency, humidity_efficiency, temp_efficiency
 from trader import Trader
 
 if TYPE_CHECKING:
     from world import World
 
-RESOURCE_CRUCIALITY = {
-    "jedzenie": 100,
-    "drewno": 40,
-    "kamien": 40
-}
+RESOURCE_CRUCIALITY = {Resource.FOOD: 100, Resource.WOOD: 40, Resource.STONE: 40}
 
 MAX_PRICE = 10.0
 MAX_FOG = 5
-RESOURCES = ["jedzenie", "drewno", "kamien"]
+RESOURCES = list(Resource)
+
 
 class City:
 
@@ -27,14 +26,24 @@ class City:
         self.name: str = name
         # self.panstwo: Panstwo | None = None
         self.citizens: list[Citizen] = []
-        self.traders: list[Trader] = [] # Trader to też citizen ale jeżeli będzie wielu citizenów to każdorazowe filtrowanie ich listy żeby traderów wyciagnąć będzie kosztowneg
+        self.buildings: dict[Building, int] = {
+            Building.FARM: 0,
+            Building.MINE: 0,
+            Building.WOODCUTTER: 0,
+        }
+        self.building_queue: list[tuple[Building, int]] = []
+        self.traders: list[Trader] = (
+            []
+        )  # Trader to też citizen ale jeżeli będzie wielu citizenów to każdorazowe filtrowanie ich listy żeby traderów wyciagnąć będzie kosztowneg
         self.table_of_weights: list[object] = []
         self.religious_value: object = None
         self.gold: int = 500
-        self.resources: dict = {}  # nie jestem przekonany do trzymania tego w dictcie ale na razie nie wiem jak to dobrze załatwić klasą
-        self.accumulation_rate: dict = {name: 0 for name in RESOURCES}
-        self.use_rate: dict = {name: 0 for name in RESOURCES}
-        self.trade_efficiency: dict = {name: 0 for name in RESOURCES}
+        self.resources: dict = (
+            {}
+        )  # nie jestem przekonany do trzymania tego w dictcie ale na razie nie wiem jak to dobrze załatwić klasą
+        self.accumulation_rate: dict = {resource: 0 for resource in RESOURCES}
+        self.use_rate: dict[Resource, float] = {resource: 0 for resource in RESOURCES}
+        self.trade_efficiency: dict = {resource: 0 for resource in RESOURCES}
         self.world: World = world  # placeholder attribute
         print("land id: "+str(self.land_id))
         self.id_init()
@@ -96,24 +105,28 @@ class City:
     def condtruction(self):
         pass
 
-    def _get_resource_delta(self, resource: str) -> float:
+    def _get_resource_delta(self, resource: Resource) -> float:
         # Wartość zaamortyzowana w praktyce zasób dostępnt dopiero popowrocie do miasta handlarza, ale
         # żeby nie wysyłać w nieskończoność handlarzy na to samo zadanie jest dodawany
-        return self.accumulation_rate[resource] + self.trade_efficiency[resource] - self.use_rate[resource]
+        return (
+            self.accumulation_rate[resource]
+            + self.trade_efficiency[resource]
+            - self.use_rate[resource]
+        )
 
-    def _get_turns_left(self, resource: str) -> float:
+    def _get_turns_left(self, resource: Resource) -> float:
         amount, _ = self.resources[resource]
         delta = self._get_resource_delta(resource)
         if delta >= 0:
-            return float('inf')
+            return float("inf")
         return amount / -delta
 
     def _get_cost_of_trade(self) -> float:
         return 1.0
 
-    def _calculate_trade_priority(self, resource: str) -> float:
+    def _calculate_trade_priority(self, resource: Resource) -> float:
         days_left = self._get_turns_left(resource)
-        if days_left == float('inf'):
+        if days_left == float("inf"):
             return 0.0
 
         cruciality = RESOURCE_CRUCIALITY[resource]
@@ -125,9 +138,9 @@ class City:
         return priority / trip_cost
 
     def calcualte_use_rate(self):
-        self.use_rate["jedzenie"] = len(self.citizens) * 0.1
-        self.use_rate["drewno"] = len(self.citizens) * 0.05
-        self.use_rate["kamien"] = len(self.citizens) * 0.05
+        self.use_rate[Resource.FOOD] = len(self.citizens) * 1
+        self.use_rate[Resource.WOOD] = len(self.citizens) * 0.05
+        self.use_rate[Resource.STONE] = len(self.citizens) * 0.05
 
     def calculate_trade_priorities(self) -> dict[str, float]:
         priorities = {}
@@ -160,23 +173,49 @@ class City:
         for good in goods:
             self.recalculate_good_price(good)
 
-    def get_resource(self, resource: str, fog_range: int = MAX_FOG) -> tuple[tuple[int, int], tuple[int, int]]:
+    def get_resource(
+        self, resource: str, fog_range: int = MAX_FOG
+    ) -> tuple[tuple[int, int], tuple[int, int]]:
         # Wraz z wycieraniem szlaku przez handlarza do miasta fog się zmniejszy, początkowo powinien być zależny od odległości
         amount, price = self.resources[resource]
-        amount_min, amount_max = (random.randint(0, fog_range), random.randint(0, fog_range))
-        price_min, price_max = (random.randint(0, fog_range), random.randint(0, fog_range))
-        return (amount - amount_min, amount + amount_max), (max(price - price_min, 1), price + price_max)
+        amount_min, amount_max = (
+            random.randint(0, fog_range),
+            random.randint(0, fog_range),
+        )
+        price_min, price_max = (
+            random.randint(0, fog_range),
+            random.randint(0, fog_range),
+        )
+        return (amount - amount_min, amount + amount_max), (
+            max(price - price_min, 1),
+            price + price_max,
+        )
 
     def get_gold(self, amount):
         amount_to_get = min(amount, self.gold)
         self.gold -= amount_to_get
         return amount
 
+    def _gather_resource(
+        self,
+        resource: Resource,
+        sqr_temperature: int,
+        sqr_height: int,
+        sqr_humidity: int,
+    ) -> float:
+        return round(
+            10
+            * height_efficiency(resource, sqr_height)
+            * temp_efficiency(resource, sqr_temperature)
+            * humidity_efficiency(resource, sqr_humidity),
+            2,
+        )
+
     def turn(self):
         self.use_resources()
         self.calculate_trade_priorities()
         priorities = self.calculate_trade_priorities()
-        for resource, priority in priorities.items():
+        for res, priority in priorities.items():
             if priority > 1.0:
                 trader = None
                 for t in self.traders:
@@ -184,9 +223,68 @@ class City:
                         trader = t
                         break
                 if trader is not None:
-                    amount, price = trader.buy_asap(resource, 50)
+                    amount, price = trader.buy_asap(res, 50)
                     if amount is not None:
-                        print(f"    Miasto {self.name} wysyła handlarza kupić {amount} {resource} po cenie {price}")
+                        print(
+                            f"\tMiasto {self.name} wysyła handlarza kupić {amount} {res} po cenie {price}"
+                        )
+
+        # Gathering resources
+        res_deltas = {res: self._get_resource_delta(res) for res in RESOURCES}
+        max_d = max(res_deltas.values())
+        weights_map = {res: (max_d - d + 1) for res, d in res_deltas.items()}
+        choices = random.choices(
+            population=list(weights_map.keys()),
+            weights=list(weights_map.values()),
+            k=len(self.citizens),
+        )
+
+        self.accumulation_rate = {name: 0 for name in self.resources.keys()}
+        available_buildings = self.buildings.copy()
+        for res in choices:
+            ammount = self._gather_resource(
+                res,
+                self.world.temperature[self.x][self.y],
+                self.world.heightmap[self.x][self.y],
+                self.world.humidity[self.x][self.y],
+            )
+            building = RES_TO_BUILDING[res]
+            if available_buildings[building] > 0:
+                ammount *= building.multiplier
+                available_buildings[building] -= 1
+
+            resources, price = self.resources[res]
+            # TODO przeliczanie ceny po każdej iteracji
+            self.resources[res] = (resources + ammount, price)
+            self.accumulation_rate[res] += ammount
+
+        # Planning building
+        BUFFER = 10.0
+        for res in sorted(RESOURCES, key=self._get_resource_delta):
+            building = RES_TO_BUILDING[res]
+            cost_satisfied = all(
+                self.resources[r][0] >= build_cost + BUFFER
+                for r, build_cost in building.cost.items()
+            )
+            if cost_satisfied:
+                for r, build_cost in building.cost.items():
+                    amount, price = self.resources[r]
+                    self.resources[r] = (amount - build_cost, price)
+                self.building_queue.append((building, building.build_time))
+                break
+
+        # Building
+        for building, i in self.building_queue:
+            if i == 0:
+                self.building_queue.remove((building, i))
+                self.buildings[building] += 1
+            else:
+                i -= 1
+
+        # Population control
+        POP_GROWTH_COST = 50.0
+        if self.resources[Resource.FOOD][0] >= POP_GROWTH_COST + BUFFER:
+            self.create_citizen()
 
     def tax(self):
         pass
