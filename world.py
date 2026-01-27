@@ -1,10 +1,11 @@
 import os
 import struct
-
+import random
 import tifffile
 
 from city import City
 from utils.definitions import Grid, Point
+SETTLERSTEPCOUNT = 32
 
 
 class World:
@@ -16,7 +17,7 @@ class World:
         self.rivers: Grid[float] = []
         self.turn = 0
         self.layers = {}
-        self.compatibility(self.load_new_map8("temperate8.tiff"))
+        self.compatibility(self.load_new_map8("m_medit8.tiff"))
 
         # TODO: zamienić to na państwa po skończeniu dema
         self.cities: list[City] = []
@@ -81,3 +82,59 @@ class World:
             for trader in city.traders:
                 trader.trader_action()
         self.turn += 1
+
+    def manhattan(self, x1, y1, x2, y2):
+        return abs(x1 - x2) + abs(y1 - y2)
+
+
+    def spawn_settlers(self, names, no_citizens, seed=10):
+        NEIGHBOR_OFFSETS = [ (0, -1), (-1, 0), (1, 0), (0, 1)]
+        random.seed(seed)
+        contflag = 0           
+        for n in names:
+            while True:
+                x_curr = int(random.uniform(0, self.width))
+                y_curr = int(random.uniform(0, self.height))
+                if self.water[x_curr][y_curr] == 0:
+                    continue
+                for c in self.cities:
+                    dist = self.manhattan(x_curr, y_curr, c.x, c.y)
+                    if dist < SETTLERSTEPCOUNT:
+                        contflag = 1
+                        break
+                if contflag == 1:
+                    continue
+
+                for _ in range(SETTLERSTEPCOUNT):
+
+                    best_score = float("-inf")
+                    best_pos = (x_curr, y_curr)
+
+                    for dx, dy in NEIGHBOR_OFFSETS:
+                        nx = x_curr + dx
+                        ny = y_curr + dy
+
+                        # bounds check
+                        if not (0 <= nx < self.width and 0 <= ny < self.height):
+                            continue
+
+                        fertility = self.layers['fertility_map'][nx][ny]
+                        water     = self.layers['water_map'][nx][ny]
+
+                        if water == 0:
+                            continue
+                        
+                        score = fertility - water
+
+                        if score > best_score:
+                            best_score = score
+                            best_pos = (nx, ny)
+
+                    # Move to the best neighbor
+                    x_curr, y_curr = best_pos
+                new_city = City(x_curr, y_curr, n, self)
+                for _ in range(no_citizens):
+                    new_city.create_citizen()
+                self.cities.append(new_city)
+                break
+                    
