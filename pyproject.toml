@@ -8,6 +8,8 @@ dependencies = [
     "numpy>=2.4.1",
     "pandas>=3.0.0",
     "pygame>=2.6.1",
+    "ruff>=0.14.14",
     "seaborn>=0.13.2",
     "tifffile>=2026.1.14",
+    "ty>=0.0.14",
 ]
