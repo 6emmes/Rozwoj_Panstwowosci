@@ -1,0 +1,13 @@
+[project]
+name = "rozwoj-panstwowosci"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "numpy>=2.4.1",
+    "pandas>=3.0.0",
+    "pygame>=2.6.1",
+    "seaborn>=0.13.2",
+    "tifffile>=2026.1.14",
+]
