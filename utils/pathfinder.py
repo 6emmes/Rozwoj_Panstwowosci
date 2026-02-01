@@ -5,17 +5,19 @@ import numpy as np
 from utils.definitions import Grid, Point
 from world import World
 
+SQRT_2 = np.sqrt(2)
+H = 3
 A = 5
 B = 4.6
 
-heigit_eff = lambda x: np.exp(x)
-river_eff = lambda x: np.exp(-B * x)
+heigit_eff = lambda x: H * (np.exp(x) - 1) + 1
+river_eff = lambda x: A * np.exp(-B * x)
 
 
 def _cost(world: World, x: int, y: int) -> float:
     if world.water[x][y] == 0:
         return float("inf")
-    river = A * river_eff(world.heightmap[x][y]) if world.rivers[x][y] > 0 else 0
+    river = river_eff(world.heightmap[x][y]) if world.rivers[x][y] > 0 else 0
     return heigit_eff(world.heightmap[x][y]) + river - world.roads[x][y]
 
 
@@ -54,6 +56,22 @@ def find_path(world: World, start: Point, end: Point) -> tuple[list[Point], floa
             if not (0 <= nx < world.width and 0 <= ny < world.height):
                 continue
             p_cost = _cost(world, nx, ny)
+            new_cost = current_cost + p_cost
+            if new_cost < min_distance[nx][ny]:
+                min_distance[nx][ny] = new_cost
+                parents[nx][ny] = (x, y)
+                heapq.heappush(pq, (new_cost, nx, ny))
+
+        neighbours_diag = [
+            (x - 1, y - 1),
+            (x - 1, y + 1),
+            (x + 1, y - 1),
+            (x + 1, y + 1),
+        ]
+        for nx, ny in neighbours_diag:
+            if not (0 <= nx < world.width and 0 <= ny < world.height):
+                continue
+            p_cost = SQRT_2 * _cost(world, nx, ny)
             new_cost = current_cost + p_cost
             if new_cost < min_distance[nx][ny]:
                 min_distance[nx][ny] = new_cost
