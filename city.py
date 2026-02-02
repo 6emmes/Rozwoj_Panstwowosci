@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import random
+from math import sqrt
 from typing import TYPE_CHECKING
 
 from buildings import RES_TO_BUILDING, Building
@@ -16,6 +17,8 @@ RESOURCE_CRUCIALITY = {Resource.FOOD: 100, Resource.WOOD: 40, Resource.STONE: 40
 MAX_PRICE = 10.0
 MAX_FOG = 5
 RESOURCES = list(Resource)
+POP_GROWTH_COST = 50.0
+BUFFER = 10.0
 
 
 class City:
@@ -125,11 +128,11 @@ class City:
         return priority / trip_cost
 
     def calcualte_use_rate(self):
-        self.use_rate[Resource.FOOD] = len(self.citizens) * 1
+        self.use_rate[Resource.FOOD] = len(self.citizens) * 0.5
         self.use_rate[Resource.WOOD] = len(self.citizens) * 0.05
         self.use_rate[Resource.STONE] = len(self.citizens) * 0.05
 
-    def calculate_trade_priorities(self) -> dict[str, float]:
+    def calculate_trade_priorities(self) -> dict[Resource, float]:
         priorities = {}
         for resource in self.resources.keys():
             priority = self._calculate_trade_priority(resource)
@@ -161,7 +164,7 @@ class City:
             self.recalculate_good_price(good)
 
     def get_resource(
-        self, resource: str, fog_range: int = MAX_FOG
+        self, resource: Resource, fog_range: int = MAX_FOG
     ) -> tuple[tuple[int, int], tuple[int, int]]:
         # Wraz z wycieraniem szlaku przez handlarza do miasta fog się zmniejszy, początkowo powinien być zależny od odległości
         amount, price = self.resources[resource]
@@ -191,7 +194,7 @@ class City:
         sqr_humidity: int,
     ) -> float:
         return round(
-            10
+            50
             * height_efficiency(resource, sqr_height)
             * temp_efficiency(resource, sqr_temperature)
             * humidity_efficiency(resource, sqr_humidity),
@@ -199,8 +202,10 @@ class City:
         )
 
     def turn(self):
+        if len(self.citizens) == 0:
+            return
+
         self.use_resources()
-        self.calculate_trade_priorities()
         priorities = self.calculate_trade_priorities()
         for res, priority in priorities.items():
             if priority > 1.0:
@@ -217,9 +222,10 @@ class City:
                         )
 
         # Gathering resources
-        res_deltas = {res: self._get_resource_delta(res) for res in RESOURCES}
-        max_d = max(res_deltas.values())
-        weights_map = {res: (max_d - d + 1) for res, d in res_deltas.items()}
+        # max_p = max(priorities.values())
+        # weights_map = {res: (max_p - d + 1) / max_p for res, d in priorities.items()}
+        priority_sum = sum(priorities.values())
+        weights_map = {res: p / priority_sum for res, p in priorities.items()}
         choices = random.choices(
             population=list(weights_map.keys()),
             weights=list(weights_map.values()),
@@ -246,7 +252,6 @@ class City:
             self.accumulation_rate[res] += ammount
 
         # Planning building
-        BUFFER = 10.0
         for res in sorted(RESOURCES, key=self._get_resource_delta):
             building = RES_TO_BUILDING[res]
             cost_satisfied = all(
@@ -269,9 +274,19 @@ class City:
                 i -= 1
 
         # Population control
-        POP_GROWTH_COST = 50.0
-        if self.resources[Resource.FOOD][0] >= POP_GROWTH_COST + BUFFER:
-            self.create_citizen()
+        if self.resources[Resource.FOOD][0] == 0:
+            self.citizens.pop()
+        elif self.resources[Resource.FOOD][0] >= POP_GROWTH_COST + BUFFER:
+            self._grow_population()
+
+    def _grow_population(self):
+        for _ in range(0, int(sqrt(len(self.citizens)))):
+            if self.resources[Resource.FOOD][0] >= POP_GROWTH_COST + BUFFER:
+                self.create_citizen()
+                amount, cost = self.resources[Resource.FOOD]
+                self.resources[Resource.FOOD] = amount - POP_GROWTH_COST, cost
+            else:
+                return
 
     def tax(self):
         pass
