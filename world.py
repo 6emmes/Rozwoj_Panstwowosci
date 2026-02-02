@@ -16,7 +16,7 @@ class World:
         self.rivers: Grid[float] = []
         self.turn = 0
         self.layers = {}
-        self.compatibility(self.load_new_map8("temperate8.tiff"))
+        self.compatibility(self.load_new_map8("m_temperate8.tiff"))
 
         # TODO: zamienić to na państwa po skończeniu dema
         self.cities: list[City] = []
@@ -36,8 +36,6 @@ class World:
 
         MAX = 255
 
-
-
         with tifffile.TiffFile(name) as tif:
             for i, page in enumerate(tif.pages):
 
@@ -55,8 +53,7 @@ class World:
             print(f"Layer '{name}' has shape {arr.shape}")
             self.width, self.height = arr.shape
         return self.layers
-    
-    
+
     def build_road(self, path: list[Point], value=0.05):
         for x, y in path:
             self.roads[x][y] += value
