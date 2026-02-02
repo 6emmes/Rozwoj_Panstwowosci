@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import math
 import random
 from math import sqrt
 from typing import TYPE_CHECKING
@@ -194,7 +195,7 @@ class City:
         sqr_humidity: int,
     ) -> float:
         return round(
-            50
+            80
             * height_efficiency(resource, sqr_height)
             * temp_efficiency(resource, sqr_temperature)
             * humidity_efficiency(resource, sqr_humidity),
@@ -222,10 +223,9 @@ class City:
                         )
 
         # Gathering resources
-        # max_p = max(priorities.values())
-        # weights_map = {res: (max_p - d + 1) / max_p for res, d in priorities.items()}
-        priority_sum = sum(priorities.values())
-        weights_map = {res: p / priority_sum for res, p in priorities.items()}
+        weights_map = {res: math.log(1 + p) for res, p in priorities.items()}
+        total = sum(priorities.values()) + 1e-3
+        weights_map = {res: p / total for res, p in weights_map.items()}
         choices = random.choices(
             population=list(weights_map.keys()),
             weights=list(weights_map.values()),
@@ -247,12 +247,12 @@ class City:
                 available_buildings[building] -= 1
 
             resources, price = self.resources[res]
-            # TODO przeliczanie ceny po każdej iteracji
+            # TODO: przeliczanie ceny po każdej iteracji
             self.resources[res] = (resources + ammount, price)
             self.accumulation_rate[res] += ammount
 
         # Planning building
-        for res in sorted(RESOURCES, key=self._get_resource_delta):
+        for res in sorted(RESOURCES, key=self._calculate_trade_priority):
             building = RES_TO_BUILDING[res]
             cost_satisfied = all(
                 self.resources[r][0] >= build_cost + BUFFER
