@@ -81,7 +81,7 @@ def main() -> None:
         sns.lineplot(
             data=df, x="Tura", y="Wskaźnik produkcji", label="Wskaźnik produkcji"
         )
-        plt.title(f"Zasób: {resource.value}")
+        plt.title(f"Zasób: {resource}")
         plt.xlabel("Tura")
         plt.ylabel("Wartość")
         plt.legend()
@@ -89,21 +89,21 @@ def main() -> None:
 
     plt.subplot(3, 3, offset + 1)
     sns.lineplot(x=range(turns), y=gold, label="Złoto", color="gold")
-    plt.title("Zmiany ilości złota w mieście")
+    plt.title("Złoto")
     plt.xlabel("Tura")
     plt.ylabel("Ilość złota")
     plt.legend()
 
     plt.subplot(3, 3, offset + 2)
     sns.lineplot(resources)
-    plt.title("Zmiany ilości zasobów w mieście")
+    plt.title("Ilość zasobów")
     plt.xlabel("Tura")
-    plt.ylabel("Ilość zasobu")
+    plt.ylabel("Zasób")
     plt.legend()
 
     plt.subplot(3, 3, offset + 3)
     sns.lineplot(prices)
-    plt.title("Zmiany cen zasobu w czasie")
+    plt.title("Ceny zasobów")
     plt.xlabel("Tura")
     plt.ylabel("Cena")
     plt.legend()
