@@ -33,6 +33,7 @@ def main() -> None:
     gold = []
     resources = {key: [] for key in europe.cities[0].resources}
     prices = {key: [] for key in europe.cities[0].resources}
+    citizens = []
 
     turns = 2000
     # Główna pętla symulacji
@@ -44,6 +45,7 @@ def main() -> None:
         production_rates.append(europe.cities[0].accumulation_rate)
         gold.append(europe.cities[0].gold)
         res = europe.cities[0].resources
+        citizens.append(len(europe.cities[0].citizens))
         for key in res:
             resources[key].append(res[key][0])
             prices[key].append(res[key][1])
@@ -51,7 +53,7 @@ def main() -> None:
         europe.next_turn()
 
     # Wizualizacja per produkt
-    plt.subplots(2, 3, figsize=(12, 6))
+    plt.figure(figsize=(15, 12))
 
     for i, resource in enumerate(list(Resource)):
         priority_data = [p[resource] for p in priorities]
@@ -61,44 +63,52 @@ def main() -> None:
         df = pd.DataFrame(
             {
                 "Tura": range(turns),
+                "Wskaźnik produkcji": production_rate_data,
                 "Priorytet": priority_data,
                 "Wskaźnik zużycia": use_rate_data,
-                "Wskaźnik produkcji": production_rate_data,
             }
         )
 
-        plt.subplot(2, 3, i + 1)
+        plt.subplot(3, 3, i + 1)
         sns.lineplot(data=df, x="Tura", y="Priorytet", label="Priorytet")
         sns.lineplot(data=df, x="Tura", y="Wskaźnik zużycia", label="Wskaźnik zużycia")
         sns.lineplot(
             data=df, x="Tura", y="Wskaźnik produkcji", label="Wskaźnik produkcji"
         )
-        plt.title(f"Zmiany priorytetu i wskaźników dla zasobu: {resource}")
+        plt.title(f"Zasób: {resource}")
         plt.xlabel("Tura")
         plt.ylabel("Wartość")
         plt.legend()
+    offset = len(list(Resource))
 
-    plt.subplot(2, 3, 4)
+    plt.subplot(3, 3, offset + 1)
     sns.lineplot(x=range(turns), y=gold, label="Złoto", color="gold")
-    plt.title("Zmiany ilości złota w mieście")
+    plt.title("Złoto")
     plt.xlabel("Tura")
     plt.ylabel("Ilość złota")
     plt.legend()
 
-    plt.subplot(2, 3, 5)
+    plt.subplot(3, 3, offset + 2)
     sns.lineplot(resources)
-    plt.title("Zmiany ilości zasobów w mieście")
+    plt.title("Ilość zasobów")
     plt.xlabel("Tura")
-    plt.ylabel("Ilość zasobu")
+    plt.ylabel("Zasób")
     plt.legend()
 
-    plt.subplot(2, 3, 6)
+    plt.subplot(3, 3, offset + 3)
     sns.lineplot(prices)
-    plt.title("Zmiany cen zasobu w czasie")
+    plt.title("Ceny zasobów")
     plt.xlabel("Tura")
     plt.ylabel("Cena")
     plt.legend()
 
+    plt.subplot(3, 3, offset + 4)
+    sns.lineplot(citizens)
+    plt.title("Populacja")
+    plt.xlabel("Tura")
+    plt.ylabel("Liczba osób")
+
+    plt.tight_layout()
     plt.savefig("visualization/prices.png")
 
 
