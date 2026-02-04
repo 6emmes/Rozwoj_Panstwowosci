@@ -99,7 +99,7 @@ class World:
                     continue
                 for c in self.cities:
                     dist = self.manhattan(x_curr, y_curr, c.x, c.y)
-                    if dist < SETTLERSTEPCOUNT:
+                    if dist < SETTLERSTEPCOUNT * 2:
                         contflag = 1
                         break
                 if contflag == 1:
