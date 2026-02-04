@@ -1,13 +1,23 @@
+import matplotlib.pyplot as plt
+import pandas as pd
+import seaborn as sns
+
+
+from display import pygame_init, pygame_loop
+import resources
 from citizen import Citizen
 from settler import Settler
 from state import State
 from world import World
-import seaborn as sns
-import matplotlib.pyplot as plt
-import pandas as pd
+
+PYGAME = True
+
 
 def main() -> None:
     europe = World()
+    if PYGAME:
+        screen, terrain_surface = pygame_init(europe)
+
     poland = State("Polska")
 
     jan = Citizen()
@@ -53,6 +63,11 @@ def main() -> None:
 
         europe.next_turn()
 
+        if i % 10 == 0 and PYGAME:
+            continue_simulation = pygame_loop(screen, europe, terrain_surface)
+            if not continue_simulation:
+                return
+
     # Wizualizacja per produkt
     plt.subplots(2, 3, figsize=(12, 6))
 
@@ -70,8 +85,10 @@ def main() -> None:
 
         plt.subplot(2, 3, i+1)
         sns.lineplot(data=df, x='Tura', y='Priorytet', label='Priorytet')
-        sns.lineplot(data=df, x='Tura', y='Wskaźnik zużycia', label='Wskaźnik zużycia')
-        sns.lineplot(data=df, x='Tura', y='Wskaźnik produkcji', label='Wskaźnik produkcji')
+        sns.lineplot(data=df, x='Tura', y='Wskaźnik zużycia',
+                     label='Wskaźnik zużycia')
+        sns.lineplot(data=df, x='Tura', y='Wskaźnik produkcji',
+                     label='Wskaźnik produkcji')
         plt.title(f'Zmiany priorytetu i wskaźników dla zasobu: {resource}')
         plt.xlabel('Tura')
         plt.ylabel('Wartość')
