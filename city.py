@@ -266,12 +266,16 @@ class City:
                 break
 
         # Building
+        new_queue = []
+
         for building, i in self.building_queue:
             if i == 0:
-                self.building_queue.remove((building, i))
                 self.buildings[building] += 1
             else:
-                i -= 1
+                new_queue.append((building, i - 1))
+
+        self.building_queue = new_queue
+
 
         # Population control
         if self.resources[Resource.FOOD][0] == 0:
