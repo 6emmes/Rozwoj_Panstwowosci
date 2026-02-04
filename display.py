@@ -11,6 +11,10 @@ class Display:
 
     def __init__(self, world: "World"):
         self.world = world
+        self.camera_scale = 1.0
+        self.camera_offset = pygame.Vector2(0, 0)
+        self.zoom_speed = 0.1
+        self.pan_speed = 20
 
     def pygame_init(self):
         pygame.init()
@@ -30,7 +34,27 @@ class Display:
                 pygame.quit()
                 return False
 
-        # Update roads
+            # --- Mouse wheel zoom ---
+            if event.type == pygame.MOUSEWHEEL:
+                old_scale = self.camera_scale
+                self.camera_scale *= (1 + self.zoom_speed * event.y)
+                self.camera_scale = max(0.1, min(5.0, self.camera_scale))
+                mx, my = pygame.mouse.get_pos()
+                mouse = pygame.Vector2(mx, my)
+                self.camera_offset = mouse - (mouse - self.camera_offset) * (self.camera_scale / old_scale)
+
+            # --- Arrow key panning ---
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_LEFT:
+                    self.camera_offset.x += self.pan_speed
+                if event.key == pygame.K_RIGHT:
+                    self.camera_offset.x -= self.pan_speed
+                if event.key == pygame.K_UP:
+                    self.camera_offset.y += self.pan_speed
+                if event.key == pygame.K_DOWN:
+                    self.camera_offset.y -= self.pan_speed
+
+        # --- Build roads surface ---
         road_array = np.array(self.world.roads, dtype=np.float32)
         road_intensity = np.clip(road_array * 255, 0, 255).astype(np.uint8)
         road_rgb = np.stack([road_intensity] * 3, axis=-1)
@@ -38,14 +62,34 @@ class Display:
         road_rgba = np.dstack([road_rgb, alpha])
         h, w = road_rgba.shape[:2]
         roads_surface = pygame.image.frombuffer(
-            road_rgba.transpose((1,0,2)).copy(), (w, h), "RGBA").convert_alpha()
+            road_rgba.transpose((1,0,2)).copy(), (w, h), "RGBA"
+        ).convert_alpha()
 
-        self.screen.blit(self.terrain_surface, (0, 0))
-        self.screen.blit(roads_surface, (0, 0))
+        # --- Apply camera transform ---
+        terrain_scaled = pygame.transform.scale(
+            self.terrain_surface,
+            (int(self.terrain_surface.get_width() * self.camera_scale),
+            int(self.terrain_surface.get_height() * self.camera_scale))
+        )
 
-        # Draw cities
+        roads_scaled = pygame.transform.scale(
+            roads_surface,
+            (int(w * self.camera_scale), int(h * self.camera_scale))
+        )
+
+        # Clear screen
+        self.screen.fill((0, 0, 0))
+
+        # Draw terrain + roads with offset
+        self.screen.blit(terrain_scaled, self.camera_offset)
+        self.screen.blit(roads_scaled, self.camera_offset)
+
+        # Draw cities (scaled + offset)
         for city in self.world.cities:
-            pygame.draw.circle(self.screen, COLOR_CITY, (city.x, city.y), 3)
+            pos = pygame.Vector2(city.x, city.y) * self.camera_scale + self.camera_offset
+            pygame.draw.circle(self.screen, COLOR_CITY, pos, int(3 * self.camera_scale))
+
         pygame.display.flip()
-        pygame.time.wait(10)
+        #pygame.time.wait(16) #should be 16 for 60fps but simulation is bottleneck here
         return True
+
