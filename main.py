@@ -65,6 +65,8 @@ def main() -> None:
         europe.next_turn()
 
         if PYGAME:
+            if i % 10 == 0:
+                display_obj.pygame_sync()
             continue_simulation = display_obj.pygame_loop()
             if not continue_simulation:
                 return
