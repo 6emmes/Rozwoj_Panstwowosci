@@ -3,7 +3,7 @@ import pandas as pd
 import seaborn as sns
 
 
-from display import pygame_init, pygame_loop
+from display import Display
 import resources
 from citizen import Citizen
 from settler import Settler
@@ -16,7 +16,8 @@ PYGAME = True
 def main() -> None:
     europe = World()
     if PYGAME:
-        screen, terrain_surface = pygame_init(europe)
+        display_obj = Display(europe)
+        display_obj.pygame_init()
 
     poland = State("Polska")
 
@@ -64,7 +65,7 @@ def main() -> None:
         europe.next_turn()
 
         if i % 10 == 0 and PYGAME:
-            continue_simulation = pygame_loop(screen, europe, terrain_surface)
+            continue_simulation = display_obj.pygame_loop()
             if not continue_simulation:
                 return
 
