@@ -17,6 +17,8 @@ class World:
         self.turn = 0
         self.layers = {}
         self.compatibility(self.load_new_map8("temperate8.tiff"))
+        self.city_control: Grid[object] = [
+            [None] * self.width for _ in range(self.height)]
 
         # TODO: zamienić to na państwa po skończeniu dema
         self.cities: list[City] = []
@@ -81,3 +83,6 @@ class World:
             for trader in city.traders:
                 trader.trader_action()
         self.turn += 1
+    def assign_tile_city(self, x: int, y: int, city: City):
+        self.city_control[x][y] = city
+        city.controlled.append([x, y])

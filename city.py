@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING
 
 from citizen import Citizen
 from trader import Trader
+from utils.definitions import Point
 
 if TYPE_CHECKING:
     from world import World
@@ -36,6 +37,9 @@ class City:
         self.use_rate: dict = {name: 0 for name in RESOURCES}
         self.trade_efficiency: dict = {name: 0 for name in RESOURCES}
         self.world: World = world  # placeholder attribute
+        self.control_init()
+        self.id_init()
+        print("land id: "+str(self.land_id))
         self._randomize_initial_recources()  # Do celów testowych
 
     def _randomize_initial_recources(self):
@@ -48,6 +52,18 @@ class City:
                 random.uniform(1.0, 10.0),
             )
         print(f"Miasto {self.name} zostało założone")
+    def control_init(self):
+        self.controlled: list[Point] = []
+        self.world.assign_tile_city(self.x, self.y, self)
+        for dx in [-1, 0, 1]:
+            for dy in [-1, 0, 1]:
+                if abs(dx) == 1 and abs(dy) == 1:
+                    continue  # not important
+                cur_x = self.x+dx
+                cur_y = self.y+dy
+                if (cur_x < 0 or cur_x >= self.world.width or cur_y < 0 or cur_y >= self.world.height):
+                    continue
+                self.world.assign_tile_city(cur_x, cur_y, self)
 
     def add_citizen(self, citizen) -> None:
         citizen.city = self
