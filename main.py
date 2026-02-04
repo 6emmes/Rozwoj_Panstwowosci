@@ -2,6 +2,8 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import seaborn as sns
 
+
+from display import pygame_init, pygame_loop
 import resources
 from citizen import Citizen
 from resources import Resource
@@ -9,9 +11,14 @@ from settler import Settler
 from state import State
 from world import World
 
+PYGAME = True
+
 
 def main() -> None:
     europe = World()
+    if PYGAME:
+        screen, terrain_surface = pygame_init(europe)
+
     poland = State("Polska")
 
     jan = Citizen()
@@ -51,6 +58,11 @@ def main() -> None:
             prices[key].append(res[key][1])
 
         europe.next_turn()
+
+        if i % 10 == 0 and PYGAME:
+            continue_simulation = pygame_loop(screen, europe, terrain_surface)
+            if not continue_simulation:
+                return
 
     # Wizualizacja per produkt
     plt.figure(figsize=(15, 12))
