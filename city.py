@@ -128,7 +128,7 @@ class City:
         trip_cost = self._get_cost_of_trade()
         return priority / trip_cost
 
-    def calcualte_use_rate(self):
+    def calcualate_use_rate(self):
         self.use_rate[Resource.FOOD] = len(self.citizens) * 0.5
         self.use_rate[Resource.WOOD] = len(self.citizens) * 0.05
         self.use_rate[Resource.STONE] = len(self.citizens) * 0.05
@@ -267,7 +267,6 @@ class City:
 
         # Building
         new_queue = []
-
         for building, i in self.building_queue:
             if i == 0:
                 self.buildings[building] += 1
@@ -276,12 +275,12 @@ class City:
 
         self.building_queue = new_queue
 
-
         # Population control
         if self.resources[Resource.FOOD][0] == 0:
             self.citizens.pop()
         elif self.resources[Resource.FOOD][0] >= POP_GROWTH_COST + BUFFER:
             self._grow_population()
+        self.calcualate_use_rate()
 
     def _grow_population(self):
         for _ in range(0, int(sqrt(len(self.citizens)))):
