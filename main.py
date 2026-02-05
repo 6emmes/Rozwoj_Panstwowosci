@@ -32,8 +32,6 @@ def main() -> None:
     europe.cities[2].create_trader()
     europe.cities[3].create_trader()
 
-    for city in europe.cities:
-        city.calcualte_use_rate()
 
     priorities = []
     use_rates = []
@@ -46,6 +44,10 @@ def main() -> None:
     turns = 2000
     # Główna pętla symulacji
     for i in range(turns):
+
+        for city in europe.cities:
+            city.calcualte_use_rate()
+            
         if i%100==0:
             print("tura: "+str(i)+" "+str(round((time.time()-last_time)*1000))+"us")
             last_time = time.time()
