@@ -36,6 +36,7 @@ class Trader(Citizen):
         self.risk_factor = (
             random.random()
         )  # TODO dobrze zrobić na jakiś rozkład np normalny
+        self.trade_efficiency = 0.0
 
     def action(self):
         self.debug_print()
@@ -72,6 +73,8 @@ class Trader(Citizen):
                 self.amount_of_good_to_buy = amount_to_buy
                 self.gold = self.city.get_gold(price * amount)
                 self.plan_travel()
+                if len(self.last_path) == 0:  # Path is unavaiable
+                    continue
                 self.trade_efficiency = math.ceil(
                     amount_to_buy / (self.target_city_distance / self.speed)
                 )
@@ -122,6 +125,8 @@ class Trader(Citizen):
         target_x = self.target_city.x
         target_y = self.target_city.y
         path, cost = find_path(self.city.world, (home_x, home_y), (target_x, target_y))
+        if len(path) == 0:
+            return
 
         self.last_path = path
         self.target_city_distance = int(cost)
