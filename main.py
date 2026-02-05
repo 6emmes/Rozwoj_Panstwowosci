@@ -33,7 +33,7 @@ def main() -> None:
     europe.cities[0].create_trader()
 
     for city in europe.cities:
-        city.calcualte_use_rate()
+        city.calcualate_use_rate()
 
     priorities = []
     use_rates = []
