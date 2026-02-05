@@ -8,8 +8,9 @@ from citizen import Citizen
 from resources import Resource
 
 if TYPE_CHECKING:
-    from city import City
     from utils.definitions import Point
+
+    from city import City
 
 
 class Trader(Citizen):
