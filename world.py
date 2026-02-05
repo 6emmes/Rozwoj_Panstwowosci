@@ -139,3 +139,14 @@ class World:
                 if self.heightmap[cur_pos[0]][cur_pos[1]] == 0.0:
                     return self.layers["id_map"][cur_pos[0]][cur_pos[1]]
         return None
+    
+    def update_prices(self):
+        self.prices = {}
+        for city in self.cities:
+            for resource, price in city.resources.items():
+                if resource not in self.prices:
+                    self.prices[resource] = price[1]
+                else:
+                    self.prices[resource] += price[1]
+        for resource in self.prices:
+            self.prices[resource] /= len(self.cities)
