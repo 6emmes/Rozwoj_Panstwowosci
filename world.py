@@ -89,9 +89,9 @@ class World:
 
     def spawn_settlers(self, names, no_citizens, seed=10):
         NEIGHBOR_OFFSETS = [ (0, -1), (-1, 0), (1, 0), (0, 1)]
-        random.seed(seed)
-        contflag = 0           
+        random.seed(seed)       
         for n in names:
+            contflag = 0
             while True:
                 x_curr = int(random.uniform(0, self.width))
                 y_curr = int(random.uniform(0, self.height))
