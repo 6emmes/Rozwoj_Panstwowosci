@@ -97,44 +97,44 @@ class World:
                 y_curr = int(random.uniform(0, self.height))
                 if self.water[x_curr][y_curr] == 0:
                     continue
+                if len(self.cities) == 0:
+                    break
                 for c in self.cities:
                     dist = self.manhattan(x_curr, y_curr, c.x, c.y)
                     if dist < SETTLERSTEPCOUNT * 2:
                         contflag = 1
                         break
                 if contflag == 1:
-                    continue
+                    break
 
-                for _ in range(SETTLERSTEPCOUNT):
+            for _ in range(SETTLERSTEPCOUNT):
 
-                    best_score = float("-inf")
-                    best_pos = (x_curr, y_curr)
+                best_score = float("-inf")
+                best_pos = (x_curr, y_curr)
 
-                    for dx, dy in NEIGHBOR_OFFSETS:
-                        nx = x_curr + dx
-                        ny = y_curr + dy
+                for dx, dy in NEIGHBOR_OFFSETS:
+                    nx = x_curr + dx
+                    ny = y_curr + dy
 
-                        # bounds check
-                        if not (0 <= nx < self.width and 0 <= ny < self.height):
-                            continue
+                    # bounds check
+                    if not (0 <= nx < self.width and 0 <= ny < self.height):
+                        continue
 
-                        fertility = self.layers['fertility_map'][nx][ny]
-                        water     = self.layers['water_map'][nx][ny]
+                    fertility = self.layers['fertility_map'][nx][ny]
+                    water     = self.layers['water_map'][nx][ny]
 
-                        if water == 0:
-                            continue
-                        
-                        score = fertility - water
-
-                        if score > best_score:
-                            best_score = score
-                            best_pos = (nx, ny)
-
-                    # Move to the best neighbor
-                    x_curr, y_curr = best_pos
-                new_city = City(x_curr, y_curr, n, self)
-                for _ in range(no_citizens):
-                    new_city.create_citizen()
-                self.cities.append(new_city)
-                break
+                    if water == 0:
+                        continue
                     
+                    score = fertility - water
+
+                    if score > best_score:
+                        best_score = score
+                        best_pos = (nx, ny)
+
+                # Move to the best neighbor
+                x_curr, y_curr = best_pos
+            new_city = City(x_curr, y_curr, n, self)
+            for _ in range(no_citizens):
+                new_city.create_citizen()
+            self.cities.append(new_city)
