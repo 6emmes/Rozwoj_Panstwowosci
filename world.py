@@ -17,7 +17,7 @@ class World:
         self.rivers: Grid[float] = []
         self.turn = 0
         self.layers = {}
-        self.compatibility(self.load_new_map8("m_medit8.tiff"))
+        self.compatibility(self.load_new_map8("m_temperate8.tiff"))
 
         # TODO: zamienić to na państwa po skończeniu dema
         self.cities: list[City] = []
@@ -34,11 +34,7 @@ class World:
         self.water = layers["water_map"]
 
     def load_new_map8(self, name):
-
         MAX = 255
-
-
-
         with tifffile.TiffFile(name) as tif:
             for i, page in enumerate(tif.pages):
 
@@ -138,3 +134,16 @@ class World:
             for _ in range(no_citizens):
                 new_city.create_citizen()
             self.cities.append(new_city)
+            
+    def find_ocean(self, pos:Point):
+        RADIUS = 5
+        for x in range(-RADIUS, RADIUS+1):
+            for y in range(-RADIUS, RADIUS+1):
+                if (abs(x)<RADIUS and abs(y)<RADIUS):
+                    continue
+                cur_pos = (pos[0]+x, pos[1]+y)
+                if (cur_pos[0]<0 or cur_pos[0]>=self.width or cur_pos[1]<0 or cur_pos[1]>=self.height):
+                    continue
+                if self.heightmap[cur_pos[0]][cur_pos[1]] == 0.0:
+                    return self.layers["id_map"][cur_pos[0]][cur_pos[1]]
+        return None

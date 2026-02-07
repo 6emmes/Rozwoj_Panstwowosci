@@ -36,6 +36,8 @@ class City:
         self.use_rate: dict = {name: 0 for name in RESOURCES}
         self.trade_efficiency: dict = {name: 0 for name in RESOURCES}
         self.world: World = world  # placeholder attribute
+        print("land id: "+str(self.land_id))
+        self.id_init()
         self._randomize_initial_recources()  # Do celów testowych
         if self.world.layers['height_map'][self.x][self.y] == 0:
             print("Miasto tonie!")
@@ -50,6 +52,15 @@ class City:
                 random.uniform(1.0, 10.0),
             )
         print(f"Miasto {self.name} zostało założone w ({self.x}, {self.y})")
+
+    def id_init(self):
+        self.land_id = self.world.layers['id_map'][self.x][self.y]
+        self.ocean_id = self.world.find_ocean((self.x, self.y))
+        if self.ocean_id is None:
+            print(f"Miasto {self.name} nie ma dostępu do oceanu")
+        else:
+            print(f"Miasto {self.name} ma dostęp do oceanu o id {self.ocean_id}")
+
 
     def add_citizen(self, citizen) -> None:
         citizen.city = self

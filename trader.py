@@ -50,6 +50,8 @@ class Trader(Citizen):
         for city in self.city.world.cities:
             if city == self.city:
                 continue
+            if city.land_id != self.city.land_id:
+                continue    #miasto jest na innym lądzie
             # TODO duże uproszczenie że kupuje tylko jak city ma tyle zasobu ile potrzeba domyślnie powinien albo zwiedzać tyle miast aż kupi zadaną ilość albo kupić tyle ile jest dostępne i wracać
             if city in self.trade_partners:
                 fog = self.trade_partners[city]
@@ -114,8 +116,8 @@ class Trader(Citizen):
 
         home_x = self.city.x
         home_y = self.city.y
-        target_x = self.city.x
-        target_y = self.city.y
+        target_x = self.target_city.x
+        target_y = self.target_city.y
         path, cost = find_path(self.city.world, (home_x, home_y), (target_x, target_y))
 
         self.last_path = path
