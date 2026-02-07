@@ -12,7 +12,7 @@ from buildings import Factory, factory_list
 
 RESOURCE_CRUCIALITY = {"food": 100, "wood": 40, "stone": 40, "marble": 10}
 
-MAX_PRICE = 10.0
+MAX_PRICE = 25.0
 MAX_FOG = 5
 
 BUFFER = 50
@@ -196,6 +196,7 @@ class City:
         
         cruciality = RESOURCE_CRUCIALITY[good]
         new_price = cruciality * (scarcity + abundance)/2
+        new_price = round(new_price / 10, 1)
         new_price = min(max(new_price, 1.0), MAX_PRICE)
 
         self.resources[good] = (amount, new_price) 
