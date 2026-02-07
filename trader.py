@@ -5,6 +5,8 @@ import random
 from typing import TYPE_CHECKING
 
 from citizen import Citizen
+from resources import Resource
+from utils.log import LogEvent
 
 if TYPE_CHECKING:
     from city import City
@@ -165,8 +167,12 @@ class Trader(Citizen):
         self.city.trade_efficiency[self.good_to_buy] -= self.trade_efficiency
         self.city.recalculate_good_price(self.good_to_buy)
         self.strengthen_trade_partner()
-        print(
-            f"    Handlarz dostarczył {self.amount_of_good_to_buy} {self.good_to_buy} do miasta {self.city.name}"
+        self.city.world.logger.save_log(
+            LogEvent(
+                turn=self.city.world.turn,
+                location=self.city.name,
+                description=f"Handlarz dostarczył {self.amount_of_good_to_buy} {self.good_to_buy} do miasta {self.city.name}"
+            )
         )
 
     def reset_trader(self):

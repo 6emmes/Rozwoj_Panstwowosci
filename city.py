@@ -4,6 +4,7 @@ import random
 from typing import TYPE_CHECKING
 
 from citizen import Citizen
+from utils.log import LogCityEstablishment, LogConsumption, LogGenericResource, LogPopulation, LogProduction, LogResource, LogTrade
 from trader import Trader
 
 if TYPE_CHECKING:
@@ -39,6 +40,9 @@ class City:
         print("land id: "+str(self.land_id))
         self.id_init()
         self._randomize_initial_recources()  # Do celów testowych
+        if self.world.layers['height_map'][self.x][self.y] == 0:
+            print("Miasto tonie!")
+        self._log_city_establishment()
 
     def _randomize_initial_recources(self):
         possible_resources = RESOURCES
@@ -170,7 +174,75 @@ class City:
         self.gold -= amount_to_get
         return amount
 
+    def _gather_resource(
+        self,
+        resource: Resource,
+        sqr_temperature: int,
+        sqr_height: int,
+        sqr_humidity: int,
+    ) -> float:
+        return round(
+            80
+            * height_efficiency(resource, sqr_height)
+            * temp_efficiency(resource, sqr_temperature)
+            * humidity_efficiency(resource, sqr_humidity),
+            2,)
+    
+    def _log(self):
+        logsProd = [LogProduction(
+                turn=self.world.turn,
+                location=self.name,
+                resource=acc.value,
+                amount=self.accumulation_rate[acc]
+            ) for acc in self.accumulation_rate.keys()]
+        
+        logsCons = [LogConsumption(
+                turn=self.world.turn,
+                location=self.name,
+                resource=acc.value,
+                amount=self.use_rate[acc]
+            ) for acc in self.use_rate.keys()]
+        
+        logRes = [LogResource(
+                turn=self.world.turn,
+                location=self.name,
+                resource=acc.value,
+                amount=self.resources[acc][0],
+                price=self.resources[acc][1]
+            ) for acc in self.resources.keys()]
+        
+        logGold = [LogGenericResource(
+                turn=self.world.turn,
+                location=self.name,
+                resource="gold",
+                amount=self.gold,
+            )]
+
+        logPop = [LogPopulation(
+                turn=self.world.turn,
+                location=self.name,
+                population=len(self.citizens)
+            )]
+
+        self.world.logger.save_logs(
+            logsProd + logsCons + logRes + logPop + logGold
+        )
+
+    def _log_city_establishment(self):
+        self.world.logger.save_log_est(
+            LogCityEstablishment(
+                turn=self.world.turn,
+                location=self.name,
+                land_id=self.land_id,
+                ocean_id=self.ocean_id,
+                X=self.x,
+                Y=self.y
+            )
+        )
+
     def turn(self):
+        if len(self.citizens) == 0:
+            return
         self.use_resources()
         self.calculate_trade_priorities()
         priorities = self.calculate_trade_priorities()
@@ -184,7 +256,86 @@ class City:
                 if trader is not None:
                     amount, price = trader.buy_asap(resource, 50)
                     if amount is not None:
-                        print(f"    Miasto {self.name} wysyła handlarza kupić {amount} {resource} po cenie {price}")
+                        self.world.logger.save_log(
+                            LogTrade(
+                                turn=self.world.turn,
+                                location=self.name,
+                                destination=trader.target_city.name if trader.target_city else None,
+                                travel_time=trader.target_city_distance/trader.speed if trader.target_city_distance else None,
+                                resource=res.value,
+                                amount=amount,
+                                price=price
+                            )
+                        )
+
+        # Gathering resources
+        weights_map = {res: math.log(1 + p) for res, p in priorities.items()}
+        total = sum(priorities.values()) + 1e-3
+        weights_map = {res: p / total for res, p in weights_map.items()}
+        choices = random.choices(
+            population=list(weights_map.keys()),
+            weights=list(weights_map.values()),
+            k=len(self.citizens),
+        )
+
+        self.accumulation_rate = {name: 0 for name in self.resources.keys()}
+        available_buildings = self.buildings.copy()
+        for res in choices:
+            ammount = self._gather_resource(
+                res,
+                self.world.temperature[self.x][self.y],
+                self.world.heightmap[self.x][self.y],
+                self.world.humidity[self.x][self.y],
+            )
+            building = RES_TO_BUILDING[res]
+            if available_buildings[building] > 0:
+                ammount *= building.multiplier
+                available_buildings[building] -= 1
+
+            resources, price = self.resources[res]
+            # TODO: przeliczanie ceny po każdej iteracji
+            self.resources[res] = (resources + ammount, price)
+            self.accumulation_rate[res] += ammount
+
+        # Planning building
+        for res in sorted(RESOURCES, key=self._calculate_trade_priority):
+            building = RES_TO_BUILDING[res]
+            cost_satisfied = all(
+                self.resources[r][0] >= build_cost + BUFFER
+                for r, build_cost in building.cost.items()
+            )
+            if cost_satisfied:
+                for r, build_cost in building.cost.items():
+                    amount, price = self.resources[r]
+                    self.resources[r] = (amount - build_cost, price)
+                self.building_queue.append((building, building.build_time))
+                break
+        new_queue = []
+        # Building
+        for building, i in self.building_queue:
+            if i == 0:
+                self.buildings[building] += 1
+            else:
+                new_queue.append((building, i - 1))
+
+        self.building_queue = new_queue
+
+
+        # Population control
+        if self.resources[Resource.FOOD][0] == 0:
+            self.citizens.pop()
+        elif self.resources[Resource.FOOD][0] >= POP_GROWTH_COST + BUFFER:
+            self._grow_population()
+        self._log()
+
+    def _grow_population(self):
+        for _ in range(0, int(sqrt(len(self.citizens)))):
+            if self.resources[Resource.FOOD][0] >= POP_GROWTH_COST + BUFFER:
+                self.create_citizen()
+                amount, cost = self.resources[Resource.FOOD]
+                self.resources[Resource.FOOD] = amount - POP_GROWTH_COST, cost
+            else:
+                return
 
     def tax(self):
         pass

@@ -5,6 +5,8 @@ import tifffile
 
 from city import City
 from utils.definitions import Grid, Point
+SETTLERSTEPCOUNT = 32
+from utils.log import Logger
 
 
 class World:
@@ -21,6 +23,7 @@ class World:
         # TODO: zamienić to na państwa po skończeniu dema
         self.cities: list[City] = []
         self.roads: Grid[float] = [[0.0] * self.width for _ in range(self.height)]
+        self.logger = Logger("log")
 
     def action(self):
         pass
