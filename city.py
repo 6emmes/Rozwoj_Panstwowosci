@@ -39,6 +39,8 @@ class City:
         print("land id: "+str(self.land_id))
         self.id_init()
         self._randomize_initial_recources()  # Do celów testowych
+        if self.world.layers['height_map'][self.x][self.y] == 0:
+            print("Miasto tonie!")
 
     def _randomize_initial_recources(self):
         possible_resources = RESOURCES
@@ -49,7 +51,7 @@ class City:
                 random.randint(0, max_resource),
                 random.uniform(1.0, 10.0),
             )
-        print(f"Miasto {self.name} zostało założone")
+        print(f"Miasto {self.name} zostało założone w ({self.x}, {self.y})")
 
     def id_init(self):
         self.land_id = self.world.layers['id_map'][self.x][self.y]
