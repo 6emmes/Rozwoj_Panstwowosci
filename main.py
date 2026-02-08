@@ -4,7 +4,7 @@ import seaborn as sns
 
 
 from utils.display import Display
-import resources
+from resources import resource_list, Resource
 from citizen import Citizen
 from resources import Resource
 from settler import Settler
@@ -20,17 +20,12 @@ def main() -> None:
         display_obj = Display(europe)
         display_obj.pygame_init()
 
-    poland = State("Polska")
-
-    jan = Citizen()
     city_names = ["Warszawa", "Krakow", "Berlin", "Madryt", "Londyn"]
 
     europe.spawn_settlers(city_names, 5)
     europe.cities[0].create_trader()
-    europe.cities[0].create_trader()
-    europe.cities[1].create_trader()
-    europe.cities[2].create_trader()
-    europe.cities[3].create_trader()
+    for c in europe.cities:
+        c.create_trader()
 
     for city in europe.cities:
         city.calcualate_use_rate()
@@ -43,11 +38,15 @@ def main() -> None:
     prices = {key: [] for key in europe.cities[0].resources}
     citizens = []
 
-    turns = 500
+    turns = 600
     # Główna pętla symulacji
     for i in range(turns):
-        priorities.append(europe.cities[0].calculate_trade_priorities())
-        use_rates.append(europe.cities[0].use_rate)
+        if i%100==0:
+            print(f"turn{i}")
+            europe.update_prices()
+            print(europe.prices)
+        priorities.append(europe.cities[0].priorities.copy())
+        use_rates.append(europe.cities[0].use_rate.copy())
         production_rates.append(europe.cities[0].accumulation_rate)
         gold.append(europe.cities[0].gold)
         res = europe.cities[0].resources
@@ -68,7 +67,7 @@ def main() -> None:
     # Wizualizacja per produkt
     plt.figure(figsize=(15, 12))
 
-    for i, resource in enumerate(list(Resource)):
+    for i, resource in enumerate(resource_list.keys()):
         priority_data = [p[resource] for p in priorities]
         use_rate_data = [u[resource] for u in use_rates]
         production_rate_data = [pr[resource] for pr in production_rates]
@@ -92,7 +91,7 @@ def main() -> None:
         plt.xlabel("Tura")
         plt.ylabel("Wartość")
         plt.legend()
-    offset = len(list(Resource))
+    offset = len(resource_list.keys())
 
     plt.subplot(3, 3, offset + 1)
     sns.lineplot(x=range(turns), y=gold, label="Złoto", color="gold")
@@ -123,6 +122,12 @@ def main() -> None:
 
     plt.tight_layout()
     plt.savefig("visualization/prices.png")
+
+    for c in europe.cities:
+        print(c.name, c.gold, len(c.citizens), c.buildings)
+    print("~~~~~~ zasoby ~~~~~~")
+    for c in europe.cities:
+        print(c.name, c.accumulation_rate)
 
 
 if __name__ == "__main__":

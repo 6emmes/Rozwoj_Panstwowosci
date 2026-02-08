@@ -75,8 +75,8 @@ class World:
         NEIGHBOR_OFFSETS = [ (0, -1), (-1, 0), (1, 0), (0, 1)]
         random.seed(seed)       
         for n in names:
-            contflag = 0
             while True:
+                contflag = 1
                 x_curr = int(random.uniform(0, self.width))
                 y_curr = int(random.uniform(0, self.height))
                 if self.water[x_curr][y_curr] == 0:
@@ -86,7 +86,7 @@ class World:
                 for c in self.cities:
                     dist = self.manhattan(x_curr, y_curr, c.x, c.y)
                     if dist < SETTLERSTEPCOUNT * 2:
-                        contflag = 1
+                        contflag = 0
                         break
                 if contflag == 1:
                     break
@@ -135,3 +135,14 @@ class World:
                 if self.heightmap[cur_pos[0]][cur_pos[1]] == 0.0:
                     return self.layers["id_map"][cur_pos[0]][cur_pos[1]]
         return None
+    
+    def update_prices(self):
+        self.prices = {}
+        for city in self.cities:
+            for resource, price in city.resources.items():
+                if resource not in self.prices:
+                    self.prices[resource] = price[1]
+                else:
+                    self.prices[resource] += price[1]
+        for resource in self.prices:
+            self.prices[resource] /= len(self.cities)
