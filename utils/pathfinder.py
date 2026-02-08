@@ -34,14 +34,25 @@ def _reconstruct_path(parents: Grid[Point], start: Point, end: Point) -> list[Po
 
 # TODO: optimise for multiple goals
 def find_path(world: World, start: Point, end: Point) -> tuple[list[Point], float]:
-    if (start, end) in world.path_cache:
+    reverse = False
+    if start[0] > end[0]:
+        reverse = True
+        cache_line = (end, start)
+    else:
+        cache_line = (start, end)
+
+    if cache_line in world.path_cache:
         #cache found
-        if world.path_cache[(start, end)][2] < world.turn - world.path_cache_timeout:
+        if world.path_cache[cache_line][2] < world.turn - world.path_cache_timeout:
             #cache is old, recalculate
-            del world.path_cache[(start, end)]
+            del world.path_cache[cache_line]
         else:
-            print("cache hit, age: "+str(world.turn - world.path_cache[(start, end)][2])+" / "+str(world.path_cache_timeout)+" turns")
-            return (world.path_cache[(start, end)][0], world.path_cache[(start, end)][1])
+            print("cache hit, age: "+str(world.turn - world.path_cache[cache_line][2])+" / "+str(world.path_cache_timeout)+" turns")
+            path, cost, _ = world.path_cache[cache_line]
+            if reverse:
+                print("reversed chache line hit")
+                path.reverse()
+            return (path, cost)
 
     width = world.width
     height = world.height
@@ -58,7 +69,7 @@ def find_path(world: World, start: Point, end: Point) -> tuple[list[Point], floa
         current_cost, x, y = heapq.heappop(pq)
         if (x, y) == end:
             path = _reconstruct_path(parents, start, end)
-            world.path_cache[(start, end)] = (path, current_cost, world.turn)
+            world.path_cache[cache_line] = (path, current_cost, world.turn)
             return path, current_cost
 
         neighbours = [(x - 1, y), (x + 1, y), (x, y - 1), (x, y + 1)]
