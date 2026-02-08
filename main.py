@@ -3,7 +3,7 @@ import pandas as pd
 import seaborn as sns
 
 
-from display import Display
+from utils.display import Display
 import resources
 from citizen import Citizen
 from settler import Settler
