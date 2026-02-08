@@ -37,7 +37,7 @@ class City:
         self.trade_efficiency: dict = {name: 0 for name in RESOURCES}
         self.world: World = world  # placeholder attribute
         self.id_init()
-        print("land id: "+str(self.land_id))
+        print(f"land id: {self.land_id}")
         self._randomize_initial_recources()  # Do celów testowych
         if self.world.layers['height_map'][self.x][self.y] == 0:
             print("Miasto tonie!")
