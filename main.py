@@ -2,6 +2,8 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import seaborn as sns
 
+
+from utils.display import Display
 import resources
 from citizen import Citizen
 from resources import Resource
@@ -9,28 +11,26 @@ from settler import Settler
 from state import State
 from world import World
 
+PYGAME = True
+
 
 def main() -> None:
     europe = World()
+    if PYGAME:
+        display_obj = Display(europe)
+        display_obj.pygame_init()
+
     poland = State("Polska")
 
     jan = Citizen()
-
-    initial_settlers = [
-        Settler(10, 10, 5, europe),
-        Settler(20, 5, 5, europe),
-        Settler(15, 15, 5, europe),
-        Settler(30, 2, 5, europe),
-        Settler(5, 20, 5, europe),
-    ]
     city_names = ["Warszawa", "Krakow", "Berlin", "Madryt", "Londyn"]
 
-    # Założenie miast początkowych
-    for o, n in zip(initial_settlers, city_names):
-        europe.cities.append(o.settle(n))
-
+    europe.spawn_settlers(city_names, 5)
     europe.cities[0].create_trader()
     europe.cities[0].create_trader()
+    europe.cities[1].create_trader()
+    europe.cities[2].create_trader()
+    europe.cities[3].create_trader()
 
     for city in europe.cities:
         city.calcualate_use_rate()
@@ -57,6 +57,13 @@ def main() -> None:
             prices[key].append(res[key][1])
 
         europe.next_turn()
+
+        if PYGAME:
+            if i % 10 == 0:
+                display_obj.pygame_sync()
+            continue_simulation = display_obj.pygame_loop()
+            if not continue_simulation:
+                return
 
     # Wizualizacja per produkt
     plt.figure(figsize=(15, 12))
