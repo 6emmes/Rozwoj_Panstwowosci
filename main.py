@@ -2,16 +2,11 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import seaborn as sns
 
-
-from utils.display import Display
-from resources import resource_list, Resource
-from citizen import Citizen
-from resources import Resource
-from settler import Settler
-from state import State
+from utils.sim_types import ResourceType
 from world import World
+from utils.display import Display
 
-PYGAME = True
+PYGAME = False
 
 
 def main() -> None:
@@ -41,7 +36,7 @@ def main() -> None:
     turns = 600
     # Główna pętla symulacji
     for i in range(turns):
-        if i%100==0:
+        if i % 100 == 0:
             print(f"turn{i}")
             europe.update_prices()
             print(europe.prices)
@@ -67,7 +62,8 @@ def main() -> None:
     # Wizualizacja per produkt
     plt.figure(figsize=(15, 12))
 
-    for i, resource in enumerate(resource_list.keys()):
+    resource_names = [rt for rt in ResourceType]
+    for i, resource in enumerate(resource_names):
         priority_data = [p[resource] for p in priorities]
         use_rate_data = [u[resource] for u in use_rates]
         production_rate_data = [pr[resource] for pr in production_rates]
@@ -83,7 +79,8 @@ def main() -> None:
 
         plt.subplot(3, 3, i + 1)
         sns.lineplot(data=df, x="Tura", y="Priorytet", label="Priorytet")
-        sns.lineplot(data=df, x="Tura", y="Wskaźnik zużycia", label="Wskaźnik zużycia")
+        sns.lineplot(data=df, x="Tura", y="Wskaźnik zużycia",
+                     label="Wskaźnik zużycia")
         sns.lineplot(
             data=df, x="Tura", y="Wskaźnik produkcji", label="Wskaźnik produkcji"
         )
@@ -91,7 +88,7 @@ def main() -> None:
         plt.xlabel("Tura")
         plt.ylabel("Wartość")
         plt.legend()
-    offset = len(resource_list.keys())
+    offset = len(resource_names)
 
     plt.subplot(3, 3, offset + 1)
     sns.lineplot(x=range(turns), y=gold, label="Złoto", color="gold")
