@@ -241,8 +241,6 @@ class City:
         )
 
     def turn(self):
-        if len(self.citizens) == 0:
-            return
         self.use_resources()
         self.calculate_trade_priorities()
         priorities = self.calculate_trade_priorities()
@@ -268,74 +266,7 @@ class City:
                             )
                         )
 
-        # Gathering resources
-        weights_map = {res: math.log(1 + p) for res, p in priorities.items()}
-        total = sum(priorities.values()) + 1e-3
-        weights_map = {res: p / total for res, p in weights_map.items()}
-        choices = random.choices(
-            population=list(weights_map.keys()),
-            weights=list(weights_map.values()),
-            k=len(self.citizens),
-        )
 
-        self.accumulation_rate = {name: 0 for name in self.resources.keys()}
-        available_buildings = self.buildings.copy()
-        for res in choices:
-            ammount = self._gather_resource(
-                res,
-                self.world.temperature[self.x][self.y],
-                self.world.heightmap[self.x][self.y],
-                self.world.humidity[self.x][self.y],
-            )
-            building = RES_TO_BUILDING[res]
-            if available_buildings[building] > 0:
-                ammount *= building.multiplier
-                available_buildings[building] -= 1
-
-            resources, price = self.resources[res]
-            # TODO: przeliczanie ceny po każdej iteracji
-            self.resources[res] = (resources + ammount, price)
-            self.accumulation_rate[res] += ammount
-
-        # Planning building
-        for res in sorted(RESOURCES, key=self._calculate_trade_priority):
-            building = RES_TO_BUILDING[res]
-            cost_satisfied = all(
-                self.resources[r][0] >= build_cost + BUFFER
-                for r, build_cost in building.cost.items()
-            )
-            if cost_satisfied:
-                for r, build_cost in building.cost.items():
-                    amount, price = self.resources[r]
-                    self.resources[r] = (amount - build_cost, price)
-                self.building_queue.append((building, building.build_time))
-                break
-        new_queue = []
-        # Building
-        for building, i in self.building_queue:
-            if i == 0:
-                self.buildings[building] += 1
-            else:
-                new_queue.append((building, i - 1))
-
-        self.building_queue = new_queue
-
-
-        # Population control
-        if self.resources[Resource.FOOD][0] == 0:
-            self.citizens.pop()
-        elif self.resources[Resource.FOOD][0] >= POP_GROWTH_COST + BUFFER:
-            self._grow_population()
-        self._log()
-
-    def _grow_population(self):
-        for _ in range(0, int(sqrt(len(self.citizens)))):
-            if self.resources[Resource.FOOD][0] >= POP_GROWTH_COST + BUFFER:
-                self.create_citizen()
-                amount, cost = self.resources[Resource.FOOD]
-                self.resources[Resource.FOOD] = amount - POP_GROWTH_COST, cost
-            else:
-                return
 
     def tax(self):
         pass
