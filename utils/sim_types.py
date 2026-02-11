@@ -14,3 +14,7 @@ class ResourceType(Enum):
     WOOD = "wood"
     FOOD = "food"
     MARBLE = "marble"
+
+
+RESOURCES: list[ResourceType] = [rt for rt in ResourceType]
+BUILDINGS: list[BuildingType] = [bt for bt in BuildingType]

@@ -49,7 +49,6 @@ class Trader(Citizen):
         return self.target_city is None
 
     def buy_asap(self, good: Resource, amount: int) -> tuple[float, float]:
-        assert self.city is not None
         # na razie przeszukanie różnych miast w obrębie państwa, potem po odległości byłoby to wskazane
         for city in self.city.world.cities:
             if city == self.city:
@@ -107,7 +106,6 @@ class Trader(Citizen):
         self.home_city_distance -= self.speed
 
     def calculate_travel_distance(self) -> int:
-        assert self.city is not None and self.target_city is not None
         dx = self.target_city.x - self.city.x
         dy = self.target_city.y - self.city.y
         distance = pow(pow(dx, 2) + pow(dy, 2), 0.5)
@@ -119,7 +117,6 @@ class Trader(Citizen):
         return cost
 
     def plan_travel(self) -> None:
-        assert self.city is not None and self.target_city is not None
         from utils.pathfinder import find_path
 
         home_x = self.city.x
@@ -138,7 +135,6 @@ class Trader(Citizen):
         pass
 
     def buy_good(self) -> None:
-        assert self.city is not None and self.target_city is not None
         amount_s, price_s = self.target_city.resources[self.good_to_buy]
         amount = min(
             math.floor(self.gold / price_s), self.amount_of_good_to_buy, amount_s
@@ -165,7 +161,6 @@ class Trader(Citizen):
             self.trade_partners[self.target_city] = 4
 
     def unpack_good(self):
-        assert self.city is not None and self.target_city is not None
         amount_m, price_m = self.city.resources[self.good_to_buy]
         self.city.resources[self.good_to_buy] = (
             amount_m + self.amount_of_good_to_buy,

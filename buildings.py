@@ -2,12 +2,17 @@ from dataclasses import dataclass
 from utils.sim_types import BuildingType, ResourceType
 
 
-@dataclass(frozen=True)
 class Factory:
     build_cost: dict = None
     upkeep_cost: dict = None
     build_time: int = 5
     worker_capacity: int = 10
+
+    def __init__(self, build_cost: dict, upkeep_cost: dict, build_time: int = 5, worker_capacity: int = 10):
+        self.build_cost = build_cost
+        self.upkeep_cost = upkeep_cost
+        self.build_time = build_time
+        self.worker_capacity = worker_capacity
 
 
 factory_list: dict[BuildingType, Factory] = {

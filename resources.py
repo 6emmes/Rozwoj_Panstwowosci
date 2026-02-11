@@ -3,13 +3,19 @@ from buildings import factory_list
 from utils.sim_types import BuildingType, ResourceType
 
 
-@dataclass(frozen=True)
 class Resource:
-    map_layer: str | None = None
-    factory: BuildingType | None = None
-    human_harvesting: float = 0.0
-    factory_harvesting: float = 0.0
-    map_flat_scale: float = 10.0
+    map_layer: str | None
+    factory: BuildingType | None
+    human_harvesting: float
+    factory_harvesting: float
+    map_flat_scale: float
+
+    def __init__(self, map_layer: str | None, factory: BuildingType | None, human_harvesting: float, factory_harvesting: float, map_flat_scale: float):
+        self.map_layer = map_layer
+        self.factory = factory
+        self.human_harvesting = human_harvesting
+        self.factory_harvesting = factory_harvesting
+        self.map_flat_scale = map_flat_scale
 
     def harvest(self, world, x: int, y: int, buildings: int, workers: int) -> float:
         if self.map_layer is not None:
@@ -26,7 +32,7 @@ class Resource:
 
 
 resource_list: dict[ResourceType, Resource] = {
-    ResourceType.STONE: Resource(map_layer=None, factory=BuildingType.STONE_QUARRY, human_harvesting=0.2, factory_harvesting=0.5),
+    ResourceType.STONE: Resource(map_layer=None, factory=BuildingType.STONE_QUARRY, human_harvesting=0.2, factory_harvesting=0.5, map_flat_scale=5.0),
     # TODO: replace with wood_conifierous, move wood to secondary resources
     ResourceType.WOOD: Resource(map_layer="coniferous_map", factory=BuildingType.LUMBER_CAMP, human_harvesting=0.75, factory_harvesting=1.2, map_flat_scale=5.0),
     # TODO: replace with wheat, move food to secondary resources

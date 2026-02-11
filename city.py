@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING
 from citizen import Citizen
 from trader import Trader
 from resources import Resource, resource_list
-from utils.sim_types import BuildingType, ResourceType
+from utils.sim_types import BuildingType, ResourceType, RESOURCES, BUILDINGS
 from buildings import factory_list
 
 if TYPE_CHECKING:
@@ -23,8 +23,6 @@ MAX_FOG = 5
 BUFFER = 50
 POP_GROWTH_COST = 20
 
-RESOURCES: list[ResourceType] = [rt for rt in ResourceType]
-BUILDINGS: list[BuildingType] = [bt for bt in BuildingType]
 
 
 class City:
@@ -39,15 +37,11 @@ class City:
         # startowa farma żeby miasto nie umarło z głodu zanim zdąży cokolwiek zbudować
         self.buildings[BuildingType.FARM] = 1
         self.building_queue: list[tuple[object, int]] = []
-        self.traders: list[Trader] = (
-            []
-        )  # Trader to też citizen ale jeżeli będzie wielu citizenów to każdorazowe filtrowanie ich listy żeby traderów wyciagnąć będzie kosztowneg
+        self.traders: list[Trader] = [] # Trader to też citizen
         self.table_of_weights: list[object] = []
         self.religious_value: object = None
         self.gold: int = 500
-        self.resources: dict = (
-            {}
-        )  # nie jestem przekonany do trzymania tego w dictcie ale na razie nie wiem jak to dobrze załatwić klasą
+        self.resources: dict = {resource: 0 for resource in RESOURCES}
         self.accumulation_rate: dict = {resource: 0 for resource in RESOURCES}
         self.use_rate: dict = {resource: 0 for resource in RESOURCES}
         self.trade_efficiency: dict = {resource: 0 for resource in RESOURCES}
