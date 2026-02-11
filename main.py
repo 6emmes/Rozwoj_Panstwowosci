@@ -1,32 +1,35 @@
+import matplotlib.pyplot as plt
+import pandas as pd
+import seaborn as sns
+
+
+from utils.display import Display
+import resources
 from citizen import Citizen
 from settler import Settler
 from state import State
 from world import World
-import seaborn as sns
-import matplotlib.pyplot as plt
-import pandas as pd
+
+PYGAME = True
+
 
 def main() -> None:
     europe = World()
+    if PYGAME:
+        display_obj = Display(europe)
+        display_obj.pygame_init()
+
     poland = State("Polska")
 
     jan = Citizen()
-
-    initial_settlers = [
-        Settler(10, 10, 5, europe),
-        Settler(20, 5, 5, europe),
-        Settler(15, 15, 5, europe),
-        Settler(30, 2, 5, europe),
-        Settler(5, 20, 5, europe),
-    ]
     city_names = ["Warszawa", "Krakow", "Berlin", "Madryt", "Londyn"]
 
-    # Założenie miast początkowych
-    for o, n in zip(initial_settlers, city_names):
-        europe.cities.append(o.settle(n))
-
+    europe.spawn_settlers(city_names, 5)
     europe.cities[0].create_trader()
     europe.cities[0].create_trader()
+    europe.cities[1].create_trader()
+    europe.cities[2].create_trader()
+    europe.cities[3].create_trader()
 
     for city in europe.cities:
         city.calcualte_use_rate()
@@ -53,6 +56,13 @@ def main() -> None:
 
         europe.next_turn()
 
+        if PYGAME:
+            if i % 10 == 0:
+                display_obj.pygame_sync()
+            continue_simulation = display_obj.pygame_loop()
+            if not continue_simulation:
+                return
+
     # Wizualizacja per produkt
     plt.subplots(2, 3, figsize=(12, 6))
 
@@ -70,8 +80,10 @@ def main() -> None:
 
         plt.subplot(2, 3, i+1)
         sns.lineplot(data=df, x='Tura', y='Priorytet', label='Priorytet')
-        sns.lineplot(data=df, x='Tura', y='Wskaźnik zużycia', label='Wskaźnik zużycia')
-        sns.lineplot(data=df, x='Tura', y='Wskaźnik produkcji', label='Wskaźnik produkcji')
+        sns.lineplot(data=df, x='Tura', y='Wskaźnik zużycia',
+                     label='Wskaźnik zużycia')
+        sns.lineplot(data=df, x='Tura', y='Wskaźnik produkcji',
+                     label='Wskaźnik produkcji')
         plt.title(f'Zmiany priorytetu i wskaźników dla zasobu: {resource}')
         plt.xlabel('Tura')
         plt.ylabel('Wartość')
