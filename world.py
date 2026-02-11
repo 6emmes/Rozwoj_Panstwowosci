@@ -87,7 +87,7 @@ class World:
         NEIGHBOR_OFFSETS = [ (0, -1), (-1, 0), (1, 0), (0, 1)]
         random.seed(seed)       
         for n in names:
-            contflag = 0
+            contflag = 1
             while True:
                 x_curr = int(random.uniform(0, self.width))
                 y_curr = int(random.uniform(0, self.height))
@@ -98,7 +98,7 @@ class World:
                 for c in self.cities:
                     dist = self.manhattan(x_curr, y_curr, c.x, c.y)
                     if dist < SETTLERSTEPCOUNT * 2:
-                        contflag = 1
+                        contflag = 0
                         break
                 if contflag == 1:
                     break
