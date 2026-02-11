@@ -41,11 +41,6 @@ class LogConsumption(LogGenericResource):
     TYPE = "consumption"
 
 @dataclass(slots=True)
-class LogPopulationEvent(LogGeneric):
-    population: int
-    TYPE = "population"
-
-@dataclass(slots=True)
 class LogEvent(LogGeneric):
     description: str
     TYPE = "event"

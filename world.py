@@ -5,7 +5,6 @@ import tifffile
 
 from city import City
 from utils.definitions import Grid, Point
-SETTLERSTEPCOUNT = 32
 from utils.log import Logger
 
 

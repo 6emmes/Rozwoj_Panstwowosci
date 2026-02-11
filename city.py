@@ -203,7 +203,7 @@ class City:
                 amount=self.use_rate[acc]
             ) for acc in self.use_rate.keys()]
         
-        logRes = [LogResource(
+        logsRes = [LogResource(
                 turn=self.world.turn,
                 location=self.name,
                 resource=acc.value,
@@ -211,21 +211,21 @@ class City:
                 price=self.resources[acc][1]
             ) for acc in self.resources.keys()]
         
-        logGold = [LogGenericResource(
+        logsGold = [LogGenericResource(
                 turn=self.world.turn,
                 location=self.name,
                 resource="gold",
                 amount=self.gold,
             )]
 
-        logPop = [LogPopulation(
+        logsPop = [LogPopulation(
                 turn=self.world.turn,
                 location=self.name,
                 population=len(self.citizens)
             )]
 
         self.world.logger.save_logs(
-            logsProd + logsCons + logRes + logPop + logGold
+            logsProd + logsCons + logsRes + logsPop + logsGold
         )
 
     def _log_city_establishment(self):
