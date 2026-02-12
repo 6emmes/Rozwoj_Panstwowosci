@@ -18,7 +18,7 @@ def _cost(world: World, x: int, y: int) -> float:
     if world.water[x][y] == 0:
         return float("inf")
     river = river_eff(world.heightmap[x][y]) if world.rivers[x][y] > 0 else 0
-    return heigit_eff(world.heightmap[x][y]) + river - world.roads[x][y]
+    return max(0.1, heigit_eff(world.heightmap[x][y]) + river - world.roads[x][y])
 
 
 def _reconstruct_path(parents: Grid[Point], start: Point, end: Point) -> list[Point]:
