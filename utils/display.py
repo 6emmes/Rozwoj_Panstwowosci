@@ -16,17 +16,44 @@ class Display:
         self.zoom_speed = 0.1
         self.pan_speed = 20
 
+    # def pygame_init(self):
+    #     pygame.init()
+    #     win_size = (self.world.width, self.world.height)
+    #     self.screen = pygame.display.set_mode(win_size)
+
+    #     heightmap = self.world.layers["height_map"]
+    #     terrain_array = np.zeros((self.world.width, self.world.height, 3), dtype=np.uint8)
+    #     terrain_array[:] = COLOR_GROUND
+    #     water_mask = heightmap == 0
+    #     terrain_array[water_mask] = COLOR_WATER
+    #     self.terrain_surface = pygame.surfarray.make_surface(terrain_array)
+
     def pygame_init(self):
         pygame.init()
         win_size = (self.world.width, self.world.height)
         self.screen = pygame.display.set_mode(win_size)
 
         heightmap = self.world.layers["height_map"]
+
         terrain_array = np.zeros((self.world.width, self.world.height, 3), dtype=np.uint8)
         terrain_array[:] = COLOR_GROUND
         water_mask = heightmap == 0
         terrain_array[water_mask] = COLOR_WATER
+
+        # --- apply monochrome shademap with 50% alpha directly into terrain_array ---
+        shademap = self.world.layers["shade_map"]  # shape: (width, height)
+
+        alpha = 0.9  # 50% influence of the shademap
+        # darker where shademap is higher: factor in [0.5..1.0]
+        shade_factor = 1.0 - shademap * alpha
+
+        # broadcast shade_factor over RGB channels
+        terrain_array = terrain_array.astype(np.float32)
+        terrain_array *= shade_factor[..., None]
+        terrain_array = np.clip(terrain_array, 0, 255).astype(np.uint8)
+        # final single surface
         self.terrain_surface = pygame.surfarray.make_surface(terrain_array)
+
 
     def pygame_sync(self):
         road_array = np.array(self.world.roads, dtype=np.float32)
@@ -38,6 +65,8 @@ class Display:
         self.roads_surface = pygame.image.frombuffer(
             road_rgba.transpose((1,0,2)).copy(), (w, h), "RGBA"
         ).convert_alpha()
+
+    
 
     def pygame_loop(self):
         for event in pygame.event.get():
