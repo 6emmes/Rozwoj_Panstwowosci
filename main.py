@@ -6,31 +6,23 @@ from utils.sim_types import ResourceType
 from world import World
 from utils.display import Display
 
-PYGAME = False
+PYGAME = True
 
 
 def main() -> None:
-    europe = World()
+    sim_world = World()
     if PYGAME:
-        display_obj = Display(europe)
+        display_obj = Display(sim_world)
         display_obj.pygame_init()
 
-    city_names = ["Warszawa", "Krakow", "Berlin", "Madryt", "Londyn"]
-
-    europe.spawn_settlers(city_names, 5)
-    europe.cities[0].create_trader()
-    for c in europe.cities:
-        c.create_trader()
-
-    for city in europe.cities:
-        city.calcualate_use_rate()
+    sim_world.spawn_states(5, 5)
 
     priorities = []
     use_rates = []
     production_rates = []
     gold = []
-    resources = {key: [] for key in europe.cities[0].resources}
-    prices = {key: [] for key in europe.cities[0].resources}
+    resources = {key: [] for key in sim_world.cities[0].resources}
+    prices = {key: [] for key in sim_world.cities[0].resources}
     citizens = []
 
     turns = 600
@@ -38,19 +30,19 @@ def main() -> None:
     for i in range(turns):
         if i % 100 == 0:
             print(f"turn{i}")
-            europe.update_prices()
-            print(europe.prices)
-        priorities.append(europe.cities[0].priorities.copy())
-        use_rates.append(europe.cities[0].use_rate.copy())
-        production_rates.append(europe.cities[0].accumulation_rate)
-        gold.append(europe.cities[0].gold)
-        res = europe.cities[0].resources
-        citizens.append(len(europe.cities[0].citizens))
+            sim_world.update_prices()
+            print(sim_world.prices)
+        priorities.append(sim_world.cities[0].priorities.copy())
+        use_rates.append(sim_world.cities[0].use_rate.copy())
+        production_rates.append(sim_world.cities[0].accumulation_rate)
+        gold.append(sim_world.cities[0].gold)
+        res = sim_world.cities[0].resources
+        citizens.append(len(sim_world.cities[0].citizens))
         for key in res:
             resources[key].append(res[key][0])
             prices[key].append(res[key][1])
 
-        europe.next_turn()
+        sim_world.next_turn()
 
         if PYGAME:
             if i % 10 == 0:
@@ -120,10 +112,10 @@ def main() -> None:
     plt.tight_layout()
     plt.savefig("visualization/prices.png")
 
-    for c in europe.cities:
+    for c in sim_world.cities:
         print(c.name, c.gold, len(c.citizens), c.buildings)
     print("~~~~~~ zasoby ~~~~~~")
-    for c in europe.cities:
+    for c in sim_world.cities:
         print(c.name, c.accumulation_rate)
 
 

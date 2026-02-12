@@ -4,6 +4,7 @@ import random
 import tifffile
 
 from city import City
+from state import State
 from utils.definitions import Grid, Point
 SETTLERSTEPCOUNT = 32
 
@@ -15,13 +16,18 @@ class World:
         self.wood_resources: list[object] = []
         self.fertility: object = None
         self.rivers: Grid[float] = []
+        self.state_names: dict[str, str] = {}
+        self.avaiable_states: list[str] = []
         self.turn = 0
         self.layers = {}
         self.compatibility(self.load_new_map8("m_temperate8.tiff"))
+        self.load_state_names()
 
         # TODO: zamienić to na państwa po skończeniu dema
         self.cities: list[City] = []
-        self.roads: Grid[float] = [[0.0] * self.width for _ in range(self.height)]
+        self.states: dict[str, State] = {}
+        self.roads: Grid[float] = [
+            [0.0] * self.width for _ in range(self.height)]
 
     def action(self):
         pass
@@ -59,83 +65,100 @@ class World:
             self.roads[x][y] += value
 
     def next_turn(self):
-        for city in self.cities:
-            city.turn()
-            if self.turn % 10 == 0:
-                city.recalculate_goods_prices()
-            for trader in city.traders:
-                trader.trader_action()
+        for s in self.states.values():
+            s.turn()
         self.turn += 1
 
     def manhattan(self, x1, y1, x2, y2):
         return abs(x1 - x2) + abs(y1 - y2)
 
+    def spawn_states(self, count: int, no_citizens: int, seed=10):
+        random.seed(seed)
+        print(no_citizens)
+        for i in range(count):
+            state_name = self.avaiable_states.pop()
+            filename = self.state_names[state_name]
+            with open(filename, encoding="utf-8") as f:
+                content = f.read().split('\n')
+                self.states[state_name] = State(
+                    self, state_name, i*360/count, content)
+            new_city = self.spawn_settler(
+                self.states[state_name].city_names.pop(), no_citizens)
+            self.states[state_name].add_city(new_city)
 
-    def spawn_settlers(self, names, no_citizens, seed=10):
-        NEIGHBOR_OFFSETS = [ (0, -1), (-1, 0), (1, 0), (0, 1)]
-        random.seed(seed)       
-        for n in names:
-            while True:
-                contflag = 1
-                x_curr = int(random.uniform(0, self.width))
-                y_curr = int(random.uniform(0, self.height))
-                if self.water[x_curr][y_curr] == 0:
+    def spawn_settler(self, name, no_citizens):
+        NEIGHBOR_OFFSETS = [(0, -1), (-1, 0), (1, 0), (0, 1)]
+        while True:
+            contflag = 1
+            x_curr = int(random.uniform(0, self.width))
+            y_curr = int(random.uniform(0, self.height))
+            if self.water[x_curr][y_curr] == 0:
+                continue
+            if len(self.cities) == 0:
+                break
+            for c in self.cities:
+                dist = self.manhattan(x_curr, y_curr, c.x, c.y)
+                if dist < SETTLERSTEPCOUNT * 2:
+                    contflag = 0
+                    break
+            if contflag == 1:
+                break
+
+        for _ in range(SETTLERSTEPCOUNT):
+
+            best_score = float("-inf")
+            best_pos = (x_curr, y_curr)
+
+            for dx, dy in NEIGHBOR_OFFSETS:
+                nx = x_curr + dx
+                ny = y_curr + dy
+
+                # bounds check
+                if not (0 <= nx < self.width and 0 <= ny < self.height):
                     continue
-                if len(self.cities) == 0:
-                    break
-                for c in self.cities:
-                    dist = self.manhattan(x_curr, y_curr, c.x, c.y)
-                    if dist < SETTLERSTEPCOUNT * 2:
-                        contflag = 0
-                        break
-                if contflag == 1:
-                    break
 
-            for _ in range(SETTLERSTEPCOUNT):
+                fertility = self.layers['fertility_map'][nx][ny]
+                water = self.layers['water_map'][nx][ny]
 
-                best_score = float("-inf")
-                best_pos = (x_curr, y_curr)
+                if water == 0:
+                    continue
 
-                for dx, dy in NEIGHBOR_OFFSETS:
-                    nx = x_curr + dx
-                    ny = y_curr + dy
+                score = fertility - water
 
-                    # bounds check
-                    if not (0 <= nx < self.width and 0 <= ny < self.height):
-                        continue
+                if score > best_score:
+                    best_score = score
+                    best_pos = (nx, ny)
 
-                    fertility = self.layers['fertility_map'][nx][ny]
-                    water     = self.layers['water_map'][nx][ny]
+            # Move to the best neighbor
+            x_curr, y_curr = best_pos
+        new_city = City(x_curr, y_curr, name, self)
+        for _ in range(no_citizens):
+            new_city.create_citizen()
 
-                    if water == 0:
-                        continue
-                    
-                    score = fertility - water
+        new_city.create_trader()
+        new_city.calcualate_use_rate()
+        self.cities.append(new_city)
+        return new_city
 
-                    if score > best_score:
-                        best_score = score
-                        best_pos = (nx, ny)
-
-                # Move to the best neighbor
-                x_curr, y_curr = best_pos
-            new_city = City(x_curr, y_curr, n, self)
-            for _ in range(no_citizens):
-                new_city.create_citizen()
+    def spawn_settlers(self, names: list[str], no_citizens: int, seed=10):
+        random.seed(seed)
+        for n in names:
+            new_city = self.spawn_settler(n, no_citizens)
             self.cities.append(new_city)
-            
-    def find_ocean(self, pos:Point):
+
+    def find_ocean(self, pos: Point):
         RADIUS = 5
         for x in range(-RADIUS, RADIUS+1):
             for y in range(-RADIUS, RADIUS+1):
-                if (abs(x)<RADIUS and abs(y)<RADIUS):
+                if (abs(x) < RADIUS and abs(y) < RADIUS):
                     continue
                 cur_pos = (pos[0]+x, pos[1]+y)
-                if (cur_pos[0]<0 or cur_pos[0]>=self.width or cur_pos[1]<0 or cur_pos[1]>=self.height):
+                if (cur_pos[0] < 0 or cur_pos[0] >= self.width or cur_pos[1] < 0 or cur_pos[1] >= self.height):
                     continue
                 if self.heightmap[cur_pos[0]][cur_pos[1]] == 0.0:
                     return self.layers["id_map"][cur_pos[0]][cur_pos[1]]
         return None
-    
+
     def update_prices(self):
         self.prices = {}
         for city in self.cities:
@@ -146,3 +169,14 @@ class World:
                     self.prices[resource] += price[1]
         for resource in self.prices:
             self.prices[resource] /= len(self.cities)
+
+    def load_state_names(self):
+        root_dir = os.path.dirname(os.path.abspath(__file__))
+        names_dir = root_dir+"/names/"
+        print(names_dir)
+        for file in os.listdir(names_dir):
+            filename = os.fsdecode(file)
+            name = filename.split('.')[0]
+            self.state_names[name] = names_dir+filename
+            self.avaiable_states.append(name)
+        print(self.state_names)

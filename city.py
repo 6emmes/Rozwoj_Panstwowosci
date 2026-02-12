@@ -31,7 +31,6 @@ class City:
         self.x: int = x
         self.y: int = y
         self.name: str = name
-        # self.panstwo: Panstwo | None = None
         self.citizens: list[Citizen] = []
         self.buildings: dict = {build: 0 for build in BUILDINGS}
         # startowa farma żeby miasto nie umarło z głodu zanim zdąży cokolwiek zbudować
