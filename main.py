@@ -6,7 +6,7 @@ from utils.sim_types import ResourceType
 from world import World
 from utils.display import Display
 
-PYGAME = False
+PYGAME = True
 
 
 def main() -> None:
