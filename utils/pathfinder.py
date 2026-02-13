@@ -31,6 +31,18 @@ def _reconstruct_path(parents: Grid[Point], start: Point, end: Point) -> list[Po
         current = parents[current[0]][current[1]]
     return path
 
+def _evaluate_path(world: World, path: list[Point]) -> float:
+    total_cost = 0
+    oldx, oldy = path[0]
+    for x, y in path[1:]:
+        xdist = abs(x - oldx)
+        ydist = abs(y - oldy)
+        if xdist == 1 and ydist == 1:
+            total_cost += _cost(world, x, y) * SQRT_2
+        else:
+            total_cost += _cost(world, x, y)
+        oldx, oldy = x, y
+    return total_cost
 
 # TODO: optimise for multiple goals
 def find_path(world: World, start: Point, end: Point) -> tuple[list[Point], float]:
@@ -47,12 +59,13 @@ def find_path(world: World, start: Point, end: Point) -> tuple[list[Point], floa
             #cache is old, recalculate
             del world.path_cache[cache_line]
         else:
-            print("cache hit, age: "+str(world.turn - world.path_cache[cache_line][2])+" / "+str(world.path_cache_timeout)+" turns")
-            path, cost, _ = world.path_cache[cache_line]
+            print(f"cache hit, age: {world.turn - world.path_cache[cache_line][2]}/{world.path_cache_timeout} turns")
+            path, _, _ = world.path_cache[cache_line]
             if reverse:
                 print("reversed chache line hit")
                 path.reverse()
-            return (path, cost)
+            new_cost = _evaluate_path(world, path)
+            return (path, new_cost)
 
     width = world.width
     height = world.height
