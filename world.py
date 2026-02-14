@@ -6,7 +6,12 @@ import tifffile
 from city import City
 from state import State
 from utils.definitions import Grid, Point
+
+
 SETTLERSTEPCOUNT = 32
+ANNEALING_START = 50
+ANNEALING_END = 250
+ANNEALING_COOLING_TIME = 1000
 
 
 class World:
@@ -21,6 +26,8 @@ class World:
         self.turn = 0
         self.layers = {}
         self.compatibility(self.load_new_map8("m_temperate8.tiff"))
+        self.path_cache = {}
+        self.path_cache_timeout = ANNEALING_START
         self.load_state_names()
 
         # TODO: zamienić to na państwa po skończeniu dema
@@ -67,6 +74,7 @@ class World:
     def next_turn(self):
         for s in self.states.values():
             s.turn()
+        self.pathfinder_annealing()
         self.turn += 1
 
     def manhattan(self, x1, y1, x2, y2):
@@ -158,7 +166,13 @@ class World:
                 if self.heightmap[cur_pos[0]][cur_pos[1]] == 0.0:
                     return self.layers["id_map"][cur_pos[0]][cur_pos[1]]
         return None
-
+    
+    def pathfinder_annealing(self):
+        if self.turn > ANNEALING_COOLING_TIME:
+            self.path_cache_timeout = ANNEALING_END
+        else:
+            self.path_cache_timeout = int(ANNEALING_START + (ANNEALING_END - ANNEALING_START) * self.turn / ANNEALING_COOLING_TIME)
+        
     def update_prices(self):
         self.prices = {}
         for city in self.cities:
