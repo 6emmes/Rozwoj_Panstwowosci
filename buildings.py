@@ -15,8 +15,8 @@ class Factory:
 
 
 factory_list: dict[BuildingType, Factory] = {
-    BuildingType.STONE_QUARRY: Factory(build_cost={ResourceType.WOOD: 200}, upkeep_cost={ResourceType.STONE: 5}),
+    BuildingType.STONE_QUARRY: Factory(build_cost={ResourceType.WOOD: 200}, upkeep_cost={ResourceType.STONE: 2}),
     BuildingType.FARM: Factory(build_cost={ResourceType.WOOD: 250}, upkeep_cost={ResourceType.WOOD: 2}),
-    BuildingType.LUMBER_CAMP: Factory(build_cost={ResourceType.WOOD: 200}, upkeep_cost={ResourceType.STONE: 5}),
-    BuildingType.MARBLE_MINE: Factory(build_cost={ResourceType.STONE: 200}, upkeep_cost={ResourceType.STONE: 5}),
+    BuildingType.LUMBER_CAMP: Factory(build_cost={ResourceType.WOOD: 200}, upkeep_cost={ResourceType.STONE: 2}),
+    BuildingType.MARBLE_MINE: Factory(build_cost={ResourceType.STONE: 200}, upkeep_cost={ResourceType.STONE: 2}),
 }

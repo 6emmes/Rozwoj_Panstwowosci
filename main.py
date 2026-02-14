@@ -26,6 +26,7 @@ def main() -> None:
         city.calcualate_use_rate()
 
     priorities = []
+    prod_priorities = []
     use_rates = []
     production_rates = []
     gold = []
@@ -41,6 +42,7 @@ def main() -> None:
             europe.update_prices()
             print(europe.prices)
         priorities.append(europe.cities[0].priorities.copy())
+        prod_priorities.append(europe.cities[0].production_priorities.copy())
         use_rates.append(europe.cities[0].use_rate.copy())
         production_rates.append(europe.cities[0].accumulation_rate)
         gold.append(europe.cities[0].gold)
@@ -65,6 +67,7 @@ def main() -> None:
     resource_names = [rt for rt in ResourceType]
     for i, resource in enumerate(resource_names):
         priority_data = [p[resource] for p in priorities]
+        prod_priorities_data = [p[resource] for p in prod_priorities]
         use_rate_data = [u[resource] for u in use_rates]
         production_rate_data = [pr[resource] for pr in production_rates]
 
@@ -73,6 +76,7 @@ def main() -> None:
                 "Tura": range(turns),
                 "Wskaźnik produkcji": production_rate_data,
                 "Priorytet": priority_data,
+                "Piorytet produkcji": prod_priorities_data,
                 "Wskaźnik zużycia": use_rate_data,
             }
         )
@@ -84,6 +88,10 @@ def main() -> None:
         sns.lineplot(
             data=df, x="Tura", y="Wskaźnik produkcji", label="Wskaźnik produkcji"
         )
+        sns.lineplot(
+            data=df, x="Tura", y="Piorytet produkcji", label="Piorytet produkcji"
+        )
+        plt.ylim(0,50)
         plt.title(f"Zasób: {resource}")
         plt.xlabel("Tura")
         plt.ylabel("Wartość")
@@ -118,7 +126,7 @@ def main() -> None:
     plt.ylabel("Liczba osób")
 
     plt.tight_layout()
-    plt.savefig("visualization/prices.png")
+    plt.savefig("visualization/prices.png", dpi=200)
 
     for c in europe.cities:
         print(c.name, c.gold, len(c.citizens), c.buildings)

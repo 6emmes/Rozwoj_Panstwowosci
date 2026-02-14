@@ -140,7 +140,7 @@ class City:
         local_price = self.resources[resource][1]
         map_layer = resource_list[ResourceType(resource)].map_layer
         if map_layer is None:
-            production_rate = 0.5
+            production_rate = 0.25
         else:
             production_rate = self.world.layers[map_layer][self.x][self.y]
         production_rate *= resource_list[ResourceType(resource)].map_flat_scale
@@ -224,9 +224,9 @@ class City:
         self.calculate_priorities()
 
         self._turn_trading()
-        self._mining()
-        self._building()
-        
+        self._turn_mining()
+        self._turn_building()
+
         self.calcualate_use_rate()
         self.use_resources()
 
@@ -252,34 +252,41 @@ class City:
                             f"\tMiasto {self.name} wysyła handlarza kupić {amount} {resource} po cenie {price} czas: {trader.target_city_distance/trader.speed}"
                         )
 
-    def _mining(self):
+    def _turn_mining(self):
+        self.unemployed = len(self.citizens)
+        farm_employed = min(self.buildings[BuildingType.FARM]*10, self.unemployed)
+        self.unemployed = self.unemployed - farm_employed
+
         weights_map = {res: math.log(1 + p)
                        for res, p in self.priorities.items()}
+        weights_map[ResourceType.FOOD] = 0
+
         total = sum(weights_map.values()) + 1e-3
         weights_map = {res: p / total for res, p in weights_map.items()}
 
         # TODO: potentially off by one due to rounding - dont care tho
-        counts = {res: int(len(self.citizens) * w)
+        counts = {res: int(self.unemployed * w)
                   for res, w in weights_map.items()}
-
+        
+        counts[ResourceType.FOOD] = farm_employed
         self.accumulation_rate = {name: 0 for name in self.resources.keys()}
         available_buildings = self.buildings.copy()
         for res, workers in counts.items():
             if workers == 0:
                 continue
             res_obj = resource_list[ResourceType(res)]
+            factory_count = available_buildings[res_obj.factory]
+            self.unemployed = self.unemployed - min(factory_count*10, workers)
             self.accumulation_rate[res] = res_obj.harvest(
-                self.world, self.x, self.y, available_buildings[res_obj.factory], workers
+                self.world, self.x, self.y, factory_count, workers
             )
 
             resources, price = self.resources[res]
             self.resources[res] = (
                 resources + self.accumulation_rate[res], price)
 
-    def _building(self):
-        building_count = 0
-        for b in self.buildings:
-            building_count += self.buildings[b]
+    def _turn_building(self):
+        building_count = sum(self.buildings.values())
         if building_count < 8:
             for res in sorted(RESOURCES, key=self.production_priorities.get, reverse=True):
                 # should be even more
