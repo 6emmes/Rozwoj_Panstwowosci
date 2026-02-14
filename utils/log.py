@@ -1,8 +1,6 @@
 from dataclasses import dataclass, asdict
 import sqlite3
 
-from dataclasses import dataclass, asdict
-
 @dataclass(slots=True)
 class LogGeneric:
     turn: int

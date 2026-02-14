@@ -31,6 +31,7 @@ class World:
 
         # TODO: zamienić to na państwa po skończeniu dema
         self.cities: list[City] = []
+        self.states: dict[str, State] = {}
         self.roads: Grid[float] = [[0.0] * self.width for _ in range(self.height)]
         self.logger = Logger("log")
 

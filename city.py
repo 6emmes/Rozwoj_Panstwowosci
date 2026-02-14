@@ -218,22 +218,11 @@ class City:
         amount_to_get = min(amount, self.gold)
         self.gold -= amount_to_get
         return amount
-
-    def _gather_resource(
-        self,
-        resource: Resource,
-        sqr_temperature: int,
-        sqr_height: int,
-        sqr_humidity: int,
-    ) -> float:
-        return round(
-            80
-            * height_efficiency(resource, sqr_height)
-            * temp_efficiency(resource, sqr_temperature)
-            * humidity_efficiency(resource, sqr_humidity),
-            2,)
     
     def _log(self):
+        if self.world.turn % 5 != 0:
+            return
+        
         logsProd = [LogProduction(
                 turn=self.world.turn,
                 location=self.name,
@@ -307,7 +296,7 @@ class City:
                                 location=self.name,
                                 destination=trader.target_city.name if trader.target_city else None,
                                 travel_time=trader.target_city_distance/trader.speed if trader.target_city_distance else None,
-                                resource=res.value,
+                                resource=resource.value,
                                 amount=amount,
                                 price=price
                             )
@@ -368,6 +357,9 @@ class City:
                 new_queue.append((building, i - 1))
 
         self.building_queue = new_queue
+        
+        self.calcualate_use_rate()
+        self.use_resources()
 
         # Population control
         if self.resources[ResourceType.FOOD][0] == 0:
@@ -375,8 +367,8 @@ class City:
         elif self.resources[ResourceType.FOOD][0] >= POP_GROWTH_COST + BUFFER:
             self._grow_population()
 
-        self.calcualate_use_rate()
-        self.use_resources()
+        self._log()
+        
 
     def _grow_population(self):
         for _ in range(0, int(math.sqrt(len(self.citizens)))):

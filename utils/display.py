@@ -112,3 +112,6 @@ class Display:
         pygame.display.flip()
         # pygame.time.wait(16) #should be 16 for 60fps but simulation is bottleneck here
         return True
+
+    def save(self):
+        pygame.image.save(self.screen, "visualization/simulation_snapshot.png")
