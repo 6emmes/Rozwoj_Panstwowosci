@@ -24,7 +24,6 @@ BUFFER = 50
 POP_GROWTH_COST = 20
 
 
-
 class City:
 
     def __init__(self, x: int, y: int, name: str, world: World) -> None:
@@ -37,7 +36,7 @@ class City:
         # startowa farma żeby miasto nie umarło z głodu zanim zdąży cokolwiek zbudować
         self.buildings[BuildingType.FARM] = 1
         self.building_queue: list[tuple[object, int]] = []
-        self.traders: list[Trader] = [] # Trader to też citizen
+        self.traders: list[Trader] = []  # Trader to też citizen
         self.table_of_weights: list[object] = []
         self.religious_value: object = None
         self.gold: int = 500
@@ -224,6 +223,21 @@ class City:
 
         self.calculate_priorities()
 
+        self._turn_trading()
+        self._mining()
+        self._building()
+        
+        self.calcualate_use_rate()
+        self.use_resources()
+
+        # Population control
+        if self.resources[ResourceType.FOOD][0] == 0:
+            self.citizens.pop()
+        elif self.resources[ResourceType.FOOD][0] >= POP_GROWTH_COST + BUFFER:
+            self._grow_population()
+
+
+    def _turn_trading(self):
         for resource, priority in self.priorities.items():
             if priority > 1.0:
                 trader = None
@@ -238,7 +252,7 @@ class City:
                             f"\tMiasto {self.name} wysyła handlarza kupić {amount} {resource} po cenie {price} czas: {trader.target_city_distance/trader.speed}"
                         )
 
-        # Gathering resources
+    def _mining(self):
         weights_map = {res: math.log(1 + p)
                        for res, p in self.priorities.items()}
         total = sum(weights_map.values()) + 1e-3
@@ -262,7 +276,7 @@ class City:
             self.resources[res] = (
                 resources + self.accumulation_rate[res], price)
 
-        # Planning building
+    def _building(self):
         building_count = 0
         for b in self.buildings:
             building_count += self.buildings[b]
@@ -293,15 +307,6 @@ class City:
                 new_queue.append((building, i - 1))
 
         self.building_queue = new_queue
-
-        # Population control
-        if self.resources[ResourceType.FOOD][0] == 0:
-            self.citizens.pop()
-        elif self.resources[ResourceType.FOOD][0] >= POP_GROWTH_COST + BUFFER:
-            self._grow_population()
-
-        self.calcualate_use_rate()
-        self.use_resources()
 
     def _grow_population(self):
         for _ in range(0, int(math.sqrt(len(self.citizens)))):
