@@ -2,11 +2,10 @@ from world import World
 import pygame
 import numpy as np
 
-COLOR_CITY = [250, 0, 0]
 COLOR_PATH = [120, 120, 120]
 COLOR_GROUND = [0, 250, 0]
 COLOR_WATER = [0, 0, 250]
-
+COLOR_BLACK = [0, 0, 0]
 
 class Display:
 
@@ -100,10 +99,15 @@ class Display:
         self.screen.blit(roads_scaled, self.camera_offset)
 
         # Draw cities (scaled + offset)
-        for city in self.world.cities:
-            pos = pygame.Vector2(city.x, city.y) * \
+        state_color = pygame.Color(0)
+        for st in self.world.states.values():
+            state_color.hsva = (st.hue, 100, 100, 100)
+            for city in st.cities:
+                pos = pygame.Vector2(city.x, city.y) * \
                 self.camera_scale + self.camera_offset
-            pygame.draw.circle(self.screen, COLOR_CITY, pos, 3)
+
+                pygame.draw.circle(self.screen, COLOR_BLACK, pos, 4)
+                pygame.draw.circle(self.screen, state_color, pos, 3)
 
         pygame.display.flip()
         # pygame.time.wait(16) #should be 16 for 60fps but simulation is bottleneck here
