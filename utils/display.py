@@ -22,10 +22,21 @@ class Display:
         self.screen = pygame.display.set_mode(win_size)
 
         heightmap = self.world.layers["height_map"]
-        terrain_array = np.zeros((self.world.width, self.world.height, 3), dtype=np.uint8)
+
+        terrain_array = np.zeros(
+            (self.world.width, self.world.height, 3), dtype=np.uint8)
         terrain_array[:] = COLOR_GROUND
         water_mask = heightmap == 0
         terrain_array[water_mask] = COLOR_WATER
+
+        shademap = self.world.layers["shade_map"]
+
+        alpha = 0.5
+        shade_factor = 1.0 - shademap * alpha
+
+        terrain_array = terrain_array.astype(np.float32)
+        terrain_array *= shade_factor[..., None]
+        terrain_array = np.clip(terrain_array, 0, 255).astype(np.uint8)
         self.terrain_surface = pygame.surfarray.make_surface(terrain_array)
 
     def pygame_sync(self):
@@ -36,7 +47,7 @@ class Display:
         road_rgba = np.dstack([road_rgb, alpha])
         h, w = road_rgba.shape[:2]
         self.roads_surface = pygame.image.frombuffer(
-            road_rgba.transpose((1,0,2)).copy(), (w, h), "RGBA"
+            road_rgba.transpose((1, 0, 2)).copy(), (w, h), "RGBA"
         ).convert_alpha()
 
     def pygame_loop(self):
@@ -52,7 +63,9 @@ class Display:
                 self.camera_scale = max(0.1, min(5.0, self.camera_scale))
                 mx, my = pygame.mouse.get_pos()
                 mouse = pygame.Vector2(mx, my)
-                self.camera_offset = mouse - (mouse - self.camera_offset) * (self.camera_scale / old_scale)
+                self.camera_offset = mouse - \
+                    (mouse - self.camera_offset) * \
+                    (self.camera_scale / old_scale)
 
             # --- Arrow key panning ---
             if event.type == pygame.KEYDOWN:
@@ -68,12 +81,14 @@ class Display:
         # --- Apply camera transform ---
         terrain_scaled = pygame.transform.scale(
             self.terrain_surface,
-            (int(self.world.width * self.camera_scale), int(self.world.height * self.camera_scale))
+            (int(self.world.width * self.camera_scale),
+             int(self.world.height * self.camera_scale))
         )
 
         roads_scaled = pygame.transform.scale(
             self.roads_surface,
-            (int(self.world.width * self.camera_scale), int(self.world.height * self.camera_scale))
+            (int(self.world.width * self.camera_scale),
+             int(self.world.height * self.camera_scale))
         )
 
         # Clear screen
@@ -88,12 +103,12 @@ class Display:
         for st in self.world.states.values():
             state_color.hsva = (st.hue, 100, 100, 100)
             for city in st.cities:
-                pos = pygame.Vector2(city.x, city.y) * self.camera_scale + self.camera_offset
+                pos = pygame.Vector2(city.x, city.y) * \
+                self.camera_scale + self.camera_offset
 
                 pygame.draw.circle(self.screen, COLOR_BLACK, pos, 4)
                 pygame.draw.circle(self.screen, state_color, pos, 3)
 
         pygame.display.flip()
-        #pygame.time.wait(16) #should be 16 for 60fps but simulation is bottleneck here
+        # pygame.time.wait(16) #should be 16 for 60fps but simulation is bottleneck here
         return True
-

@@ -25,7 +25,7 @@ class World:
         self.avaiable_states: list[str] = []
         self.turn = 0
         self.layers = {}
-        self.compatibility(self.load_new_map8("m_temperate8.tiff"))
+        self.compatibility(self.load_new_map8("maps/m_continent.tiff"))
         self.path_cache = {}
         self.path_cache_timeout = ANNEALING_START
         self.load_state_names()
