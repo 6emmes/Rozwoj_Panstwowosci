@@ -1,10 +1,16 @@
 from army import Army
 from city import City
+from typing import TYPE_CHECKING
 
+if TYPE_CHECKING:
+    from world import World
 
 class State:
-    def __init__(self, name: str) -> None:
+    def __init__(self, world , name: str, hue: int, namelist: list[str]) -> None:
         self.name: str = name
+        self.world = world
+        self.hue: int = hue
+        self.city_names: list[str] = namelist
         self.cities: list[City] = []
         self.armies: list[Army] = []
         self.objectives: list[object] = []
@@ -12,22 +18,16 @@ class State:
         self.diplomacy: list[object] = []
 
     def add_city(self, city: City) -> None:
-        # miasto.panstwo = self
+        city.state = self
         self.cities.append(city)
 
     def add_army(self, army: Army) -> None:
         self.armies.append(army)
 
-    def action(self):
-        print(f"Akcje w państwie: {self.name}")
-        for m in self.cities:
-            m.action()
-
-    def tax(self):
-        pass
-
-    def declare_war(self):
-        pass
-
-    def unify_culture(self):
-        pass
+    def turn(self):
+        for c in self.cities:
+            c.turn()
+            if self.world.turn % 10 == 0:
+                c.recalculate_goods_prices()
+            for trader in c.traders:
+                trader.trader_action()
