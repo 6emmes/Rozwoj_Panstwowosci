@@ -71,8 +71,7 @@ def main() -> None:
 
         plt.subplot(3, 3, i + 1)
         sns.lineplot(data=df, x="Tura", y="Priorytet", label="Priorytet")
-        sns.lineplot(data=df, x="Tura", y="Wskaźnik zużycia",
-                     label="Wskaźnik zużycia")
+        sns.lineplot(data=df, x="Tura", y="Wskaźnik zużycia", label="Wskaźnik zużycia")
         sns.lineplot(
             data=df, x="Tura", y="Wskaźnik produkcji", label="Wskaźnik produkcji"
         )

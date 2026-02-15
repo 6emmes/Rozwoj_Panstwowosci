@@ -13,8 +13,12 @@ from buildings import factory_list
 if TYPE_CHECKING:
     from world import World
 
-RESOURCE_CRUCIALITY = {ResourceType.FOOD: 10, ResourceType.WOOD: 4,
-                       ResourceType.STONE: 4, ResourceType.MARBLE: 1}
+RESOURCE_CRUCIALITY = {
+    ResourceType.FOOD: 10,
+    ResourceType.WOOD: 4,
+    ResourceType.STONE: 4,
+    ResourceType.MARBLE: 1,
+}
 
 MAX_PRICE = 25.0
 MAX_FOG = 5
@@ -23,9 +27,7 @@ BUFFER = 50
 POP_GROWTH_COST = 20
 
 
-
 class City:
-
     def __init__(self, x: int, y: int, name: str, world: World) -> None:
         self.x: int = x
         self.y: int = y
@@ -35,7 +37,7 @@ class City:
         # startowa farma żeby miasto nie umarło z głodu zanim zdąży cokolwiek zbudować
         self.buildings[BuildingType.FARM] = 1
         self.building_queue: list[tuple[object, int]] = []
-        self.traders: list[Trader] = [] # Trader to też citizen
+        self.traders: list[Trader] = []  # Trader to też citizen
         self.table_of_weights: list[object] = []
         self.religious_value: object = None
         self.gold: int = 500
@@ -44,17 +46,15 @@ class City:
         self.use_rate: dict = {resource: 0 for resource in RESOURCES}
         self.trade_efficiency: dict = {resource: 0 for resource in RESOURCES}
 
-        #TODO Po co to
-        self.import_priorities: dict = {
-            resource: 0.0 for resource in RESOURCES}
-        self.production_priorities: dict = {
-            resource: 0.0 for resource in RESOURCES}
+        # TODO Po co to
+        self.import_priorities: dict = {resource: 0.0 for resource in RESOURCES}
+        self.production_priorities: dict = {resource: 0.0 for resource in RESOURCES}
         self.priorities: dict = {resource: 0.0 for resource in RESOURCES}
         self.world: World = world  # placeholder attribute
         self.id_init()
         print(f"land id: {self.land_id}")
         self._randomize_initial_recources()  # Do celów testowych
-        if self.world.layers['height_map'][self.x][self.y] == 0:
+        if self.world.layers["height_map"][self.x][self.y] == 0:
             print("Miasto tonie!")
 
     def _randomize_initial_recources(self):
@@ -69,13 +69,12 @@ class City:
         print(f"Miasto {self.name} zostało założone w ({self.x}, {self.y})")
 
     def id_init(self):
-        self.land_id = self.world.layers['id_map'][self.x][self.y]
+        self.land_id = self.world.layers["id_map"][self.x][self.y]
         self.ocean_id = self.world.find_ocean((self.x, self.y))
         if self.ocean_id is None:
             print(f"Miasto {self.name} nie ma dostępu do oceanu")
         else:
-            print(
-                f"Miasto {self.name} ma dostęp do oceanu o id {self.ocean_id}")
+            print(f"Miasto {self.name} ma dostęp do oceanu o id {self.ocean_id}")
 
     def add_citizen(self, citizen) -> None:
         citizen.city = self
@@ -121,7 +120,7 @@ class City:
         amount, _ = self.resources[resource]
         delta = self._get_resource_delta(resource)
         if delta >= 0:
-            return float('inf')
+            return float("inf")
         return amount / -delta
 
     def _get_cost_of_trade(self) -> float:
@@ -155,7 +154,7 @@ class City:
             count = self.buildings[b]
             if count > 0:
                 for res, rate in factory_list[b].upkeep_cost.items():
-                    self.use_rate[res] += rate*count
+                    self.use_rate[res] += rate * count
 
     def calculate_import_priorities(self) -> dict[str, float]:
         for resource in self.resources.keys():
@@ -171,8 +170,9 @@ class City:
         self.calculate_import_priorities()
         self.calculate_production_priorities()
         for resource in self.resources.keys():
-            self.priorities[resource] = self.import_priorities[resource] + \
-                self.production_priorities[resource]
+            self.priorities[resource] = (
+                self.import_priorities[resource] + self.production_priorities[resource]
+            )
 
     def use_resources(self):
         for resource, rate in self.use_rate.items():
@@ -182,7 +182,7 @@ class City:
                 amount = 0
             self.resources[resource] = (amount, price)
 
-    def recalculate_good_price(self, good: str) -> float:
+    def recalculate_good_price(self, good: Resource | None) -> float:
         # old priority logic
         turns_left = self._get_turns_left(good)
         sum_of_all = sum([self.resources[z][0] for z in self.resources])
@@ -192,7 +192,7 @@ class City:
         abundance = sum_of_all / max(amount, 1)
 
         cruciality = RESOURCE_CRUCIALITY[good]
-        new_price = cruciality * (scarcity + abundance)/2
+        new_price = cruciality * (scarcity + abundance) / 2
         new_price = round(new_price / 10, 1)
         new_price = min(max(new_price, 1.0), MAX_PRICE)
 
@@ -204,14 +204,23 @@ class City:
         for good in goods:
             self.recalculate_good_price(good)
 
-    def get_resource(self, resource: str, fog_range: int = MAX_FOG) -> tuple[tuple[int, int], tuple[int, int]]:
+    def get_resource(
+        self, resource: Resource, fog_range: int = MAX_FOG
+    ) -> tuple[tuple[int, int], tuple[int, int]]:
         # Wraz z wycieraniem szlaku przez handlarza do miasta fog się zmniejszy, początkowo powinien być zależny od odległości
         amount, price = self.resources[resource]
-        amount_min, amount_max = (random.randint(
-            0, fog_range), random.randint(0, fog_range))
-        price_min, price_max = (random.randint(
-            0, fog_range), random.randint(0, fog_range))
-        return (amount - amount_min, amount + amount_max), (max(price - price_min, 1), price + price_max)
+        amount_min, amount_max = (
+            random.randint(0, fog_range),
+            random.randint(0, fog_range),
+        )
+        price_min, price_max = (
+            random.randint(0, fog_range),
+            random.randint(0, fog_range),
+        )
+        return (amount - amount_min, amount + amount_max), (
+            max(price - price_min, 1),
+            price + price_max,
+        )
 
     def get_gold(self, amount):
         amount_to_get = min(amount, self.gold)
@@ -235,18 +244,16 @@ class City:
                     amount, price = trader.buy_asap(resource, 50)
                     if amount is not None:
                         print(
-                            f"\tMiasto {self.name} wysyła handlarza kupić {amount} {resource} po cenie {price} czas: {trader.target_city_distance/trader.speed}"
+                            f"\tMiasto {self.name} wysyła handlarza kupić {amount} {resource} po cenie {price} czas: {trader.target_city_distance / trader.speed}"
                         )
 
         # Gathering resources
-        weights_map = {res: math.log(1 + p)
-                       for res, p in self.priorities.items()}
+        weights_map = {res: math.log(1 + p) for res, p in self.priorities.items()}
         total = sum(weights_map.values()) + 1e-3
         weights_map = {res: p / total for res, p in weights_map.items()}
 
         # TODO: potentially off by one due to rounding - dont care tho
-        counts = {res: int(len(self.citizens) * w)
-                  for res, w in weights_map.items()}
+        counts = {res: int(len(self.citizens) * w) for res, w in weights_map.items()}
 
         self.accumulation_rate = {name: 0 for name in self.resources.keys()}
         available_buildings = self.buildings.copy()
@@ -255,27 +262,38 @@ class City:
                 continue
             res_obj = resource_list[ResourceType(res)]
             self.accumulation_rate[res] = res_obj.harvest(
-                self.world, self.x, self.y, available_buildings[res_obj.factory], workers
+                self.world,
+                self.x,
+                self.y,
+                available_buildings[res_obj.factory],
+                workers,
             )
-                        print(f"    Miasto priorytetowo {self.name} wysyła handlarza kupić {amount} {resource} po cenie {price}")
-        available_traders = [trader for trader in self.traders if trader.is_available()][:-1] # zostawiamy jednego handlarza jakby był potrzebny na priorytetowe zakupy
+
+        available_traders = [
+            trader for trader in self.traders if trader.is_available()
+        ][
+            :-1
+        ]  # zostawiamy jednego handlarza jakby był potrzebny na priorytetowe zakupy
         for trader in available_traders:
+            print(f"Miasto {self.name} ma dostępnego handlarza, szukam okazji...")
             if trader.is_available():
                 amount, price = trader.find_opportunity_trade()
                 if amount is not None:
-                    print(f"    Miasto {self.name} wysyła handlarza kupić {amount} po cenie {price}")
-
+                    print(
+                        f"    Miasto {self.name} wysyła handlarza kupić {amount} po cenie {price}"
+                    )
 
             resources, price = self.resources[res]
-            self.resources[res] = (
-                resources + self.accumulation_rate[res], price)
+            self.resources[res] = (resources + self.accumulation_rate[res], price)
 
         # Planning building
         building_count = 0
         for b in self.buildings:
             building_count += self.buildings[b]
         if building_count < 8:
-            for res in sorted(RESOURCES, key=self.production_priorities.get, reverse=True):
+            for res in sorted(
+                RESOURCES, key=self.production_priorities.get, reverse=True
+            ):
                 # should be even more
                 if self.production_priorities[res] < 1.0:
                     continue
@@ -289,7 +307,8 @@ class City:
                         amount, price = self.resources[r]
                         self.resources[r] = (amount - build_cost, price)
                     self.building_queue.append(
-                        (resource_list[res].factory, building.build_time))
+                        (resource_list[res].factory, building.build_time)
+                    )
                     break
 
         # Building
@@ -316,8 +335,7 @@ class City:
             if self.resources[ResourceType.FOOD][0] >= POP_GROWTH_COST + BUFFER:
                 self.create_citizen()
                 amount, cost = self.resources[ResourceType.FOOD]
-                self.resources[ResourceType.FOOD] = amount - \
-                    POP_GROWTH_COST, cost
+                self.resources[ResourceType.FOOD] = amount - POP_GROWTH_COST, cost
             else:
                 return
 

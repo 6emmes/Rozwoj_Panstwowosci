@@ -2,11 +2,9 @@ from army import Army
 from city import City
 from typing import TYPE_CHECKING
 
-if TYPE_CHECKING:
-    from world import World
 
 class State:
-    def __init__(self, world , name: str, hue: int, namelist: list[str]) -> None:
+    def __init__(self, world, name: str, hue: int, namelist: list[str]) -> None:
         self.name: str = name
         self.world = world
         self.hue: int = hue

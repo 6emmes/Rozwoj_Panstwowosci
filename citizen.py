@@ -6,7 +6,6 @@ if TYPE_CHECKING:
 
 
 class Citizen:
-
     def __init__(self) -> None:
         self.city: City | None = None
         # placeholder attribute
