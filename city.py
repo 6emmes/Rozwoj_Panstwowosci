@@ -117,7 +117,7 @@ class City:
             - self.use_rate[resource]
         )
 
-    def _get_turns_left(self, resource: str) -> float:
+    def _get_turns_left(self, resource: ResourceType) -> float:
         amount, _ = self.resources[resource]
         delta = self._get_resource_delta(resource)
         if delta >= 0:
@@ -127,7 +127,7 @@ class City:
     def _get_cost_of_trade(self) -> float:
         return 1.0
 
-    def _calculate_import_priority(self, resource: str) -> float:
+    def _calculate_import_priority(self, resource: ResourceType) -> float:
         cruciality = 1.2  # RESOURCE_CRUCIALITY[resource]
         use = self.use_rate[resource]
         acc = self.accumulation_rate[resource]
@@ -137,21 +137,18 @@ class City:
 
         return deficit
 
-    def _calculate_production_priority(self, resource: str) -> float:
-        # local_price = self.resources[resource][1]
+    def _calculate_production_priority(self, resource: ResourceType) -> float:
         global_price = self.world.prices[resource]
         if resource in raw_resource_list:
-            map_layer = raw_resource_list[ResourceType(resource)].map_layer
+            map_layer = raw_resource_list[resource].map_layer
             if map_layer is None:
                 production_rate = 0.25
             else:
                 production_rate = self.world.layers[map_layer][self.x][self.y]
-            production_rate *= raw_resource_list[ResourceType(resource)].map_flat_scale
+            production_rate *= raw_resource_list[resource].map_flat_scale
         elif resource in manufactured_resource_list:
             production_rate = 0
-            for input in manufactured_resource_list[
-                ResourceType(resource)
-            ].input_resources:
+            for input in manufactured_resource_list[resource].input_resources:
                 production_rate = max(production_rate, self.accumulation_rate[input])
         return global_price * production_rate
 
@@ -165,17 +162,17 @@ class City:
                 for res, rate in factory_list[b].upkeep_cost.items():
                     self.use_rate[res] += rate * count
 
-    def calculate_import_priorities(self) -> dict[str, float]:
+    def calculate_import_priorities(self) -> dict[ResourceType, float]:
         for resource in self.resources.keys():
             priority = self._calculate_import_priority(resource)
             self.import_priorities[resource] = priority
 
-    def calculate_production_priorities(self) -> dict[str, float]:
+    def calculate_production_priorities(self) -> dict[ResourceType, float]:
         for resource in self.resources.keys():
             priority = self._calculate_production_priority(resource)
             self.production_priorities[resource] = priority
 
-    def calculate_priorities(self) -> dict[str, float]:
+    def calculate_priorities(self) -> dict[ResourceType, float]:
         self.calculate_import_priorities()
         self.calculate_production_priorities()
         for resource in self.resources.keys():
@@ -191,7 +188,7 @@ class City:
                 amount = 0
             self.resources[resource] = (amount, price)
 
-    def recalculate_good_price(self, good: str) -> float:
+    def recalculate_good_price(self, good: ResourceType) -> float:
         # old priority logic
         turns_left = self._get_turns_left(good)
         sum_of_all = sum([self.resources[z][0] for z in self.resources])
@@ -214,7 +211,7 @@ class City:
             self.recalculate_good_price(good)
 
     def get_resource(
-        self, resource: str, fog_range: int = MAX_FOG
+        self, resource: ResourceType, fog_range: int = MAX_FOG
     ) -> tuple[tuple[int, int], tuple[int, int]]:
         # Wraz z wycieraniem szlaku przez handlarza do miasta fog się zmniejszy, początkowo powinien być zależny od odległości
         amount, price = self.resources[resource]
@@ -291,9 +288,9 @@ class City:
             if workers == 0:
                 continue
             if res in raw_resource_list:
-                res_obj = raw_resource_list[ResourceType(res)]
+                res_obj = raw_resource_list[res]
             elif res in manufactured_resource_list:
-                res_obj = manufactured_resource_list[ResourceType(res)]
+                res_obj = manufactured_resource_list[res]
             factory_count = available_buildings[res_obj.factory]
             self.unemployed = self.unemployed - min(factory_count * 10, workers)
             self.accumulation_rate[res] = res_obj.harvest(
