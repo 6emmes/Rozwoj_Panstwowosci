@@ -191,7 +191,7 @@ class Trader(Citizen):
         if len(path) == 0:
             return
         print(
-            f"    Handlarz planuje podróż z miasta {self.city} do miasta {self.target_city.name} kosztem {int(cost)} złota"
+            f"    Handlarz planuje podróż z miasta {self.city} do miasta {self.target_city.name} kosztem {int(cost)}"
         )
 
         self.last_path = path

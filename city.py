@@ -146,7 +146,7 @@ class City:
         production_rate *= resource_list[ResourceType(resource)].map_flat_scale
         return local_price * production_rate
 
-    def calcualate_use_rate(self):
+    def calculate_use_rate(self):
         for r in RESOURCES:
             self.use_rate[r] = 0.0
         self.use_rate[ResourceType.FOOD] = len(self.citizens) * 1.0
@@ -156,17 +156,17 @@ class City:
                 for res, rate in factory_list[b].upkeep_cost.items():
                     self.use_rate[res] += rate * count
 
-    def calculate_import_priorities(self) -> dict[str, float]:
+    def calculate_import_priorities(self):
         for resource in self.resources.keys():
             priority = self._calculate_import_priority(resource)
             self.import_priorities[resource] = priority
 
-    def calculate_production_priorities(self) -> dict[str, float]:
+    def calculate_production_priorities(self):
         for resource in self.resources.keys():
             priority = self._calculate_production_priority(resource)
             self.production_priorities[resource] = priority
 
-    def calculate_priorities(self) -> dict[str, float]:
+    def calculate_priorities(self):
         self.calculate_import_priorities()
         self.calculate_production_priorities()
         for resource in self.resources.keys():
@@ -328,7 +328,7 @@ class City:
         elif self.resources[ResourceType.FOOD][0] >= POP_GROWTH_COST + BUFFER:
             self._grow_population()
 
-        self.calcualate_use_rate()
+        self.calculate_use_rate()
         self.use_resources()
 
     def _grow_population(self):
