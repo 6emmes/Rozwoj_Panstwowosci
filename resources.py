@@ -127,7 +127,7 @@ manufactured_resource_list: dict[ResourceType, ManufacturedResource] = {
         factory_production=1.0,
         input_resources={ResourceType.WOOD_DECI: 1.0, ResourceType.WOOD_CONI: 1.0},
     ),
-    ResourceType.BUDULEC: ManufacturedResource(
+    ResourceType.BRICKS: ManufacturedResource(
         factory=BuildingType.KILN,
         human_production=0.5,
         factory_production=1.0,

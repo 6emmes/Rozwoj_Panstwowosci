@@ -1,27 +1,55 @@
+from abc import ABC
+from dataclasses import dataclass
+
 from utils.sim_types import BuildingType, ResourceType
 
 
-class Factory:
+@dataclass
+class Building(ABC):
     build_cost: dict = None
     upkeep_cost: dict = None
     build_time: int = 5
-    worker_capacity: int = 10
 
-    def __init__(self, build_cost: dict, upkeep_cost: dict, build_time: int = 5, worker_capacity: int = 10):
-        self.build_cost = build_cost
-        self.upkeep_cost = upkeep_cost
-        self.build_time = build_time
-        self.worker_capacity = worker_capacity
+
+@dataclass
+class Factory(Building):
+    worker_capacity: int = 10
 
 
 factory_list: dict[BuildingType, Factory] = {
-    #resource extraction
-    BuildingType.STONE_QUARRY: Factory(build_cost={ResourceType.PLANKS: 200}, upkeep_cost={ResourceType.STONE: 2}),
-    BuildingType.FARM: Factory(build_cost={ResourceType.PLANKS: 250}, upkeep_cost={ResourceType.PLANKS: 2}),
-    BuildingType.LUMBER_CAMP: Factory(build_cost={ResourceType.PLANKS: 200}, upkeep_cost={ResourceType.STONE: 2}),
-    BuildingType.MARBLE_MINE: Factory(build_cost={ResourceType.STONE: 200}, upkeep_cost={ResourceType.STONE: 2}),
-    #secondary processing
-    BuildingType.SAWMILL: Factory(build_cost={ResourceType.STONE: 200}, upkeep_cost={ResourceType.STONE: 2}),
-    BuildingType.KILN: Factory(build_cost={ResourceType.STONE: 200}, upkeep_cost={ResourceType.STONE: 2}),
-    #support structures
+    # resource extraction
+    BuildingType.STONE_QUARRY: Factory(
+        build_cost={ResourceType.PLANKS: 200}, upkeep_cost={ResourceType.STONE: 2}
+    ),
+    BuildingType.FARM: Factory(
+        build_cost={ResourceType.PLANKS: 250}, upkeep_cost={ResourceType.PLANKS: 2}
+    ),
+    BuildingType.LUMBER_CAMP: Factory(
+        build_cost={ResourceType.PLANKS: 200}, upkeep_cost={ResourceType.STONE: 2}
+    ),
+    BuildingType.MARBLE_MINE: Factory(
+        build_cost={ResourceType.STONE: 200}, upkeep_cost={ResourceType.STONE: 2}
+    ),
+    # secondary processing
+    BuildingType.SAWMILL: Factory(
+        build_cost={ResourceType.STONE: 200}, upkeep_cost={ResourceType.STONE: 2}
+    ),
+    BuildingType.KILN: Factory(
+        build_cost={ResourceType.STONE: 200}, upkeep_cost={ResourceType.STONE: 2}
+    ),
+    # support structures
+}
+
+
+@dataclass
+class PassiveBuilding(Building):
+    affected_resource: ResourceType
+
+
+passive_building_list: dict[BuildingType, PassiveBuilding] = {
+    BuildingType.HOUSE: PassiveBuilding(
+        build_cost={ResourceType.PLANKS: 20},
+        upkeep_cost={ResourceType.PLANKS: 1},
+        affected_resource=ResourceType.FOOD,
+    )
 }

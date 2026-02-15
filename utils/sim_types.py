@@ -8,6 +8,7 @@ class BuildingType(Enum):
     MARBLE_MINE = "marble_mine"
     SAWMILL = "sawmill"
     KILN = "kiln"
+    HOUSE = "house"
 
 
 class ResourceType(Enum):
@@ -19,7 +20,7 @@ class ResourceType(Enum):
     WOOD_DECI = "wood_deci"
 
     PLANKS = "planks"
-    BUDULEC = "budulec"
+    BRICKS = "bricks"
 
 
 RESOURCES: list[ResourceType] = [rt for rt in ResourceType]
