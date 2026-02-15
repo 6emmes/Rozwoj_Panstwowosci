@@ -5,16 +5,14 @@ import random
 from typing import TYPE_CHECKING
 
 from citizen import Citizen
-from resources import Primary_resource
+from resources import Resource
 
 if TYPE_CHECKING:
-    from utils.definitions import Point
-
     from city import City
+    from utils.definitions import Point
 
 
 class Trader(Citizen):
-
     UNIT_COST = 2
 
     def __init__(self):
@@ -30,9 +28,7 @@ class Trader(Citizen):
         self.target_city: City | None = None
         self.speed: int = 10  # jednostki na turę
         self.last_path: list[Point] = []
-        self.trade_partners: dict = (
-            {}
-        )  # tablica miast odwiedzonych przez handlarza zmniejsza fog, czyli znajomość ceny w dnaym mieście
+        self.trade_partners: dict = {}  # tablica miast odwiedzonych przez handlarza zmniejsza fog, czyli znajomość ceny w dnaym mieście
         self.risk_factor = (
             random.random()
         )  # TODO dobrze zrobić na jakiś rozkład np normalny
@@ -48,13 +44,13 @@ class Trader(Citizen):
     def is_available(self):
         return self.target_city is None
 
-    def buy_asap(self, good: Primary_resource, amount: int) -> tuple[float, float]:
+    def buy_asap(self, good: Resource, amount: int) -> tuple[float, float]:
         # na razie przeszukanie różnych miast w obrębie państwa, potem po odległości byłoby to wskazane
         for city in self.city.world.cities:
             if city == self.city:
                 continue
             if city.land_id != self.city.land_id:
-                continue    #miasto jest na innym lądzie
+                continue  # miasto jest na innym lądzie
             # TODO duże uproszczenie że kupuje tylko jak city ma tyle zasobu ile potrzeba domyślnie powinien albo zwiedzać tyle miast aż kupi zadaną ilość albo kupić tyle ile jest dostępne i wracać
             if city in self.trade_partners:
                 fog = self.trade_partners[city]
