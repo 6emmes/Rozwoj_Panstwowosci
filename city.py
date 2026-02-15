@@ -268,6 +268,8 @@ class City:
                 available_buildings[res_obj.factory],
                 workers,
             )
+            resources, price = self.resources[res]
+            self.resources[res] = (resources + self.accumulation_rate[res], price)
 
         available_traders = [
             trader for trader in self.traders if trader.is_available()
@@ -283,8 +285,7 @@ class City:
                         f"    Miasto {self.name} wysyła handlarza kupić {amount} po cenie {price}"
                     )
 
-            resources, price = self.resources[res]
-            self.resources[res] = (resources + self.accumulation_rate[res], price)
+
 
         # Planning building
         building_count = 0
