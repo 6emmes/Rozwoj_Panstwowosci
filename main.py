@@ -1,104 +1,123 @@
-from citizen import Citizen
-from settler import Settler
-from state import State
-from world import World
-import seaborn as sns
 import matplotlib.pyplot as plt
 import pandas as pd
+import seaborn as sns
+
+from utils.sim_types import ResourceType
+from world import World
+from utils.display import Display
+
+PYGAME = True
+
 
 def main() -> None:
-    europe = World()
-    poland = State("Polska")
+    sim_world = World()
+    if PYGAME:
+        display_obj = Display(sim_world)
+        display_obj.pygame_init()
 
-    jan = Citizen()
-
-    initial_settlers = [
-        Settler(10, 10, 5, europe),
-        Settler(20, 5, 5, europe),
-        Settler(15, 15, 5, europe),
-        Settler(30, 2, 5, europe),
-        Settler(5, 20, 5, europe),
-    ]
-    city_names = ["Warszawa", "Krakow", "Berlin", "Madryt", "Londyn"]
-
-    # Założenie miast początkowych
-    for o, n in zip(initial_settlers, city_names):
-        europe.cities.append(o.settle(n))
-
-    europe.cities[0].create_trader()
-    europe.cities[0].create_trader()
-
-    for city in europe.cities:
-        city.calcualte_use_rate()
+    sim_world.spawn_states(5, 5)
 
     priorities = []
     use_rates = []
     production_rates = []
     gold = []
-    resources = {key: [] for key in europe.cities[0].resources}
-    prices = {key: [] for key in europe.cities[0].resources}
+    resources = {key: [] for key in sim_world.cities[0].resources}
+    prices = {key: [] for key in sim_world.cities[0].resources}
+    citizens = []
 
-    turns = 200
+    turns = 600
     # Główna pętla symulacji
     for i in range(turns):
-        # Wypisz debug o zasobach co 50 tur; tylko do dema
-        priorities.append(europe.cities[0].calculate_trade_priorities())
-        use_rates.append(europe.cities[0].use_rate)
-        production_rates.append(europe.cities[0].accumulation_rate)
-        gold.append(europe.cities[0].gold)
-        res = europe.cities[0].resources
+        if i % 100 == 0:
+            print(f"turn{i}")
+            sim_world.update_prices()
+            print(sim_world.prices)
+        priorities.append(sim_world.cities[0].priorities.copy())
+        use_rates.append(sim_world.cities[0].use_rate.copy())
+        production_rates.append(sim_world.cities[0].accumulation_rate)
+        gold.append(sim_world.cities[0].gold)
+        res = sim_world.cities[0].resources
+        citizens.append(len(sim_world.cities[0].citizens))
         for key in res:
             resources[key].append(res[key][0])
             prices[key].append(res[key][1])
 
-        europe.next_turn()
+        sim_world.next_turn()
+
+        if PYGAME:
+            if i % 10 == 0:
+                display_obj.pygame_sync()
+            continue_simulation = display_obj.pygame_loop()
+            if not continue_simulation:
+                return
 
     # Wizualizacja per produkt
-    plt.subplots(2, 3, figsize=(12, 6))
+    plt.figure(figsize=(15, 12))
 
-    for i, resource in enumerate(["jedzenie", "drewno", "kamien"]):
+    resource_names = [rt for rt in ResourceType]
+    for i, resource in enumerate(resource_names):
         priority_data = [p[resource] for p in priorities]
         use_rate_data = [u[resource] for u in use_rates]
         production_rate_data = [pr[resource] for pr in production_rates]
 
-        df = pd.DataFrame({
-            'Tura': range(turns),
-            'Priorytet': priority_data,
-            'Wskaźnik zużycia': use_rate_data,
-            'Wskaźnik produkcji': production_rate_data
-        })
+        df = pd.DataFrame(
+            {
+                "Tura": range(turns),
+                "Wskaźnik produkcji": production_rate_data,
+                "Priorytet": priority_data,
+                "Wskaźnik zużycia": use_rate_data,
+            }
+        )
 
-        plt.subplot(2, 3, i+1)
-        sns.lineplot(data=df, x='Tura', y='Priorytet', label='Priorytet')
-        sns.lineplot(data=df, x='Tura', y='Wskaźnik zużycia', label='Wskaźnik zużycia')
-        sns.lineplot(data=df, x='Tura', y='Wskaźnik produkcji', label='Wskaźnik produkcji')
-        plt.title(f'Zmiany priorytetu i wskaźników dla zasobu: {resource}')
-        plt.xlabel('Tura')
-        plt.ylabel('Wartość')
+        plt.subplot(3, 3, i + 1)
+        sns.lineplot(data=df, x="Tura", y="Priorytet", label="Priorytet")
+        sns.lineplot(data=df, x="Tura", y="Wskaźnik zużycia",
+                     label="Wskaźnik zużycia")
+        sns.lineplot(
+            data=df, x="Tura", y="Wskaźnik produkcji", label="Wskaźnik produkcji"
+        )
+        plt.title(f"Zasób: {resource}")
+        plt.xlabel("Tura")
+        plt.ylabel("Wartość")
         plt.legend()
+    offset = len(resource_names)
 
-    plt.subplot(2, 3, 4)
-    sns.lineplot(x=range(turns), y=gold, label='Złoto', color='gold')
-    plt.title('Zmiany ilości złota w mieście')
-    plt.xlabel('Tura')
-    plt.ylabel('Ilość złota')
+    plt.subplot(3, 3, offset + 1)
+    sns.lineplot(x=range(turns), y=gold, label="Złoto", color="gold")
+    plt.title("Złoto")
+    plt.xlabel("Tura")
+    plt.ylabel("Ilość złota")
     plt.legend()
 
-    plt.subplot(2, 3, 5)
+    plt.subplot(3, 3, offset + 2)
     sns.lineplot(resources)
-    plt.title('Zmiany ilości zasobów w mieście')
-    plt.xlabel('Tura')
-    plt.ylabel('Ilość zasobu')
+    plt.title("Ilość zasobów")
+    plt.xlabel("Tura")
+    plt.ylabel("Zasób")
     plt.legend()
 
-    plt.subplot(2, 3, 6)
+    plt.subplot(3, 3, offset + 3)
     sns.lineplot(prices)
-    plt.title('Zmiany cen zasobu w czasie')
-    plt.xlabel('Tura')
-    plt.ylabel('Cena')
+    plt.title("Ceny zasobów")
+    plt.xlabel("Tura")
+    plt.ylabel("Cena")
     plt.legend()
 
-    plt.show()
+    plt.subplot(3, 3, offset + 4)
+    sns.lineplot(citizens)
+    plt.title("Populacja")
+    plt.xlabel("Tura")
+    plt.ylabel("Liczba osób")
+
+    plt.tight_layout()
+    plt.savefig("visualization/prices.png")
+
+    for c in sim_world.cities:
+        print(c.name, c.gold, len(c.citizens), c.buildings)
+    print("~~~~~~ zasoby ~~~~~~")
+    for c in sim_world.cities:
+        print(c.name, c.accumulation_rate)
+
 
 if __name__ == "__main__":
     main()
