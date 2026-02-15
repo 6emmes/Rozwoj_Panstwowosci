@@ -173,7 +173,14 @@ class City:
                 if trader is not None:
                     amount, price = trader.buy_asap(resource, 50)
                     if amount is not None:
-                        print(f"    Miasto {self.name} wysyła handlarza kupić {amount} {resource} po cenie {price}")
+                        print(f"    Miasto priorytetowo {self.name} wysyła handlarza kupić {amount} {resource} po cenie {price}")
+        available_traders = [trader for trader in self.traders if trader.is_available()][:-1] # zostawiamy jednego handlarza jakby był potrzebny na priorytetowe zakupy
+        for trader in available_traders:
+            if trader.is_available():
+                amount, price = trader.find_opportunity_trade()
+                if amount is not None:
+                    print(f"    Miasto {self.name} wysyła handlarza kupić {amount} po cenie {price}")
+
 
     def tax(self):
         pass

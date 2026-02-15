@@ -14,6 +14,7 @@ if TYPE_CHECKING:
 class Trader(Citizen):
 
     UNIT_COST = 2
+    SCAN_CITIES = 3
 
     def __init__(self):
         super().__init__()
@@ -76,6 +77,69 @@ class Trader(Citizen):
                 return amount_to_buy, price
         return None, None
 
+    def find_opportunity_trade(self) -> tuple[float, float]:
+        from utils.pathfinder import find_path
+        cities: list[City] = random.sample(self.city.world.cities, self.SCAN_CITIES)
+        good: str = random.choice(list(self.city.resources.keys()))
+        best_city: City | None = None
+        best_score: float = 0
+        best_amount: int = 0
+        for city in cities:
+            if city == self.city:
+                continue
+            if city in self.trade_partners:
+                fog = self.trade_partners[city]
+                city_amount, price = city.get_resource(good, fog)
+            else:
+                city_amount, price = city.get_resource(good)
+            if city_amount[1] <= 0:
+                continue
+            city_amount = math.floor(
+                city_amount[0] + (city_amount[1] - city_amount[0]) * self.risk_factor
+            )
+            price = math.floor(price[1] - (price[1] - price[0]) * self.risk_factor)
+
+            trade_amount = min(self.capacity, city_amount)
+
+            if trade_amount <= 0:
+                continue
+
+            target_city_x = city.x
+            target_city_y = city.y
+            home_city_x = self.city.x
+            home_city_y = self.city.y
+            dx = target_city_x - home_city_x
+            dy = target_city_y - home_city_y
+            path, cost = find_path(self.city.world, (home_city_x, home_city_y), (target_city_x, target_city_y))
+
+            travel_cost = int(cost)
+            good_cost = trade_amount * price
+
+            total_cost = good_cost + travel_cost
+
+            if total_cost > self.city.gold:
+                continue
+
+            score = trade_amount / total_cost
+
+            if score > best_score:
+                best_score = score
+                best_city = city
+                best_amount = trade_amount
+        if best_city is not None:
+            self.target_city = best_city
+            self.good_to_buy = good
+            self.amount_of_good_to_buy = best_amount
+            self.gold = self.city.get_gold(best_amount * price)
+            self.plan_travel()
+            self.trade_efficiency = math.ceil(
+                best_amount / (self.target_city_distance / self.speed)
+            )
+            self.city.trade_efficiency[good] += self.trade_efficiency
+            return best_amount, price
+        return None, None
+
+
     def trader_action(self) -> bool:
         if self.target_city is None:
             return False
@@ -111,12 +175,12 @@ class Trader(Citizen):
 
     def plan_travel(self) -> None:
         from utils.pathfinder import find_path
-
         home_x = self.city.x
         home_y = self.city.y
         target_x = self.target_city.x
         target_y = self.target_city.y
         path, cost = find_path(self.city.world, (home_x, home_y), (target_x, target_y))
+        print(f"    Handlarz planuje podróż z miasta {self.city} do miasta {self.target_city.name} kosztem {int(cost)} złota")
 
         self.last_path = path
         self.target_city_distance = int(cost)
