@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING
 
 from citizen import Citizen
 from trader import Trader
-from resources import Resource, resource_list
+from resources import Primary_resource, Secondary_resource, secondary_resource_list, primary_resource_list
 from utils.sim_types import BuildingType, ResourceType, RESOURCES, BUILDINGS
 from buildings import factory_list
 
@@ -14,8 +14,9 @@ if TYPE_CHECKING:
     from world import World
 
 
-RESOURCE_CRUCIALITY = {ResourceType.FOOD: 10, ResourceType.WOOD: 4,
-                       ResourceType.STONE: 4, ResourceType.MARBLE: 1}
+# RESOURCE_CRUCIALITY = {ResourceType.FOOD: 10, ResourceType.PLANKS: 4,
+#                        ResourceType.STONE: 4, ResourceType.MARBLE: 1,
+#                        ResourceType.WOOD_DECI: 2, ResourceType.WOOD_CONI: 2}
 
 MAX_PRICE = 25.0
 MAX_FOG = 5
@@ -106,7 +107,7 @@ class City:
         self.traders.append(trader)
         return trader
 
-    def _get_resource_delta(self, resource: Resource) -> float:
+    def _get_resource_delta(self, resource: Primary_resource) -> float:
         # Wartość zaamortyzowana w praktyce zasób dostępnt dopiero popowrocie do miasta handlarza, ale
         # żeby nie wysyłać w nieskończoność handlarzy na to samo zadanie jest dodawany
         return (
@@ -126,7 +127,7 @@ class City:
         return 1.0
 
     def _calculate_import_priority(self, resource: str) -> float:
-        cruciality = RESOURCE_CRUCIALITY[resource]
+        cruciality = 1.2 #RESOURCE_CRUCIALITY[resource]
         use = self.use_rate[resource]
         acc = self.accumulation_rate[resource]
 
@@ -136,14 +137,20 @@ class City:
         return deficit
 
     def _calculate_production_priority(self, resource: str) -> float:
-        local_price = self.resources[resource][1]
-        map_layer = resource_list[ResourceType(resource)].map_layer
-        if map_layer is None:
-            production_rate = 0.25
-        else:
-            production_rate = self.world.layers[map_layer][self.x][self.y]
-        production_rate *= resource_list[ResourceType(resource)].map_flat_scale
-        return local_price * production_rate
+        # local_price = self.resources[resource][1]
+        global_price = self.world.prices[resource]
+        if resource in primary_resource_list:
+            map_layer = primary_resource_list[ResourceType(resource)].map_layer
+            if map_layer is None:
+                production_rate = 0.25
+            else:
+                production_rate = self.world.layers[map_layer][self.x][self.y]
+            production_rate *= primary_resource_list[ResourceType(resource)].map_flat_scale
+        elif resource in secondary_resource_list:
+            production_rate = 0
+            for input in secondary_resource_list[ResourceType(resource)].input_resources:
+                production_rate = max(production_rate, self.accumulation_rate[input])
+        return global_price * production_rate
 
     def calcualate_use_rate(self):
         for r in RESOURCES:
@@ -189,7 +196,7 @@ class City:
         scarcity = 1 / max(turns_left, 1)
         abundance = sum_of_all / max(amount, 1)
 
-        cruciality = RESOURCE_CRUCIALITY[good]
+        cruciality = 1.0 #RESOURCE_CRUCIALITY[good]
         new_price = cruciality * (scarcity + abundance)/2
         new_price = round(new_price / 10, 1)
         new_price = min(max(new_price, 1.0), MAX_PRICE)
@@ -237,7 +244,7 @@ class City:
 
 
     def _turn_trading(self):
-        for resource, priority in self.priorities.items():
+        for resource, priority in self.import_priorities.items():
             if priority > 1.0:
                 trader = None
                 for t in self.traders:
@@ -273,7 +280,10 @@ class City:
         for res, workers in counts.items():
             if workers == 0:
                 continue
-            res_obj = resource_list[ResourceType(res)]
+            if res in primary_resource_list:
+                res_obj = primary_resource_list[ResourceType(res)]
+            elif res in secondary_resource_list:
+                res_obj = secondary_resource_list[ResourceType(res)]
             factory_count = available_buildings[res_obj.factory]
             self.unemployed = self.unemployed - min(factory_count*10, workers)
             self.accumulation_rate[res] = res_obj.harvest(
@@ -291,7 +301,10 @@ class City:
                 # should be even more
                 if self.production_priorities[res] < 1.0:
                     continue
-                building = factory_list[resource_list[res].factory]
+                if res in primary_resource_list:
+                    building = factory_list[primary_resource_list[res].factory]
+                elif res in secondary_resource_list:
+                    building = factory_list[secondary_resource_list[res].factory]
                 cost_satisfied = all(
                     self.resources[r][0] >= build_cost + BUFFER
                     for r, build_cost in building.build_cost.items()
@@ -301,7 +314,7 @@ class City:
                         amount, price = self.resources[r]
                         self.resources[r] = (amount - build_cost, price)
                     self.building_queue.append(
-                        (resource_list[res].factory, building.build_time))
+                        (primary_resource_list[res].factory, building.build_time))
                     break
 
         # Building

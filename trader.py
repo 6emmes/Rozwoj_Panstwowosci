@@ -5,7 +5,7 @@ import random
 from typing import TYPE_CHECKING
 
 from citizen import Citizen
-from resources import Resource
+from resources import Primary_resource
 
 if TYPE_CHECKING:
     from utils.definitions import Point
@@ -48,7 +48,7 @@ class Trader(Citizen):
     def is_available(self):
         return self.target_city is None
 
-    def buy_asap(self, good: Resource, amount: int) -> tuple[float, float]:
+    def buy_asap(self, good: Primary_resource, amount: int) -> tuple[float, float]:
         # na razie przeszukanie różnych miast w obrębie państwa, potem po odległości byłoby to wskazane
         for city in self.city.world.cities:
             if city == self.city:

@@ -15,7 +15,7 @@ def main() -> None:
         display_obj = Display(sim_world)
         display_obj.pygame_init()
 
-    sim_world.spawn_states(5, 5)
+    sim_world.spawn_states(3, 5)
 
     priorities = []
     prod_priorities = []
@@ -73,7 +73,7 @@ def main() -> None:
             }
         )
 
-        plt.subplot(3, 3, i + 1)
+        plt.subplot(3, 4, i + 1)
         sns.lineplot(data=df, x="Tura", y="Priorytet", label="Priorytet")
         sns.lineplot(data=df, x="Tura", y="Wskaźnik zużycia",
                      label="Wskaźnik zużycia")
@@ -90,28 +90,28 @@ def main() -> None:
         plt.legend()
     offset = len(resource_names)
 
-    plt.subplot(3, 3, offset + 1)
+    plt.subplot(3, 4, offset + 1)
     sns.lineplot(x=range(turns), y=gold, label="Złoto", color="gold")
     plt.title("Złoto")
     plt.xlabel("Tura")
     plt.ylabel("Ilość złota")
     plt.legend()
 
-    plt.subplot(3, 3, offset + 2)
+    plt.subplot(3, 4, offset + 2)
     sns.lineplot(resources)
     plt.title("Ilość zasobów")
     plt.xlabel("Tura")
     plt.ylabel("Zasób")
     plt.legend()
 
-    plt.subplot(3, 3, offset + 3)
+    plt.subplot(3, 4, offset + 3)
     sns.lineplot(prices)
     plt.title("Ceny zasobów")
     plt.xlabel("Tura")
     plt.ylabel("Cena")
     plt.legend()
 
-    plt.subplot(3, 3, offset + 4)
+    plt.subplot(3, 4, offset + 4)
     sns.lineplot(citizens)
     plt.title("Populacja")
     plt.xlabel("Tura")
