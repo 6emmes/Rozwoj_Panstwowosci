@@ -46,10 +46,10 @@ class World:
         self.rivers = layers["river_map"]
         self.water = layers["water_map"]
 
-    def load_new_map8(self, name):
+    def load_new_map8(self, filename):
         MAX = 255
 
-        with tifffile.TiffFile(name) as tif:
+        with tifffile.TiffFile(filename) as tif:
             for i, page in enumerate(tif.pages):
 
                 page_name = page.tags.get("PageName")
@@ -65,6 +65,11 @@ class World:
         for name, arr in self.layers.items():
             print(f"Layer '{name}' has shape {arr.shape}")
             self.width, self.height = arr.shape
+        with open(filename, "rb") as f:
+            f.seek(-2, 2)   # move 2 bytes before the end (2 = end of file)
+            last_two = f.read(2)
+            self.top_latitude = int(last_two[0])
+            self.bot_latitude = int(last_two[1])
         return self.layers
 
     def build_road(self, path: list[Point], value=0.05):
