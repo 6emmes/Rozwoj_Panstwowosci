@@ -10,16 +10,19 @@ class LogGeneric:
     location: str
     TYPE = "generic"
 
+
 @dataclass(slots=True)
 class LogGenericResource(LogGeneric):
     resource: str
     amount: float
     TYPE = "resource"
 
+
 @dataclass(slots=True)
 class LogResource(LogGenericResource):
     price: float
     TYPE = "resource"
+
 
 @dataclass(slots=True)
 class LogTrade(LogGenericResource):
@@ -28,23 +31,28 @@ class LogTrade(LogGenericResource):
     travel_time: int
     TYPE = "trade"
 
+
 @dataclass(slots=True)
 class LogProduction(LogGenericResource):
     TYPE = "production"
+
 
 @dataclass(slots=True)
 class LogPopulation(LogGeneric):
     population: int
     TYPE = "population"
 
+
 @dataclass(slots=True)
 class LogConsumption(LogGenericResource):
     TYPE = "consumption"
+
 
 @dataclass(slots=True)
 class LogEvent(LogGeneric):
     description: str
     TYPE = "event"
+
 
 @dataclass(slots=True)
 class LogCityEstablishment(LogGeneric):
@@ -61,7 +69,8 @@ class Logger:
         self.types = pd.DataFrame(columns=["id", "type"])
         self.locations = pd.DataFrame(columns=["id", "location"])
         self.resources = pd.DataFrame(columns=["id", "resource"])
-        self.city_locations = pd.DataFrame(columns=["location", "land_id", "ocean_id", "X", "Y"])
+        self.city_locations = pd.DataFrame(
+            columns=["location", "land_id", "ocean_id", "X", "Y"])
         self.logs = pd.DataFrame()
 
         # Caches
@@ -145,11 +154,13 @@ class Logger:
     # -----------------------------
     def save_log(self, log_obj: LogGeneric):
         data = self._normalize_log(log_obj)
-        self.logs = pd.concat([self.logs, pd.DataFrame([data])], ignore_index=True)
+        self.logs = pd.concat(
+            [self.logs, pd.DataFrame([data])], ignore_index=True)
 
     def save_logs(self, log_list: list[LogGeneric]):
         rows = [self._normalize_log(log) for log in log_list]
-        self.logs = pd.concat([self.logs, pd.DataFrame(rows)], ignore_index=True)
+        self.logs = pd.concat(
+            [self.logs, pd.DataFrame(rows)], ignore_index=True)
 
     def save_log_est(self, log: LogCityEstablishment):
         location_id = self._get_location_id(log.location)
@@ -158,9 +169,9 @@ class Logger:
         ]
 
     def plot_logs(self,
-                filter_city=None,
-                filter_resources=None,
-                figsize=(14, 10)):
+                  filter_city=None,
+                  filter_resources=None,
+                  figsize=(14, 10)):
 
         # -----------------------------
         # Helpers
@@ -182,17 +193,23 @@ class Logger:
             return
 
         # Merge type names
-        df = df.merge(self.types, left_on="type", right_on="id", how="left", suffixes=("", "_type"))
-        df.rename(columns={"type": "type_id", "type_type": "log_type"}, inplace=True)
+        df = df.merge(self.types, left_on="type", right_on="id",
+                      how="left", suffixes=("", "_type"))
+        df.rename(columns={"type": "type_id",
+                  "type_type": "log_type"}, inplace=True)
 
         # Merge location names
-        df = df.merge(self.locations, left_on="location", right_on="id", how="left", suffixes=("", "_loc"))
-        df.rename(columns={"location": "location_id", "location_loc": "city"}, inplace=True)
+        df = df.merge(self.locations, left_on="location",
+                      right_on="id", how="left", suffixes=("", "_loc"))
+        df.rename(columns={"location": "location_id",
+                  "location_loc": "city"}, inplace=True)
 
         # Merge resource names (if present)
         if "resource" in df.columns:
-            df = df.merge(self.resources, left_on="resource", right_on="id", how="left", suffixes=("", "_res"))
-            df.rename(columns={"resource": "resource_id", "resource_res": "resource"}, inplace=True)
+            df = df.merge(self.resources, left_on="resource",
+                          right_on="id", how="left", suffixes=("", "_res"))
+            df.rename(columns={"resource": "resource_id",
+                      "resource_res": "resource"}, inplace=True)
 
         # Destination city (trade logs)
         if "destination" in df.columns:
@@ -230,7 +247,8 @@ class Logger:
         # Resource palette
         # -----------------------------
         resources = list(df["resource"].dropna().unique())
-        df["resource"] = pd.Categorical(df["resource"], categories=resources, ordered=True)
+        df["resource"] = pd.Categorical(
+            df["resource"], categories=resources, ordered=True)
 
         palette = sns.color_palette("tab10", n_colors=len(resources))
         resource_colors = dict(zip(resources, palette))
@@ -265,7 +283,8 @@ class Logger:
             axis=1
         )
 
-        net_df = df_pc.groupby(["turn", "city", "resource"], as_index=False)["signed_amount"].sum()
+        net_df = df_pc.groupby(["turn", "city", "resource"], as_index=False)[
+            "signed_amount"].sum()
 
         if not net_df.empty:
             sns.lineplot(
@@ -321,11 +340,11 @@ class Logger:
                     fill_value=0
                 )
 
-                sns.heatmap(matrix, annot=True, fmt="g", cmap="viridis", ax=axes[4])
+                sns.heatmap(matrix, annot=True, fmt="g",
+                            cmap="viridis", ax=axes[4])
                 axes[4].set_title("Trade Value Matrix")
                 axes[4].set_xlabel("Destination")
                 axes[4].set_ylabel("Origin")
-
 
         plt.tight_layout()
         plt.show()
