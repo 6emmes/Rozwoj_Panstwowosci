@@ -28,6 +28,9 @@ def main() -> None:
                 return
     if PYGAME:
         display_obj.save()
+
+    sim_world.logger.plot_logs()
+
     for c in sim_world.cities:
         print(c.name, c.gold, len(c.citizens), c.buildings)
 
