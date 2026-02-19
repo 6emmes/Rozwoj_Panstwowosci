@@ -1,11 +1,13 @@
-from abc import ABC
+from abc import ABC, abstractmethod
 
 from buildings import FACTORIES
 from utils.sim_types import BuildingType, ResourceType
 
 
 class Resource(ABC):
-    pass
+    @abstractmethod
+    def harvest(self, world, x: int, y: int, buildings: int, workers: int) -> float:
+        pass
 
 
 class RawResource(ABC):
