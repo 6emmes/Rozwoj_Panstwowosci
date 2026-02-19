@@ -4,7 +4,7 @@ import math
 import random
 from typing import TYPE_CHECKING
 
-from buildings import factory_list
+from buildings import FACTORIES, PASSIVE_BUILDINGS
 from citizen import Citizen
 from resources import (
     ManufacturedResource,
@@ -13,7 +13,12 @@ from resources import (
     raw_resource_list,
 )
 from trader import Trader
-from utils.sim_types import BUILDINGS, RESOURCES, BuildingType, ResourceType
+from utils.sim_types import (
+    BUILDINGS,
+    RESOURCES,
+    BuildingType,
+    ResourceType,
+)
 
 if TYPE_CHECKING:
     from world import World
@@ -158,8 +163,11 @@ class City:
         self.use_rate[ResourceType.FOOD] = len(self.citizens) * 1.0
         for b in self.buildings:
             count = self.buildings[b]
-            if count > 0:
-                for res, rate in factory_list[b].upkeep_cost.items():
+            if count > 0 and b in FACTORIES:
+                for res, rate in FACTORIES[b].upkeep_cost.items():
+                    self.use_rate[res] += rate * count
+            if count > 0 and b in PASSIVE_BUILDINGS:
+                for res, rate in PASSIVE_BUILDINGS[b].affected_resources.items():
                     self.use_rate[res] += rate * count
 
     def calculate_import_priorities(self) -> dict[ResourceType, float]:
@@ -301,8 +309,9 @@ class City:
             self.resources[res] = (resources + self.accumulation_rate[res], price)
 
     def _turn_building(self):
-        building_count = sum(self.buildings.values())
-        if building_count < 8:
+        factory_count = sum(self.buildings[b] for b in self.buildings if b in FACTORIES)
+        factory_count += sum(1 for b in self.building_queue if b in FACTORIES)
+        if factory_count < 8:
             for res in sorted(
                 RESOURCES, key=self.production_priorities.get, reverse=True
             ):
@@ -310,9 +319,9 @@ class City:
                 if self.production_priorities[res] < 1.0:
                     continue
                 if res in raw_resource_list:
-                    building = factory_list[raw_resource_list[res].factory]
+                    building = FACTORIES[raw_resource_list[res].factory]
                 elif res in manufactured_resource_list:
-                    building = factory_list[manufactured_resource_list[res].factory]
+                    building = FACTORIES[manufactured_resource_list[res].factory]
                 cost_satisfied = all(
                     self.resources[r][0] >= build_cost + BUFFER
                     for r, build_cost in building.build_cost.items()
@@ -325,6 +334,38 @@ class City:
                         (raw_resource_list[res].factory, building.build_time)
                     )
                     break
+
+        for building in PASSIVE_BUILDINGS:
+            passive_building_count = self.buildings[building]
+            passive_building_count += sum(
+                1 for b in self.building_queue if b[0] == building
+            )
+            citizens = len(self.citizens)
+            if (
+                passive_building_count * PASSIVE_BUILDINGS[building].citizen_capacity
+                < citizens
+            ):
+                for _ in range(
+                    0,
+                    citizens
+                    - passive_building_count
+                    * PASSIVE_BUILDINGS[building].citizen_capacity,
+                ):
+                    cost_satisfied = all(
+                        self.resources[r][0] >= build_cost + BUFFER
+                        for r, build_cost in PASSIVE_BUILDINGS[
+                            building
+                        ].build_cost.items()
+                    )
+                    if not cost_satisfied:
+                        break
+
+                    for r, build_cost in PASSIVE_BUILDINGS[building].build_cost.items():
+                        amount, price = self.resources[r]
+                        self.resources[r] = (amount - build_cost, price)
+                    self.building_queue.append(
+                        (building, PASSIVE_BUILDINGS[building].build_time)
+                    )
 
         # Building
         new_queue = []

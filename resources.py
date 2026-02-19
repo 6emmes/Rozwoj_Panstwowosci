@@ -1,6 +1,6 @@
 from abc import ABC
 
-from buildings import factory_list
+from buildings import FACTORIES
 from utils.sim_types import BuildingType, ResourceType
 
 
@@ -39,7 +39,7 @@ class RawResource(ABC):
         if self.factory is None:
             return terrain_factor * self.human_harvesting * workers
         factory_workers = min(
-            workers, buildings * factory_list[self.factory].worker_capacity
+            workers, buildings * FACTORIES[self.factory].worker_capacity
         )
         manual_workers = workers - factory_workers
         factory_output = self.factory_harvesting * factory_workers
@@ -112,7 +112,7 @@ class ManufacturedResource(ABC):
         self, world: None, x: None, y: None, buildings: int, workers: int
     ) -> float:
         factory_workers = min(
-            workers, buildings * factory_list[self.factory].worker_capacity
+            workers, buildings * FACTORIES[self.factory].worker_capacity
         )
         manual_workers = workers - factory_workers
         factory_output = self.factory_production * factory_workers

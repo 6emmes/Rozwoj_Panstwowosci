@@ -16,7 +16,7 @@ class Factory(Building):
     worker_capacity: int = 10
 
 
-factory_list: dict[BuildingType, Factory] = {
+FACTORIES: dict[BuildingType, Factory] = {
     # resource extraction
     BuildingType.STONE_QUARRY: Factory(
         build_cost={ResourceType.PLANKS: 200}, upkeep_cost={ResourceType.STONE: 2}
@@ -43,13 +43,14 @@ factory_list: dict[BuildingType, Factory] = {
 
 @dataclass
 class PassiveBuilding(Building):
-    affected_resource: ResourceType
+    affected_resources: dict[ResourceType, float] = None
+    citizen_capacity: int = 2
 
 
-passive_building_list: dict[BuildingType, PassiveBuilding] = {
+PASSIVE_BUILDINGS: dict[BuildingType, PassiveBuilding] = {
     BuildingType.HOUSE: PassiveBuilding(
         build_cost={ResourceType.PLANKS: 20},
         upkeep_cost={ResourceType.PLANKS: 1},
-        affected_resource=ResourceType.FOOD,
+        affected_resources={ResourceType.FOOD: -0.5, ResourceType.PLANKS: 0.1},
     )
 }
