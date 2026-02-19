@@ -6,7 +6,7 @@ from utils.sim_types import BuildingType, ResourceType
 
 class Resource(ABC):
     @abstractmethod
-    def harvest(self, world, x: int, y: int, buildings: int, workers: int) -> float:
+    def extract(self, world, x: int, y: int, buildings: int, workers: int) -> float:
         pass
 
 
@@ -31,7 +31,7 @@ class RawResource(ABC):
         self.factory_harvesting = factory_harvesting
         self.map_flat_scale = map_flat_scale
 
-    def harvest(self, world, x: int, y: int, buildings: int, workers: int) -> float:
+    def extract(self, world, x: int, y: int, buildings: int, workers: int) -> float:
         if self.map_layer is not None:
             terrain_factor = float(
                 world.layers[self.map_layer][y][x] * self.map_flat_scale
@@ -117,7 +117,7 @@ class ManufacturedResource(ABC):
         self.input_resources = input_resources
         self.output_scale = output_scale
 
-    def harvest(
+    def extract(
         self, world: None, x: None, y: None, buildings: int, workers: int
     ) -> float:
         factory_workers = min(

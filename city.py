@@ -301,7 +301,7 @@ class City:
                 res_obj = manufactured_resource_list[res]
             factory_count = available_buildings[res_obj.factory]
             self.unemployed = self.unemployed - min(factory_count * 10, workers)
-            self.accumulation_rate[res] = res_obj.harvest(
+            self.accumulation_rate[res] = res_obj.extract(
                 self.world, self.x, self.y, factory_count, workers
             )
 
