@@ -22,12 +22,15 @@ class Display:
         self.screen = pygame.display.set_mode(win_size)
 
         heightmap = self.world.layers["height_map"]
+        rivermap = self.world.layers["river_map"]
 
         terrain_array = np.zeros(
             (self.world.width, self.world.height, 3), dtype=np.uint8)
         terrain_array[:] = COLOR_GROUND
         water_mask = heightmap == 0
+        river_mask = rivermap != 0
         terrain_array[water_mask] = COLOR_WATER
+        terrain_array[river_mask] = COLOR_WATER
 
         shademap = self.world.layers["shade_map"]
 
