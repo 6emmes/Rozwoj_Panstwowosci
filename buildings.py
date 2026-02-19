@@ -30,6 +30,10 @@ FACTORIES: dict[BuildingType, Factory] = {
     BuildingType.MARBLE_MINE: Factory(
         build_cost={ResourceType.STONE: 200}, upkeep_cost={ResourceType.STONE: 2}
     ),
+    BuildingType.SILVER_MINE: Factory(
+        build_cost={ResourceType.PLANKS: 200, ResourceType.STONE: 100},
+        upkeep_cost={ResourceType.STONE: 2},
+    ),
     # secondary processing
     BuildingType.SAWMILL: Factory(
         build_cost={ResourceType.STONE: 200}, upkeep_cost={ResourceType.STONE: 2}

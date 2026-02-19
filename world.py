@@ -1,12 +1,12 @@
 import os
-import struct
 import random
+import struct
+
 import tifffile
 
 from city import City
 from state import State
 from utils.definitions import Grid, Point
-
 
 SETTLERSTEPCOUNT = 32
 ANNEALING_START = 50
@@ -15,7 +15,6 @@ ANNEALING_COOLING_TIME = 1000
 
 
 class World:
-
     def __init__(self) -> None:
         self.mining_resources: list[object] = []
         self.wood_resources: list[object] = []
@@ -33,8 +32,7 @@ class World:
         # TODO: zamienić to na państwa po skończeniu dema
         self.cities: list[City] = []
         self.states: dict[str, State] = {}
-        self.roads: Grid[float] = [
-            [0.0] * self.width for _ in range(self.height)]
+        self.roads: Grid[float] = [[0.0] * self.width for _ in range(self.height)]
 
     def action(self):
         pass
@@ -45,13 +43,13 @@ class World:
         self.humidity = layers["humidity_map"]
         self.rivers = layers["river_map"]
         self.water = layers["water_map"]
+        self.silver = layers["silver_map"]
 
     def load_new_map8(self, name):
         MAX = 255
 
         with tifffile.TiffFile(name) as tif:
             for i, page in enumerate(tif.pages):
-
                 page_name = page.tags.get("PageName")
                 if page_name is not None:
                     page_name = page_name.value
@@ -87,11 +85,13 @@ class World:
             state_name = self.avaiable_states.pop()
             filename = self.state_names[state_name]
             with open(filename, encoding="utf-8") as f:
-                content = f.read().split('\n')
+                content = f.read().split("\n")
                 self.states[state_name] = State(
-                    self, state_name, i*360/count, content)
+                    self, state_name, i * 360 / count, content
+                )
             new_city = self.spawn_settler(
-                self.states[state_name].city_names.pop(), no_citizens)
+                self.states[state_name].city_names.pop(), no_citizens
+            )
             self.states[state_name].add_city(new_city)
 
     def spawn_settler(self, name, no_citizens):
@@ -113,7 +113,6 @@ class World:
                 break
 
         for _ in range(SETTLERSTEPCOUNT):
-
             best_score = float("-inf")
             best_pos = (x_curr, y_curr)
 
@@ -125,8 +124,8 @@ class World:
                 if not (0 <= nx < self.width and 0 <= ny < self.height):
                     continue
 
-                fertility = self.layers['fertility_map'][nx][ny]
-                water = self.layers['water_map'][nx][ny]
+                fertility = self.layers["fertility_map"][nx][ny]
+                water = self.layers["water_map"][nx][ny]
 
                 if water == 0:
                     continue
@@ -156,23 +155,31 @@ class World:
 
     def find_ocean(self, pos: Point):
         RADIUS = 5
-        for x in range(-RADIUS, RADIUS+1):
-            for y in range(-RADIUS, RADIUS+1):
-                if (abs(x) < RADIUS and abs(y) < RADIUS):
+        for x in range(-RADIUS, RADIUS + 1):
+            for y in range(-RADIUS, RADIUS + 1):
+                if abs(x) < RADIUS and abs(y) < RADIUS:
                     continue
-                cur_pos = (pos[0]+x, pos[1]+y)
-                if (cur_pos[0] < 0 or cur_pos[0] >= self.width or cur_pos[1] < 0 or cur_pos[1] >= self.height):
+                cur_pos = (pos[0] + x, pos[1] + y)
+                if (
+                    cur_pos[0] < 0
+                    or cur_pos[0] >= self.width
+                    or cur_pos[1] < 0
+                    or cur_pos[1] >= self.height
+                ):
                     continue
                 if self.heightmap[cur_pos[0]][cur_pos[1]] == 0.0:
                     return self.layers["id_map"][cur_pos[0]][cur_pos[1]]
         return None
-    
+
     def pathfinder_annealing(self):
         if self.turn > ANNEALING_COOLING_TIME:
             self.path_cache_timeout = ANNEALING_END
         else:
-            self.path_cache_timeout = int(ANNEALING_START + (ANNEALING_END - ANNEALING_START) * self.turn / ANNEALING_COOLING_TIME)
-        
+            self.path_cache_timeout = int(
+                ANNEALING_START
+                + (ANNEALING_END - ANNEALING_START) * self.turn / ANNEALING_COOLING_TIME
+            )
+
     def update_prices(self):
         self.prices = {}
         for city in self.cities:
@@ -186,11 +193,11 @@ class World:
 
     def load_state_names(self):
         root_dir = os.path.dirname(os.path.abspath(__file__))
-        names_dir = root_dir+"/names/"
+        names_dir = root_dir + "/names/"
         print(names_dir)
         for file in os.listdir(names_dir):
             filename = os.fsdecode(file)
-            name = filename.split('.')[0]
-            self.state_names[name] = names_dir+filename
+            name = filename.split(".")[0]
+            self.state_names[name] = names_dir + filename
             self.avaiable_states.append(name)
         print(self.state_names)

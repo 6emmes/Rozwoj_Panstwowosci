@@ -84,6 +84,13 @@ raw_resource_list: dict[ResourceType, RawResource] = {
         factory_harvesting=1.0,
         map_flat_scale=5.0,
     ),
+    ResourceType.SILVER: RawResource(
+        map_layer="silver_map",
+        factory=BuildingType.SILVER_MINE,
+        human_harvesting=0.05,
+        factory_harvesting=3.0,
+        map_flat_scale=5.0,
+    ),
 }
 
 

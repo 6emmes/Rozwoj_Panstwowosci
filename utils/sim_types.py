@@ -6,6 +6,7 @@ class BuildingType(Enum):
     FARM = "farm"
     LUMBER_CAMP = "lumber_camp"
     MARBLE_MINE = "marble_mine"
+    SILVER_MINE = "silver_mine"
     SAWMILL = "sawmill"
     KILN = "kiln"
     HOUSE = "house"
@@ -18,6 +19,7 @@ class ResourceType(Enum):
     MARBLE = "marble"
     WOOD_CONI = "wood_coni"
     WOOD_DECI = "wood_deci"
+    SILVER = "silver"
 
     PLANKS = "planks"
     BRICKS = "bricks"

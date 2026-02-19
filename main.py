@@ -58,7 +58,7 @@ def main() -> None:
                 return
 
     # Wizualizacja per produkt
-    plt.figure(figsize=(15, 12))
+    plt.figure(figsize=(20, 10))
 
     resource_names = [rt for rt in ResourceType]
     for i, resource in enumerate(resource_names):
@@ -77,7 +77,7 @@ def main() -> None:
             }
         )
 
-        plt.subplot(3, 4, i + 1)
+        plt.subplot(3, 5, i + 1)
         sns.lineplot(data=df, x="Tura", y="Priorytet", label="Priorytet")
         sns.lineplot(data=df, x="Tura", y="Wskaźnik zużycia", label="Wskaźnik zużycia")
         sns.lineplot(
@@ -93,34 +93,34 @@ def main() -> None:
         plt.legend()
     offset = len(resource_names)
 
-    plt.subplot(3, 4, offset + 1)
+    plt.subplot(3, 5, offset + 1)
     sns.lineplot(x=range(turns), y=gold, label="Złoto", color="gold")
     plt.title("Złoto")
     plt.xlabel("Tura")
     plt.ylabel("Ilość złota")
     plt.legend()
 
-    plt.subplot(3, 4, offset + 2)
+    plt.subplot(3, 5, offset + 2)
     sns.lineplot(resources)
     plt.title("Ilość zasobów")
     plt.xlabel("Tura")
     plt.ylabel("Zasób")
     plt.legend()
 
-    plt.subplot(3, 4, offset + 3)
+    plt.subplot(3, 5, offset + 3)
     sns.lineplot(prices)
     plt.title("Ceny zasobów")
     plt.xlabel("Tura")
     plt.ylabel("Cena")
     plt.legend()
 
-    plt.subplot(3, 4, offset + 4)
+    plt.subplot(3, 5, offset + 4)
     sns.lineplot(citizens)
     plt.title("Populacja")
     plt.xlabel("Tura")
     plt.ylabel("Liczba osób")
 
-    plt.subplot(3, 4, offset + 5)
+    plt.subplot(3, 5, offset + 5)
     sns.lineplot(buildings)
     plt.title("Liczba budynków")
     plt.xlabel("Tura")
