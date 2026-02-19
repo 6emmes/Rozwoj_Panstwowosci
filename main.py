@@ -2,9 +2,9 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import seaborn as sns
 
-from utils.sim_types import ResourceType
-from world import World
 from utils.display import Display
+from utils.sim_types import BuildingType, ResourceType
+from world import World
 
 PYGAME = True
 
@@ -25,6 +25,7 @@ def main() -> None:
     resources = {key: [] for key in sim_world.cities[0].resources}
     prices = {key: [] for key in sim_world.cities[0].resources}
     citizens = []
+    buildings = {key: [] for key in sim_world.cities[0].buildings}
 
     turns = 600
     # Główna pętla symulacji
@@ -43,6 +44,9 @@ def main() -> None:
         for key in res:
             resources[key].append(res[key][0])
             prices[key].append(res[key][1])
+        bld = sim_world.cities[0].buildings
+        for key in bld:
+            buildings[key].append(bld[key])
 
         sim_world.next_turn()
 
@@ -75,15 +79,14 @@ def main() -> None:
 
         plt.subplot(3, 4, i + 1)
         sns.lineplot(data=df, x="Tura", y="Priorytet", label="Priorytet")
-        sns.lineplot(data=df, x="Tura", y="Wskaźnik zużycia",
-                     label="Wskaźnik zużycia")
+        sns.lineplot(data=df, x="Tura", y="Wskaźnik zużycia", label="Wskaźnik zużycia")
         sns.lineplot(
             data=df, x="Tura", y="Wskaźnik produkcji", label="Wskaźnik produkcji"
         )
         sns.lineplot(
             data=df, x="Tura", y="Piorytet produkcji", label="Piorytet produkcji"
         )
-        plt.ylim(0,50)
+        plt.ylim(0, 50)
         plt.title(f"Zasób: {resource}")
         plt.xlabel("Tura")
         plt.ylabel("Wartość")
@@ -116,6 +119,13 @@ def main() -> None:
     plt.title("Populacja")
     plt.xlabel("Tura")
     plt.ylabel("Liczba osób")
+
+    plt.subplot(3, 4, offset + 5)
+    sns.lineplot(buildings)
+    plt.title("Liczba budynków")
+    plt.xlabel("Tura")
+    plt.ylabel("Budynek")
+    plt.legend()
 
     plt.tight_layout()
     plt.savefig("visualization/prices.png", dpi=200)
