@@ -169,6 +169,9 @@ class City:
             if count > 0 and b in PASSIVE_BUILDINGS:
                 for res, rate in PASSIVE_BUILDINGS[b].affected_resources.items():
                     self.use_rate[res] += rate * count
+                    
+                for res, rate in PASSIVE_BUILDINGS[b].upkeep_cost.items():
+                    self.use_rate[res] += rate * count
 
     def calculate_import_priorities(self) -> dict[ResourceType, float]:
         for resource in self.resources.keys():
@@ -319,9 +322,10 @@ class City:
                 if self.production_priorities[res] < 1.0:
                     continue
                 if res in raw_resource_list:
-                    building = FACTORIES[raw_resource_list[res].factory]
+                    building_name = raw_resource_list[res].factory
                 elif res in manufactured_resource_list:
-                    building = FACTORIES[manufactured_resource_list[res].factory]
+                    building_name = manufactured_resource_list[res].factory
+                building = FACTORIES[building_name]
                 cost_satisfied = all(
                     self.resources[r][0] >= build_cost + BUFFER
                     for r, build_cost in building.build_cost.items()
@@ -331,7 +335,7 @@ class City:
                         amount, price = self.resources[r]
                         self.resources[r] = (amount - build_cost, price)
                     self.building_queue.append(
-                        (raw_resource_list[res].factory, building.build_time)
+                        (building_name, building.build_time)
                     )
                     break
 
