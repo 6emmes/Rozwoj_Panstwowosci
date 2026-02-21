@@ -46,6 +46,7 @@ def _evaluate_path(world: World, path: list[Point]) -> float:
 
 # TODO: optimise for multiple goals
 def find_path(world: World, start: Point, end: Point) -> tuple[list[Point], float]:
+    #cache check
     reverse = False
     if start[0] > end[0]:
         reverse = True
@@ -67,6 +68,8 @@ def find_path(world: World, start: Point, end: Point) -> tuple[list[Point], floa
             new_cost = _evaluate_path(world, path)
             return (path, new_cost)
 
+    #actual pathfinding:
+
     width = world.width
     height = world.height
     sx, sy = start
@@ -80,6 +83,9 @@ def find_path(world: World, start: Point, end: Point) -> tuple[list[Point], floa
 
     while pq:
         current_cost, x, y = heapq.heappop(pq)
+        if current_cost != min_distance[x][y]:
+            continue
+        
         if (x, y) == end:
             path = _reconstruct_path(parents, start, end)
             world.path_cache[cache_line] = (path, current_cost, world.turn)
