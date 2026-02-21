@@ -15,7 +15,7 @@ def main() -> None:
         display_obj = Display(sim_world)
         display_obj.pygame_init()
 
-    sim_world.spawn_states(3, 5)
+    sim_world.spawn_states(4, 5)
 
     priorities = []
     prod_priorities = []
@@ -105,6 +105,7 @@ def main() -> None:
     plt.title("Ilość zasobów")
     plt.xlabel("Tura")
     plt.ylabel("Zasób")
+    plt.ylim(0, 2_500)
     plt.legend()
 
     plt.subplot(3, 5, offset + 3)
@@ -126,12 +127,16 @@ def main() -> None:
     plt.xlabel("Tura")
     plt.ylabel("Budynek")
     plt.legend()
+    plt.ylim(0, 16)
 
     plt.tight_layout()
     plt.savefig("visualization/prices.png", dpi=200)
 
     for c in sim_world.cities:
-        print(c.name, c.gold, len(c.citizens), c.buildings)
+        print(c.name, round(c.gold), len(c.citizens), end = '')
+        for b in c.buildings:
+            print(f"{b.name} : {c.buildings[b]} | ", end='')
+        print()
     print("~~~~~~ zasoby ~~~~~~")
     for c in sim_world.cities:
         print(c.name, c.accumulation_rate)

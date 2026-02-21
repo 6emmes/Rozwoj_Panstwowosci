@@ -22,7 +22,7 @@ FACTORIES: dict[BuildingType, Factory] = {
         build_cost={ResourceType.PLANKS: 200}, upkeep_cost={ResourceType.STONE: 2}
     ),
     BuildingType.FARM: Factory(
-        build_cost={ResourceType.PLANKS: 250}, upkeep_cost={ResourceType.PLANKS: 2}
+        build_cost={ResourceType.BRICKS: 200}, upkeep_cost={ResourceType.PLANKS: 2}
     ),
     BuildingType.LUMBER_CAMP: Factory(
         build_cost={ResourceType.PLANKS: 200}, upkeep_cost={ResourceType.STONE: 2}
@@ -53,7 +53,7 @@ class PassiveBuilding(Building):
 
 PASSIVE_BUILDINGS: dict[BuildingType, PassiveBuilding] = {
     BuildingType.HOUSE: PassiveBuilding(
-        build_cost={ResourceType.PLANKS: 20},
-        affected_resources={ResourceType.FOOD: -0.5, ResourceType.PLANKS: 0.1},
+        build_cost={ResourceType.BRICKS: 250},
+        affected_resources={ResourceType.FOOD: -0.1, ResourceType.PLANKS: 2},
     )
 }

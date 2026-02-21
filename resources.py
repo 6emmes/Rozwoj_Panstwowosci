@@ -77,7 +77,7 @@ RAW_RESOURCES: dict[ResourceType, RawResource] = {
         factory=BuildingType.FARM,
         human_harvesting=0.25,
         factory_harvesting=2.0,
-        map_flat_scale=5.5,
+        map_flat_scale=4.0,
     ),
     ResourceType.MARBLE: RawResource(
         map_layer="marble_map",

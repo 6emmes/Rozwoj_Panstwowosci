@@ -50,17 +50,19 @@ class City:
         self.table_of_weights: list[object] = []
         self.religious_value: object = None
         self.gold: int = 500
-        self.resources: dict = {resource: 0 for resource in RESOURCES}
+        self.resources: dict = {resource: (0.0, 5.0) for resource in RESOURCES}
         self.accumulation_rate: dict = {resource: 0 for resource in RESOURCES}
         self.use_rate: dict = {resource: 0 for resource in RESOURCES}
         self.trade_efficiency: dict = {resource: 0 for resource in RESOURCES}
         self.import_priorities: dict = {resource: 0.0 for resource in RESOURCES}
         self.production_priorities: dict = {resource: 0.0 for resource in RESOURCES}
         self.priorities: dict = {resource: 0.0 for resource in RESOURCES}
+        self.settle_candidates: dict = {}
         self.world: World = world  # placeholder attribute
+        self.state = None
         self.id_init()
         print(f"land id: {self.land_id}")
-        self._randomize_initial_recources()  # Do celów testowych
+        # self._randomize_initial_recources()  # Do celów testowych
         if self.world.layers["height_map"][self.x][self.y] == 0:
             print("Miasto tonie!")
 
@@ -155,7 +157,7 @@ class City:
         elif resource in MANUFACTURED_RESOURCES:
             production_rate = 0
             for input in MANUFACTURED_RESOURCES[resource].input_resources:
-                production_rate = max(production_rate, self.accumulation_rate[input])
+                production_rate = max(production_rate, self.accumulation_rate[input])/5
         return global_price * production_rate
 
     def calcualate_use_rate(self):
@@ -251,6 +253,7 @@ class City:
         self._turn_trading()
         self._turn_mining()
         self._turn_building()
+        self._turn_settle()
 
         self.calcualate_use_rate()
         self.use_resources()
@@ -378,7 +381,54 @@ class City:
 
         self.building_queue = new_queue
 
+    def _turn_settle(self):
+        if self.world.turn%10 > 0:
+            return
+        PI = 3.14159265359
+        sample_angle = random.uniform(0.0, 2 * PI)
+        sample_radius = random.uniform(64, 256)
+        sample_x = int(sample_radius * math.cos(sample_angle)) + self.x
+        sample_y = int(sample_radius * math.sin(sample_angle)) + self.y
+        if sample_x < 0 or sample_x >= self.world.width or sample_y < 0 or sample_y >= self.world.height:
+            return
+        if self.world.heightmap[sample_x][sample_y] == 0:
+            return
+        map_value = {resource: 0 for resource in RAW_RESOURCES}
+        for res in RAW_RESOURCES:
+            if RAW_RESOURCES[res].map_layer is None:
+                map_value[res] = 0.25
+            else:
+                map_value[res] = self.world.layers[RAW_RESOURCES[res].map_layer][sample_x][sample_y]
+                map_value[res] = map_value[res] * RAW_RESOURCES[res].map_flat_scale
+
+        for res in RAW_RESOURCES:
+            if res in self.settle_candidates.keys():
+                if map_value[res] > self.settle_candidates[res][0]:
+                    self.settle_candidates[res] = (map_value[res], sample_x, sample_y)
+            else:
+                self.settle_candidates[res] = (map_value[res], sample_x, sample_y)
+
+        #actual settle action:
+        if self.world.turn == 500 and self.resources[ResourceType.FOOD][0]>2000:
+            best_value = 0
+            for res in self.settle_candidates.keys():
+                value = self.settle_candidates[res][1] * self.world.prices[res]
+                if value > best_value:
+                    best_value = value
+                    best_resource = res
+            x = self.settle_candidates[res][1]
+            y = self.settle_candidates[res][2]
+            new_city = self.world.settle(self.state, 1, x, y)
+            for res in self.resources.keys():
+                donation = self.resources[res][0]*0.5
+                if donation > 100:
+                    new_city.resources[res] = (donation*0.5, self.resources[res][1])
+                    self.resources[res] = (self.resources[res][0] - donation, self.resources[res][1])
+
+
     def _grow_population(self):
+        if self.unemployed > 5:
+            return #no jobs for new people
         for _ in range(0, int(math.sqrt(len(self.citizens)))):
             if self.resources[ResourceType.FOOD][0] >= POP_GROWTH_COST + BUFFER:
                 self.create_citizen()

@@ -89,12 +89,14 @@ class World:
                 self.states[state_name] = State(
                     self, state_name, i * 360 / count, content
                 )
-            new_city = self.spawn_settler(
+            new_city = self.spawn_settler_rand(
                 self.states[state_name].city_names.pop(), no_citizens
             )
             self.states[state_name].add_city(new_city)
+            new_city._randomize_initial_recources()
+            new_city.state = self.states[state_name]
 
-    def spawn_settler(self, name, no_citizens):
+    def spawn_settler_rand(self, name, no_citizens, goal = "fertility_map"):
         NEIGHBOR_OFFSETS = [(0, -1), (-1, 0), (1, 0), (0, 1)]
         while True:
             contflag = 1
@@ -124,7 +126,7 @@ class World:
                 if not (0 <= nx < self.width and 0 <= ny < self.height):
                     continue
 
-                fertility = self.layers["fertility_map"][nx][ny]
+                fertility = self.layers[goal][nx][ny]
                 water = self.layers["water_map"][nx][ny]
 
                 if water == 0:
@@ -146,11 +148,24 @@ class World:
         new_city.calcualate_use_rate()
         self.cities.append(new_city)
         return new_city
+    
+    def settle(self, state: State, no_citizens, x, y):
+        new_city = City(x, y, state.city_names.pop(), self)
+        for _ in range(no_citizens):
+            new_city.create_citizen()
+
+        new_city.create_trader()
+        new_city.calcualate_use_rate()
+        self.cities.append(new_city)
+        state.add_city(new_city)
+        new_city.state = state
+        return new_city
+
 
     def spawn_settlers(self, names: list[str], no_citizens: int, seed=10):
         random.seed(seed)
         for n in names:
-            new_city = self.spawn_settler(n, no_citizens)
+            new_city = self.spawn_settler_rand(n, no_citizens)
             self.cities.append(new_city)
 
     def find_ocean(self, pos: Point):
