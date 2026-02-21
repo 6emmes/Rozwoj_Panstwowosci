@@ -49,7 +49,7 @@ class RawResource(ABC):
         return terrain_factor * (manual_output + factory_output)
 
 
-raw_resource_list: dict[ResourceType, RawResource] = {
+RAW_RESOURCES: dict[ResourceType, RawResource] = {
     ResourceType.STONE: RawResource(
         map_layer=None,
         factory=BuildingType.STONE_QUARRY,
@@ -129,7 +129,7 @@ class ManufacturedResource(ABC):
         return (manual_output + factory_output) * self.output_scale
 
 
-manufactured_resource_list: dict[ResourceType, ManufacturedResource] = {
+MANUFACTURED_RESOURCES: dict[ResourceType, ManufacturedResource] = {
     ResourceType.PLANKS: ManufacturedResource(
         factory=BuildingType.SAWMILL,
         human_production=0.5,
@@ -143,3 +143,5 @@ manufactured_resource_list: dict[ResourceType, ManufacturedResource] = {
         input_resources={ResourceType.STONE: 1.0},
     ),
 }
+
+ALL_RESOURCES = RAW_RESOURCES | MANUFACTURED_RESOURCES

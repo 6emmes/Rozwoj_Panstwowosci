@@ -7,10 +7,11 @@ from typing import TYPE_CHECKING
 from buildings import FACTORIES, PASSIVE_BUILDINGS
 from citizen import Citizen
 from resources import (
+    ALL_RESOURCES,
+    MANUFACTURED_RESOURCES,
+    RAW_RESOURCES,
     ManufacturedResource,
     RawResource,
-    manufactured_resource_list,
-    raw_resource_list,
 )
 from trader import Trader
 from utils.sim_types import (
@@ -144,16 +145,16 @@ class City:
 
     def _calculate_production_priority(self, resource: ResourceType) -> float:
         global_price = self.world.prices[resource]
-        if resource in raw_resource_list:
-            map_layer = raw_resource_list[resource].map_layer
+        if resource in RAW_RESOURCES:
+            map_layer = RAW_RESOURCES[resource].map_layer
             if map_layer is None:
                 production_rate = 0.25
             else:
                 production_rate = self.world.layers[map_layer][self.x][self.y]
-            production_rate *= raw_resource_list[resource].map_flat_scale
-        elif resource in manufactured_resource_list:
+            production_rate *= RAW_RESOURCES[resource].map_flat_scale
+        elif resource in MANUFACTURED_RESOURCES:
             production_rate = 0
-            for input in manufactured_resource_list[resource].input_resources:
+            for input in MANUFACTURED_RESOURCES[resource].input_resources:
                 production_rate = max(production_rate, self.accumulation_rate[input])
         return global_price * production_rate
 
@@ -295,10 +296,10 @@ class City:
         for res, workers in counts.items():
             if workers == 0:
                 continue
-            if res in raw_resource_list:
-                res_obj = raw_resource_list[res]
-            elif res in manufactured_resource_list:
-                res_obj = manufactured_resource_list[res]
+            if res in RAW_RESOURCES:
+                res_obj = RAW_RESOURCES[res]
+            elif res in MANUFACTURED_RESOURCES:
+                res_obj = MANUFACTURED_RESOURCES[res]
             factory_count = available_buildings[res_obj.factory]
             self.unemployed = self.unemployed - min(factory_count * 10, workers)
             self.accumulation_rate[res] = res_obj.extract(
@@ -318,10 +319,10 @@ class City:
                 # should be even more
                 if self.production_priorities[res] < 1.0:
                     continue
-                if res in raw_resource_list:
-                    building = FACTORIES[raw_resource_list[res].factory]
-                elif res in manufactured_resource_list:
-                    building = FACTORIES[manufactured_resource_list[res].factory]
+                if res in RAW_RESOURCES:
+                    building = FACTORIES[RAW_RESOURCES[res].factory]
+                elif res in MANUFACTURED_RESOURCES:
+                    building = FACTORIES[MANUFACTURED_RESOURCES[res].factory]
                 cost_satisfied = all(
                     self.resources[r][0] >= build_cost + BUFFER
                     for r, build_cost in building.build_cost.items()
@@ -331,7 +332,7 @@ class City:
                         amount, price = self.resources[r]
                         self.resources[r] = (amount - build_cost, price)
                     self.building_queue.append(
-                        (raw_resource_list[res].factory, building.build_time)
+                        (ALL_RESOURCES[res].factory, building.build_time)
                     )
                     break
 
