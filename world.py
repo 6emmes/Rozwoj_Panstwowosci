@@ -9,10 +9,13 @@ from state import State
 from utils.definitions import Grid, Point
 
 SETTLERSTEPCOUNT = 32
+
 ANNEALING_START = 50
 ANNEALING_END = 250
 ANNEALING_COOLING_TIME = 1000
 
+FRIENDLY_CITY_DENSITY = 32
+HOSTILE_CITY_DENSITY = 64
 
 class World:
     def __init__(self) -> None:
@@ -65,7 +68,7 @@ class World:
             self.width, self.height = arr.shape
         return self.layers
 
-    def build_road(self, path: list[Point], value=0.05):
+    def build_road(self, path: list[Point], value=0.01):
         for x, y in path:
             self.roads[x][y] += value
 
@@ -150,6 +153,15 @@ class World:
         return new_city
     
     def settle(self, state: State, no_citizens, x, y):
+        for c in self.cities:
+            if c.state == state:
+                if self.manhattan(x, y, c.x, c.y) < FRIENDLY_CITY_DENSITY:
+                    return None
+            else:
+                if self.manhattan(x, y, c.x, c.y) < HOSTILE_CITY_DENSITY:
+                    return None
+        if len(state.city_names) < 24:
+            return None
         new_city = City(x, y, state.city_names.pop(), self)
         for _ in range(no_citizens):
             new_city.create_citizen()

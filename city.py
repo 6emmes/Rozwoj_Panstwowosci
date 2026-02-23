@@ -35,6 +35,8 @@ MAX_FOG = 5
 BUFFER = 50
 POP_GROWTH_COST = 20
 
+SETTLER_SCOUTING_RANGE = (32, 128)
+
 
 class City:
     def __init__(self, x: int, y: int, name: str, world: World) -> None:
@@ -382,11 +384,12 @@ class City:
         self.building_queue = new_queue
 
     def _turn_settle(self):
-        if self.world.turn%10 > 0:
+        if self.world.turn%10 > 0: #execute only sometimes
             return
         PI = 3.14159265359
+        #settle spot exploration:
         sample_angle = random.uniform(0.0, 2 * PI)
-        sample_radius = random.uniform(64, 256)
+        sample_radius = random.uniform(*SETTLER_SCOUTING_RANGE)
         sample_x = int(sample_radius * math.cos(sample_angle)) + self.x
         sample_y = int(sample_radius * math.sin(sample_angle)) + self.y
         if sample_x < 0 or sample_x >= self.world.width or sample_y < 0 or sample_y >= self.world.height:
@@ -407,23 +410,27 @@ class City:
                     self.settle_candidates[res] = (map_value[res], sample_x, sample_y)
             else:
                 self.settle_candidates[res] = (map_value[res], sample_x, sample_y)
-
         #actual settle action:
-        if self.world.turn == 500 and self.resources[ResourceType.FOOD][0]>2000:
+        if self.resources[ResourceType.FOOD][0]>2000:
             best_value = 0
             for res in self.settle_candidates.keys():
                 value = self.settle_candidates[res][1] * self.world.prices[res]
                 if value > best_value:
                     best_value = value
                     best_resource = res
-            x = self.settle_candidates[res][1]
-            y = self.settle_candidates[res][2]
+            x = self.settle_candidates[best_resource][1]
+            y = self.settle_candidates[best_resource][2]
             new_city = self.world.settle(self.state, 1, x, y)
-            for res in self.resources.keys():
-                donation = self.resources[res][0]*0.5
-                if donation > 100:
-                    new_city.resources[res] = (donation*0.5, self.resources[res][1])
-                    self.resources[res] = (self.resources[res][0] - donation, self.resources[res][1])
+            if new_city is None:
+                #too dense / kill candidate
+                self.settle_candidates[best_resource] = (0, 0, 0)
+                pass
+            else:
+                for res in self.resources.keys():
+                    donation = self.resources[res][0]*0.5
+                    if donation > 100:
+                        new_city.resources[res] = (donation*0.5, self.resources[res][1])
+                        self.resources[res] = (self.resources[res][0] - donation, self.resources[res][1])
 
 
     def _grow_population(self):

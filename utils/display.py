@@ -18,6 +18,7 @@ class Display:
 
     def pygame_init(self):
         pygame.init()
+        pygame.font.init()
         win_size = (self.world.width, self.world.height)
         self.screen = pygame.display.set_mode(win_size)
 
@@ -39,6 +40,9 @@ class Display:
         terrain_array = np.clip(terrain_array, 0, 255).astype(np.uint8)
         self.terrain_surface = pygame.surfarray.make_surface(terrain_array)
 
+        self.font = pygame.font.SysFont('Verdana', 16)
+        self.text_surface = self.font.render('Some Text', False, (128, 128, 128))
+
     def pygame_sync(self):
         road_array = np.array(self.world.roads, dtype=np.float32)
         road_intensity = np.clip(road_array * 255, 0, 255).astype(np.uint8)
@@ -49,6 +53,7 @@ class Display:
         self.roads_surface = pygame.image.frombuffer(
             road_rgba.transpose((1, 0, 2)).copy(), (w, h), "RGBA"
         ).convert_alpha()
+        self.text_surface = self.font.render(str(self.world.turn), False, (128, 128, 128))
 
     def pygame_loop(self):
         for event in pygame.event.get():
@@ -109,6 +114,7 @@ class Display:
                 pygame.draw.circle(self.screen, COLOR_BLACK, pos, 4)
                 pygame.draw.circle(self.screen, state_color, pos, 3)
 
+        self.screen.blit(self.text_surface, (0,0))
         pygame.display.flip()
-        # pygame.time.wait(16) #should be 16 for 60fps but simulation is bottleneck here
+        # pygame.time.wait(8) #should be 16 for 60fps but simulation is bottleneck here
         return True
