@@ -1,11 +1,12 @@
 import os
 import random
+import struct
+
 import tifffile
 
 from city import City
 from state import State
 from utils.definitions import Grid, Point
-
 
 SETTLERSTEPCOUNT = 32
 ANNEALING_START = 50
@@ -42,6 +43,7 @@ class World:
         self.humidity = layers["humidity_map"]
         self.rivers = layers["river_map"]
         self.water = layers["water_map"]
+        self.silver = layers["silver_map"]
 
     def load_new_map8(self, name):
         MAX = 255
