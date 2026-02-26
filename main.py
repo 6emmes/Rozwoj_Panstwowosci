@@ -7,6 +7,7 @@ from utils.sim_types import BuildingType, ResourceType
 from world import World
 
 PYGAME = True
+PLOTTED_CITY = 3
 
 
 def main() -> None:
@@ -34,13 +35,19 @@ def main() -> None:
             print(f"turn{i}")
             sim_world.update_prices()
             print(sim_world.prices)
-        priorities.append(sim_world.cities[0].priorities.copy())
-        prod_priorities.append(sim_world.cities[0].production_priorities.copy())
-        use_rates.append(sim_world.cities[0].use_rate.copy())
-        production_rates.append(sim_world.cities[0].accumulation_rate)
-        gold.append(sim_world.cities[0].gold)
-        res = sim_world.cities[0].resources
-        citizens.append(len(sim_world.cities[0].citizens))
+            sum = 0
+            for s in sim_world.states.values():
+                sum += s.budget
+            for c in sim_world.cities:
+                sum += c.gold
+            print(f"Simulation gold level: {sum}")
+        priorities.append(sim_world.cities[PLOTTED_CITY].priorities.copy())
+        prod_priorities.append(sim_world.cities[PLOTTED_CITY].production_priorities.copy())
+        use_rates.append(sim_world.cities[PLOTTED_CITY].use_rate.copy())
+        production_rates.append(sim_world.cities[PLOTTED_CITY].accumulation_rate)
+        gold.append(sim_world.cities[PLOTTED_CITY].gold)
+        res = sim_world.cities[PLOTTED_CITY].resources
+        citizens.append(len(sim_world.cities[PLOTTED_CITY].citizens))
         for key in res:
             resources[key].append(res[key][0])
             prices[key].append(res[key][1])
@@ -132,14 +139,19 @@ def main() -> None:
     plt.tight_layout()
     plt.savefig("visualization/prices.png", dpi=200)
 
+    # for c in sim_world.cities:
+    #     print(c.name, round(c.gold), len(c.citizens), end = '')
+    #     for b in c.buildings:
+    #         print(f"{b.name} : {c.buildings[b]} | ", end='')
+    #     print()
+    # print("~~~~~~ zasoby ~~~~~~")
+    # for c in sim_world.cities:
+    #     print(c.name, c.accumulation_rate)
     for c in sim_world.cities:
-        print(c.name, round(c.gold), len(c.citizens), end = '')
-        for b in c.buildings:
-            print(f"{b.name} : {c.buildings[b]} | ", end='')
-        print()
-    print("~~~~~~ zasoby ~~~~~~")
-    for c in sim_world.cities:
-        print(c.name, c.accumulation_rate)
+        print(f"{c.name} : {c.gold}")
+    print()
+    for s in sim_world.states.values():
+        print(s.name, s.budget)
 
 
 if __name__ == "__main__":

@@ -160,7 +160,7 @@ class World:
             else:
                 if self.manhattan(x, y, c.x, c.y) < HOSTILE_CITY_DENSITY:
                     return None
-        if len(state.city_names) < 24:
+        if len(state.city_names) == 0:
             return None
         new_city = City(x, y, state.city_names.pop(), self)
         for _ in range(no_citizens):

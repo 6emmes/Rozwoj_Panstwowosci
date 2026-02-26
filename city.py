@@ -62,6 +62,7 @@ class City:
         self.settle_candidates: dict = {}
         self.world: World = world  # placeholder attribute
         self.state = None
+        self.DEBUG_bankruptcy = 0
         self.id_init()
         print(f"land id: {self.land_id}")
         # self._randomize_initial_recources()  # Do celów testowych
@@ -80,7 +81,18 @@ class City:
         print(f"Miasto {self.name} zostało założone w ({self.x}, {self.y})")
 
     def id_init(self):
-        self.land_id = self.world.layers["id_map"][self.x][self.y]
+        try:
+            self.land_id = self.world.layers["id_map"][self.x][self.y]
+            if self.land_id < 0.5:
+                print(f"Miasto {self.name} znajduje się na wodzie!")
+                raise ValueError("City cannot be placed on water")
+        except ValueError:
+            a = self.land_id = self.world.layers["id_map"][self.x+2][self.y+2]
+            b = self.land_id = self.world.layers["id_map"][self.x-2][self.y-2]
+            self.land_id = max(a,b)
+            
+
+
         self.ocean_id = self.world.find_ocean((self.x, self.y))
         if self.ocean_id is None:
             print(f"Miasto {self.name} nie ma dostępu do oceanu")
@@ -198,7 +210,12 @@ class City:
             amount, price = self.resources[resource]
             amount -= rate
             if amount < 0:
+                self.gold -= amount
+                if self.gold < 0:
+                    self.gold = 0
                 amount = 0
+                self.DEBUG_bankruptcy +=1
+                # print(f"No {resource}")
             self.resources[resource] = (amount, price)
 
     def recalculate_good_price(self, good: ResourceType) -> float:
@@ -256,6 +273,7 @@ class City:
         self._turn_mining()
         self._turn_building()
         self._turn_settle()
+        self._turn_tax()
 
         self.calcualate_use_rate()
         self.use_resources()
@@ -277,9 +295,10 @@ class City:
                 if trader is not None:
                     amount, price = trader.buy_asap(resource, 50)
                     if amount is not None:
-                        print(
-                            f"\tMiasto {self.name} wysyła handlarza kupić {amount} {resource} po cenie {price} czas: {trader.target_city_distance / trader.speed}"
-                        )
+                        pass
+                        # print(
+                        #     f"\tMiasto {self.name} wysyła handlarza kupić {amount} {resource} po cenie {price} czas: {trader.target_city_distance / trader.speed}"
+                        # )
 
     def _turn_mining(self):
         self.unemployed = len(self.citizens)
@@ -383,6 +402,7 @@ class City:
 
         self.building_queue = new_queue
 
+
     def _turn_settle(self):
         if self.world.turn%10 > 0: #execute only sometimes
             return
@@ -404,33 +424,7 @@ class City:
                 map_value[res] = self.world.layers[RAW_RESOURCES[res].map_layer][sample_x][sample_y]
                 map_value[res] = map_value[res] * RAW_RESOURCES[res].map_flat_scale
 
-        for res in RAW_RESOURCES:
-            if res in self.settle_candidates.keys():
-                if map_value[res] > self.settle_candidates[res][0]:
-                    self.settle_candidates[res] = (map_value[res], sample_x, sample_y)
-            else:
-                self.settle_candidates[res] = (map_value[res], sample_x, sample_y)
-        #actual settle action:
-        if self.resources[ResourceType.FOOD][0]>2000:
-            best_value = 0
-            for res in self.settle_candidates.keys():
-                value = self.settle_candidates[res][1] * self.world.prices[res]
-                if value > best_value:
-                    best_value = value
-                    best_resource = res
-            x = self.settle_candidates[best_resource][1]
-            y = self.settle_candidates[best_resource][2]
-            new_city = self.world.settle(self.state, 1, x, y)
-            if new_city is None:
-                #too dense / kill candidate
-                self.settle_candidates[best_resource] = (0, 0, 0)
-                pass
-            else:
-                for res in self.resources.keys():
-                    donation = self.resources[res][0]*0.5
-                    if donation > 100:
-                        new_city.resources[res] = (donation*0.5, self.resources[res][1])
-                        self.resources[res] = (self.resources[res][0] - donation, self.resources[res][1])
+        self.state.update_settle_candidates(map_value, sample_x, sample_y)
 
 
     def _grow_population(self):
@@ -443,6 +437,13 @@ class City:
                 self.resources[ResourceType.FOOD] = amount - POP_GROWTH_COST, cost
             else:
                 return
+
+    def _turn_tax(self):
+        if self.gold < 250:
+            return
+        tax = (self.gold - 250) // 10
+        self.gold -= tax
+        self.state.budget += tax
 
     def __repr__(self):
         return f"Miasto({self.name}, mieszkańcy: {len(self.citizens)})"

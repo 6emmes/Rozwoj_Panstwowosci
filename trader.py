@@ -168,9 +168,9 @@ class Trader(Citizen):
         self.city.trade_efficiency[self.good_to_buy] -= self.trade_efficiency
         self.city.recalculate_good_price(self.good_to_buy)
         self.strengthen_trade_partner()
-        print(
-            f"    Handlarz dostarczył {self.amount_of_good_to_buy} {self.good_to_buy} do miasta {self.city.name}"
-        )
+        # print(
+        #     f"    Handlarz dostarczył {self.amount_of_good_to_buy} {self.good_to_buy} do miasta {self.city.name}"
+        # )
 
     def reset_trader(self):
         self.target_city_distance = 0

@@ -107,12 +107,16 @@ class Display:
         state_color = pygame.Color(0)
         for st in self.world.states.values():
             state_color.hsva = (st.hue, 100, 100, 100)
-            for city in st.cities:
+            for index, city in enumerate(st.cities):
                 pos = pygame.Vector2(city.x, city.y) * \
                 self.camera_scale + self.camera_offset
 
-                pygame.draw.circle(self.screen, COLOR_BLACK, pos, 4)
-                pygame.draw.circle(self.screen, state_color, pos, 3)
+                if index == 0:
+                    pygame.draw.circle(self.screen, COLOR_BLACK, pos, 5)
+                else:
+                    pygame.draw.circle(self.screen, COLOR_BLACK, pos, 4)
+                if len(city.citizens) > 0:
+                    pygame.draw.circle(self.screen, state_color, pos, 3)
 
         self.screen.blit(self.text_surface, (0,0))
         pygame.display.flip()
