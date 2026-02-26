@@ -343,6 +343,8 @@ class City:
                 # should be even more
                 if self.production_priorities[res] < 1.0:
                     continue
+                if res == ResourceType.FOOD and self.buildings[BuildingType.FARM] > factory_count * 0.5:
+                    continue    #keep farms less than 50% of buildings
                 if res in RAW_RESOURCES:
                     building = FACTORIES[RAW_RESOURCES[res].factory]
                 elif res in MANUFACTURED_RESOURCES:
@@ -444,6 +446,7 @@ class City:
         tax = (self.gold - 250) // 10
         self.gold -= tax
         self.state.budget += tax
+        self.state.score += tax
 
     def __repr__(self):
         return f"Miasto({self.name}, mieszkańcy: {len(self.citizens)})"

@@ -137,7 +137,7 @@ def main() -> None:
     plt.ylim(0, 16)
 
     plt.tight_layout()
-    plt.savefig("visualization/prices.png", dpi=200)
+    plt.savefig("visualization/prices.png", dpi=300)
 
     # for c in sim_world.cities:
     #     print(c.name, round(c.gold), len(c.citizens), end = '')
@@ -151,7 +151,7 @@ def main() -> None:
         print(f"{c.name} : {c.gold}")
     print()
     for s in sim_world.states.values():
-        print(s.name, s.budget)
+        print(s.name, s.score)
 
 
 if __name__ == "__main__":

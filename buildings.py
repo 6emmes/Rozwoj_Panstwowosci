@@ -7,7 +7,7 @@ from utils.sim_types import BuildingType, ResourceType
 @dataclass
 class Building(ABC):
     build_cost: dict = None
-    build_time: int = 5
+    build_time: int = 25
 
 
 @dataclass
@@ -54,6 +54,6 @@ class PassiveBuilding(Building):
 PASSIVE_BUILDINGS: dict[BuildingType, PassiveBuilding] = {
     BuildingType.HOUSE: PassiveBuilding(
         build_cost={ResourceType.BRICKS: 250},
-        affected_resources={ResourceType.FOOD: -0.1, ResourceType.PLANKS: 1},
+        affected_resources={ResourceType.FOOD: -0.2, ResourceType.PLANKS: 1},
     )
 }
