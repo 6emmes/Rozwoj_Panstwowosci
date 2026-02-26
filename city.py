@@ -158,7 +158,7 @@ class City:
                 production_rate = max(production_rate, self.accumulation_rate[input])
         return global_price * production_rate
 
-    def calcualate_use_rate(self):
+    def calculate_use_rate(self):
         for r in RESOURCES:
             self.use_rate[r] = 0.0
         self.use_rate[ResourceType.FOOD] = len(self.citizens) * 1.0
