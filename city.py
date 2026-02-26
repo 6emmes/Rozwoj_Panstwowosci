@@ -4,14 +4,14 @@ import math
 import random
 from typing import TYPE_CHECKING
 
-from buildings import FACTORIES, PASSIVE_BUILDINGS
+from buildings import FACTORIES, PASSIVE_BUILDINGS, Building
 from citizen import Citizen
 from resources import (
     ALL_RESOURCES,
     MANUFACTURED_RESOURCES,
     RAW_RESOURCES,
-    ManufacturedResource,
     RawResource,
+    Resource,
 )
 from trader import Trader
 from utils.sim_types import (
@@ -42,7 +42,7 @@ class City:
         self.y: int = y
         self.name: str = name
         self.citizens: list[Citizen] = []
-        self.buildings: dict = {build: 0 for build in BUILDINGS}
+        self.buildings: dict[BuildingType, int] = {build: 0 for build in BUILDINGS}
         # startowa farma żeby miasto nie umarło z głodu zanim zdąży cokolwiek zbudować
         self.buildings[BuildingType.FARM] = 1
         self.building_queue: list[tuple[object, int]] = []
@@ -50,12 +50,24 @@ class City:
         self.table_of_weights: list[object] = []
         self.religious_value: object = None
         self.gold: int = 500
-        self.resources: dict = {resource: 0 for resource in RESOURCES}
-        self.accumulation_rate: dict = {resource: 0 for resource in RESOURCES}
-        self.use_rate: dict = {resource: 0 for resource in RESOURCES}
-        self.trade_efficiency: dict = {resource: 0 for resource in RESOURCES}
-        self.import_priorities: dict = {resource: 0.0 for resource in RESOURCES}
-        self.production_priorities: dict = {resource: 0.0 for resource in RESOURCES}
+        self.resources: dict[ResourceType, float] = {
+            resource: 0 for resource in RESOURCES
+        }
+        self.accumulation_rate: dict[ResourceType, float] = {
+            resource: 0.0 for resource in RESOURCES
+        }
+        self.use_rate: dict[ResourceType, float] = {
+            resource: 0 for resource in RESOURCES
+        }
+        self.trade_efficiency: dict[Resource, float] = {
+            resource: 0.0 for resource in RESOURCES
+        }
+        self.import_priorities: dict[ResourceType, float] = {
+            resource: 0.0 for resource in RESOURCES
+        }
+        self.production_priorities: dict[ResourceType, float] = {
+            resource: 0.0 for resource in RESOURCES
+        }
         self.priorities: dict = {resource: 0.0 for resource in RESOURCES}
         self.world: World = world  # placeholder attribute
         self.id_init()
@@ -76,8 +88,8 @@ class City:
         print(f"Miasto {self.name} zostało założone w ({self.x}, {self.y})")
 
     def id_init(self):
-        self.land_id = self.world.layers["id_map"][self.x][self.y]
-        self.ocean_id = self.world.find_ocean((self.x, self.y))
+        self.land_id: float = self.world.layers["id_map"][self.x][self.y]
+        self.ocean_id: float = self.world.find_ocean((self.x, self.y))
         if self.ocean_id is None:
             print(f"Miasto {self.name} nie ma dostępu do oceanu")
         else:
@@ -252,7 +264,7 @@ class City:
         self._turn_mining()
         self._turn_building()
 
-        self.calcualate_use_rate()
+        self.calculate_use_rate()
         self.use_resources()
 
         # Population control
