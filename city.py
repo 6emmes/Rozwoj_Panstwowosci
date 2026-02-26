@@ -271,10 +271,6 @@ class City:
                         break
                 if trader is not None:
                     amount, price = trader.buy_asap(resource, 50)
-                    if amount is not None:
-                        print(
-                            f"\tMiasto {self.name} wysyła handlarza kupić {amount} {resource} po cenie {price} czas: {trader.target_city_distance / trader.speed}"
-                        )
 
     def _turn_mining(self):
         self.unemployed = len(self.citizens)

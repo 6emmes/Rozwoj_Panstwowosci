@@ -61,12 +61,9 @@ def find_path(world: World, start: Point, end: Point) -> tuple[list[Point], floa
             # cache is old, recalculate
             del world.path_cache[cache_line]
         else:
-            print(
-                f"cache hit, age: {world.turn - world.path_cache[cache_line][2]}/{world.path_cache_timeout} turns"
-            )
             path, _, _ = world.path_cache[cache_line]
             if reverse:
-                print("reversed chache line hit")
+
                 path.reverse()
             new_cost = _evaluate_path(world, path)
             return (path, new_cost)

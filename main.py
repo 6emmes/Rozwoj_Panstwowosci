@@ -6,7 +6,7 @@ from utils.display import Display
 from utils.sim_types import BuildingType, ResourceType
 from world import World
 
-PYGAME = True
+PYGAME = False
 
 
 def main() -> None:
@@ -15,7 +15,7 @@ def main() -> None:
         display_obj = Display(sim_world)
         display_obj.pygame_init()
 
-    sim_world.spawn_states(3, 5)
+    sim_world.spawn_states(5, 5)
 
     priorities = []
     prod_priorities = []
@@ -27,13 +27,16 @@ def main() -> None:
     citizens = []
     buildings = {key: [] for key in sim_world.cities[0].buildings}
 
-    turns = 600
+    turns = 1200
     # Główna pętla symulacji
     for i in range(turns):
         if i % 100 == 0:
             print(f"turn{i}")
             sim_world.update_prices()
-            print(sim_world.prices)
+            sum = 0
+            for c in sim_world.cities:
+                sum += c.gold
+            print(f"Simulation gold level: {sum}")
         priorities.append(sim_world.cities[0].priorities.copy())
         prod_priorities.append(sim_world.cities[0].production_priorities.copy())
         use_rates.append(sim_world.cities[0].use_rate.copy())
@@ -129,12 +132,6 @@ def main() -> None:
 
     plt.tight_layout()
     plt.savefig("visualization/prices.png", dpi=200)
-
-    for c in sim_world.cities:
-        print(c.name, c.gold, len(c.citizens), c.buildings)
-    print("~~~~~~ zasoby ~~~~~~")
-    for c in sim_world.cities:
-        print(c.name, c.accumulation_rate)
 
 
 if __name__ == "__main__":

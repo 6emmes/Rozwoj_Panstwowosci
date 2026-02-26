@@ -190,9 +190,6 @@ class Trader(Citizen):
         path, cost = find_path(self.city.world, (home_x, home_y), (target_x, target_y))
         if len(path) == 0:
             return
-        print(
-            f"    Handlarz planuje podróż z miasta {self.city} do miasta {self.target_city.name} kosztem {int(cost)}"
-        )
 
         self.last_path = path
         self.target_city_distance = int(cost)
@@ -211,8 +208,6 @@ class Trader(Citizen):
             price_s,
         )
         paid = amount * price_s
-        if paid < 0:
-            print(f"amout: {amount}, price_s: {price_s}, gold: {self.gold}")
         self.target_city.gold += paid
         self.gold -= paid
         self.target_city_distance = 0
@@ -239,9 +234,6 @@ class Trader(Citizen):
         self.city.trade_efficiency[self.good_to_buy] -= self.trade_efficiency
         self.city.recalculate_good_price(self.good_to_buy)
         self.strengthen_trade_partner()
-        print(
-            f"    Handlarz dostarczył {self.amount_of_good_to_buy} {self.good_to_buy} do miasta {self.city.name}"
-        )
 
     def reset_trader(self):
         self.target_city_distance = 0
