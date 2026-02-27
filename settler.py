@@ -4,9 +4,9 @@ from world import World
 
 class Settler:
     def __init__(self, x: int, y: int, no_citizens: int, world: World) -> None:
-        self.x = x
-        self.y = y
-        self.no_citizens = no_citizens
+        self.x: int = x
+        self.y: int = y
+        self.no_citizens: int = no_citizens
         # na potrzeby linka
         self.world: World = world
 

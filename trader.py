@@ -24,16 +24,18 @@ class Trader(Citizen):
         self.home_city_distance: int = 0
         self.good_to_buy: Resource | None = None
         self.amount_of_good_to_buy: int = 0
-        self.gold = 0
-        self.capacity = random.randint(30, 50)
+        self.gold: float = 0.0
+        self.capacity: int = random.randint(30, 50)
         self.target_city: City | None = None
         self.speed: int = 10  # jednostki na turę
         self.last_path: list[Point] = []
-        self.trade_partners: dict = {}  # tablica miast odwiedzonych przez handlarza zmniejsza fog, czyli znajomość ceny w dnaym mieście
-        self.risk_factor = (
+        self.trade_partners: dict[
+            City, int
+        ] = {}  # tablica miast odwiedzonych przez handlarza zmniejsza fog, czyli znajomość ceny w dnaym mieście
+        self.risk_factor: float = (
             random.random()
         )  # TODO dobrze zrobić na jakiś rozkład np normalny
-        self.trade_efficiency = 0.0
+        self.trade_efficiency: float = 0.0
 
     def action(self):
         self.debug_print()

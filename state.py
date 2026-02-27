@@ -1,6 +1,10 @@
+from typing import TYPE_CHECKING
+
 from army import Army
 from city import City
-from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from world import World
 
 from resources import RawResource, RAW_RESOURCES
 from utils.sim_types import ResourceType
@@ -11,7 +15,7 @@ if TYPE_CHECKING:
 class State:
     def __init__(self, world, name: str, hue: int, namelist: list[str]) -> None:
         self.name: str = name
-        self.world = world
+        self.world: World = world
         self.hue: int = hue
         self.city_names: list[str] = namelist
         self.cities: list[City] = []
