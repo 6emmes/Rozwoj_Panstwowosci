@@ -14,6 +14,7 @@ if TYPE_CHECKING:
 
 class Trader(Citizen):
     UNIT_COST = 2
+    SCAN_CITIES = 3
 
     def __init__(self):
         super().__init__()
@@ -21,7 +22,7 @@ class Trader(Citizen):
         # self.y: int = super().miasto.y # wymagałoby wykonania algorytmu znajdowania drogogi na razie działam na odległosciach
         self.target_city_distance: int = 0
         self.home_city_distance: int = 0
-        self.good_to_buy: str = ""
+        self.good_to_buy: Resource | None = None
         self.amount_of_good_to_buy: int = 0
         self.gold = 0
         self.capacity = random.randint(30, 50)
@@ -44,7 +45,9 @@ class Trader(Citizen):
     def is_available(self):
         return self.target_city is None
 
-    def buy_asap(self, good: Resource, amount: int) -> tuple[float, float]:
+    def buy_asap(
+        self, good: Resource, amount: int
+    ) -> tuple[float | None, float | None]:
         # na razie przeszukanie różnych miast w obrębie państwa, potem po odległości byłoby to wskazane
         for city in self.city.world.cities:
             if city == self.city:
@@ -79,12 +82,77 @@ class Trader(Citizen):
                 return amount_to_buy, price
         return None, None
 
+    def find_opportunity_trade(self) -> tuple[int | float | None, int | float | None]:
+        from utils.pathfinder import find_path
+
+        cities: list[City] = random.sample(self.city.world.cities, self.SCAN_CITIES)
+        good: Resource = random.choice(list(self.city.resources.keys()))
+        best_city: City | None = None
+        best_score: float = 0
+        best_amount: int = 0
+        for city in cities:
+            if city == self.city:
+                continue
+            if city in self.trade_partners:
+                fog = self.trade_partners[city]
+                city_amount, price = city.get_resource(good, fog)
+            else:
+                city_amount, price = city.get_resource(good)
+            if city_amount[1] <= 0:
+                continue
+            city_amount = math.floor(
+                city_amount[0] + (city_amount[1] - city_amount[0]) * self.risk_factor
+            )
+            price = math.floor(price[1] - (price[1] - price[0]) * self.risk_factor)
+
+            trade_amount = min(self.capacity, city_amount)
+
+            if trade_amount <= 0:
+                continue
+
+            target_city_x = city.x
+            target_city_y = city.y
+            home_city_x = self.city.x
+            home_city_y = self.city.y
+            path, cost = find_path(
+                self.city.world,
+                (home_city_x, home_city_y),
+                (target_city_x, target_city_y),
+            )
+
+            travel_cost = int(cost)
+            good_cost = trade_amount * price
+
+            total_cost = good_cost + travel_cost
+
+            if total_cost > self.city.gold:
+                continue
+
+            score = trade_amount / total_cost
+
+            if score > best_score:
+                best_score = score
+                best_city = city
+                best_amount = trade_amount
+        if best_city is not None:
+            self.target_city = best_city
+            self.good_to_buy = good
+            self.amount_of_good_to_buy = best_amount
+            self.gold = self.city.get_gold(best_amount * price)
+            self.plan_travel()
+            self.trade_efficiency = math.ceil(
+                best_amount / (self.target_city_distance / self.speed)
+            )
+            self.city.trade_efficiency[good] += self.trade_efficiency
+            return best_amount, price
+        return None, None
+
     def trader_action(self) -> bool:
         if self.target_city is None:
             return False
         if self.target_city_distance > 0:
             self.go_to_target_city()
-        elif self.home_city_distance > 0 and self.target_city_distance < 0:
+        elif self.home_city_distance > 0 > self.target_city_distance:
             self.buy_good()
         elif self.home_city_distance > 0:
             self.go_to_home_city()
@@ -122,6 +190,9 @@ class Trader(Citizen):
         path, cost = find_path(self.city.world, (home_x, home_y), (target_x, target_y))
         if len(path) == 0:
             return
+        print(
+            f"    Handlarz planuje podróż z miasta {self.city} do miasta {self.target_city.name} kosztem {int(cost)}"
+        )
 
         self.last_path = path
         self.target_city_distance = int(cost)
@@ -175,9 +246,12 @@ class Trader(Citizen):
     def reset_trader(self):
         self.target_city_distance = 0
         self.home_city_distance = 0
-        self.good_to_buy = ""
+        self.good_to_buy = None
         self.amount_of_good_to_buy = 0
         self.target_city = None
+
+    def __str__(self):
+        return f"Handlarz z miasta {self.city.name} (cel: {self.target_city.name if self.target_city else 'brak'}, towar: {self.good_to_buy}, ilość: {self.amount_of_good_to_buy}, złoto: {self.gold})"
 
     def build_road(self):
         pass
