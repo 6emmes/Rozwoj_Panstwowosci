@@ -22,7 +22,7 @@ class World:
         self.rivers: Grid[float] = []
         self.state_names: dict[str, str] = {}
         self.avaiable_states: list[str] = []
-        self.turn = 0
+        self.turn: int = 0
         self.layers = {}
         self.compatibility(self.load_new_map8("maps/m_continent.tiff"))
         self.path_cache = {}
