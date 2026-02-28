@@ -15,7 +15,7 @@ def main() -> None:
         display_obj = Display(sim_world)
         display_obj.pygame_init()
 
-    sim_world.spawn_states(5, 5, 143)
+    sim_world.spawn_states(3, 5)
 
     priorities = []
     prod_priorities = []

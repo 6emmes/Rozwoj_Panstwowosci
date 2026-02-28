@@ -11,13 +11,9 @@ if TYPE_CHECKING:
     from city import City
     from utils.definitions import Point
 
-# SPEED = 10
-# CAPACITY_MIN = 30
-# CAPACITY_MAX = 50
-
-SPEED = 20
-CAPACITY_MIN = 15
-CAPACITY_MAX = 25
+SPEED = 10
+CAPACITY_MIN = 30
+CAPACITY_MAX = 50
 
 class Trader(Citizen):
     UNIT_COST = 2
