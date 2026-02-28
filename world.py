@@ -13,6 +13,8 @@ ANNEALING_START = 50
 ANNEALING_END = 250
 ANNEALING_COOLING_TIME = 1000
 
+ROAD_K = 0.04
+
 
 class World:
     def __init__(self) -> None:
@@ -65,14 +67,17 @@ class World:
             self.width, self.height = arr.shape
         return self.layers
 
-    def build_road(self, path: list[Point], value=0.05):
+    def build_road(self, path: list[Point]):
         for x, y in path:
-            self.roads[x][y] += value
+            old_road = self.roads[x][y]
+            self.roads[x][y] = old_road + ROAD_K * (1-old_road)
 
     def next_turn(self):
         for s in self.states.values():
             s.turn()
         self.pathfinder_annealing()
+        if self.turn % 150 == 0:
+            self.road_decay()
         self.turn += 1
 
     def manhattan(self, x1, y1, x2, y2):
@@ -201,3 +206,12 @@ class World:
             self.state_names[name] = names_dir + filename
             self.avaiable_states.append(name)
         print(self.state_names)
+
+    def road_decay(self):
+        for x in range(self.width):
+            for y in range(self.height):
+                if self.roads[x][y] > 0:
+                    if self.roads[x][y] < ROAD_K*1.1:
+                        self.roads[x][y] = 0
+                    else:
+                        self.roads[x][y] -= ROAD_K/2
