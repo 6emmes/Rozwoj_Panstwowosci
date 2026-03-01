@@ -9,9 +9,6 @@ from state import State
 from utils.definitions import Grid, Point
 
 SETTLERSTEPCOUNT = 32
-ANNEALING_START = 50
-ANNEALING_END = 250
-ANNEALING_COOLING_TIME = 1000
 
 ROAD_K = 0.04
 
@@ -28,7 +25,7 @@ class World:
         self.layers = {}
         self.compatibility(self.load_new_map8("maps/m_continent.tiff"))
         self.path_cache = {}
-        self.path_cache_timeout = ANNEALING_START
+        self.path_cache_start = {}
         self.load_state_names()
 
         # TODO: zamienić to na państwa po skończeniu dema
@@ -75,7 +72,6 @@ class World:
     def next_turn(self):
         for s in self.states.values():
             s.turn()
-        self.pathfinder_annealing()
         if self.turn % 150 == 0:
             self.road_decay()
         self.turn += 1
@@ -175,15 +171,21 @@ class World:
                 if self.heightmap[cur_pos[0]][cur_pos[1]] == 0.0:
                     return self.layers["id_map"][cur_pos[0]][cur_pos[1]]
         return None
-
-    def pathfinder_annealing(self):
-        if self.turn > ANNEALING_COOLING_TIME:
-            self.path_cache_timeout = ANNEALING_END
-        else:
-            self.path_cache_timeout = int(
-                ANNEALING_START
-                + (ANNEALING_END - ANNEALING_START) * self.turn / ANNEALING_COOLING_TIME
-            )
+    
+    def check_path_cache(self, line):
+        if line not in self.path_cache:
+            return False
+        cache_value_age = self.turn-self.path_cache[line][2]
+        cache_age = self.turn-self.path_cache_start[line]
+        if cache_value_age < 0.5 * cache_age:
+            return True
+        return False
+    
+    def write_path_cache(self, line, value):
+        if line not in self.path_cache:
+            self.path_cache_start[line] = self.turn
+        self.path_cache[line] = value
+        
 
     def update_prices(self):
         self.prices = {}
@@ -211,7 +213,7 @@ class World:
         for x in range(self.width):
             for y in range(self.height):
                 if self.roads[x][y] > 0:
-                    if self.roads[x][y] < ROAD_K*1.1:
+                    if self.roads[x][y] < ROAD_K:
                         self.roads[x][y] = 0
                     else:
                         self.roads[x][y] -= ROAD_K/2

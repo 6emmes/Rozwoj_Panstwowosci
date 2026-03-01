@@ -6,8 +6,8 @@ from utils.definitions import Grid, Point
 from world import World
 
 SQRT_2 = np.sqrt(2)
-PATH_BEAUTY = 100
-
+PATH_BEAUTY = 25
+PATH_COST_SCALE = 0.9
 
 def _cost(world: World, xold: int, yold: int, x: int, y: int) -> float:
     if world.water[x][y] == 0:
@@ -16,7 +16,9 @@ def _cost(world: World, xold: int, yold: int, x: int, y: int) -> float:
     height = 1 + \
         (PATH_BEAUTY*(world.heightmap[x][y] -
          world.heightmap[xold][yold]) + 0.5) ** 3
-    return max(0.1, river + height - world.roads[x][y])
+    cost = river + height - world.roads[x][y]
+    assert cost > 0
+    return max(0.1, cost * PATH_COST_SCALE)
 
 
 def _reconstruct_path(parents: Grid[Point], start: Point, end: Point) -> list[Point]:
@@ -54,21 +56,17 @@ def find_path(world: World, start: Point, end: Point) -> tuple[list[Point], floa
     else:
         cache_line = (start, end)
 
-    if cache_line in world.path_cache:
+    if world.check_path_cache(cache_line):
         # cache found
-        if world.path_cache[cache_line][2] < world.turn - world.path_cache_timeout:
-            # cache is old, recalculate
-            del world.path_cache[cache_line]
-        else:
-            print(
-                f"cache hit, age: {world.turn - world.path_cache[cache_line][2]}/{world.path_cache_timeout} turns"
-            )
-            path, _, _ = world.path_cache[cache_line]
-            if reverse:
-                print("reversed chache line hit")
-                path.reverse()
-            new_cost = _evaluate_path(world, path)
-            return (path, new_cost)
+        print(
+            f"cache hit, age: {world.turn - world.path_cache[cache_line][2]}/{world.path_cache_timeout} turns"
+        )
+        path, _, _ = world.path_cache[cache_line]
+        if reverse:
+            print("reversed chache line hit")
+            path.reverse()
+        new_cost = _evaluate_path(world, path)
+        return (path, new_cost)
 
     # actual pathfinding:
 
@@ -97,7 +95,7 @@ def find_path(world: World, start: Point, end: Point) -> tuple[list[Point], floa
         
         if (x, y) == end:
             path = _reconstruct_path(parents, start, end)
-            world.path_cache[cache_line] = (path, current_cost, world.turn)
+            world.write_path_cache(cache_line, (path, current_cost, world.turn))
             return path, current_cost
 
         if (x, y) in city_locations:
@@ -110,7 +108,7 @@ def find_path(world: World, start: Point, end: Point) -> tuple[list[Point], floa
             else:
                 key = ((x, y), start)
                 path_to_store = list(reversed(partial_path))
-            world.path_cache[key] = (path_to_store, cost, world.turn)
+            world.write_path_cache(key, (path_to_store, cost, world.turn))
 
         neighbours = [(x - 1, y), (x + 1, y), (x, y - 1), (x, y + 1)]
         for nx, ny in neighbours:
