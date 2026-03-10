@@ -7,7 +7,7 @@ import tifffile
 from city import City
 from state import State
 from utils.definitions import Grid, Point
-
+from utils.log import Logger
 SETTLERSTEPCOUNT = 32
 ANNEALING_START = 50
 ANNEALING_END = 250
@@ -33,6 +33,7 @@ class World:
         self.cities: list[City] = []
         self.states: dict[str, State] = {}
         self.roads: Grid[float] = [[0.0] * self.width for _ in range(self.height)]
+        self.logger = Logger("log")
 
     def action(self):
         pass
