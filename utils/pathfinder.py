@@ -31,6 +31,7 @@ def _reconstruct_path(parents: Grid[Point], start: Point, end: Point) -> list[Po
         current = parents[current[0]][current[1]]
     return path
 
+
 def _evaluate_path(world: World, path: list[Point]) -> float:
     total_cost = 0
     oldx, oldy = path[0]
@@ -44,8 +45,10 @@ def _evaluate_path(world: World, path: list[Point]) -> float:
         oldx, oldy = x, y
     return total_cost
 
+
 # TODO: optimise for multiple goals
 def find_path(world: World, start: Point, end: Point) -> tuple[list[Point], float]:
+    #cache check
     reverse = False
     if start[0] > end[0]:
         reverse = True
@@ -54,18 +57,29 @@ def find_path(world: World, start: Point, end: Point) -> tuple[list[Point], floa
         cache_line = (start, end)
 
     if cache_line in world.path_cache:
-        #cache found
+        # cache found
         if world.path_cache[cache_line][2] < world.turn - world.path_cache_timeout:
-            #cache is old, recalculate
+            # cache is old, recalculate
             del world.path_cache[cache_line]
         else:
-            print(f"cache hit, age: {world.turn - world.path_cache[cache_line][2]}/{world.path_cache_timeout} turns")
+            print(
+                f"cache hit, age: {world.turn - world.path_cache[cache_line][2]}/{world.path_cache_timeout} turns"
+            )
             path, _, _ = world.path_cache[cache_line]
             if reverse:
                 print("reversed chache line hit")
                 path.reverse()
             new_cost = _evaluate_path(world, path)
             return (path, new_cost)
+
+    #actual pathfinding:
+
+    city_locations = []
+    for c in world.cities:
+        point = (c.x, c.y)
+        if point == start or point == end:
+            continue
+        city_locations.append((c.x, c.y))
 
     width = world.width
     height = world.height
@@ -80,10 +94,25 @@ def find_path(world: World, start: Point, end: Point) -> tuple[list[Point], floa
 
     while pq:
         current_cost, x, y = heapq.heappop(pq)
+        if current_cost != min_distance[x][y]:
+            continue
+        
         if (x, y) == end:
             path = _reconstruct_path(parents, start, end)
             world.path_cache[cache_line] = (path, current_cost, world.turn)
             return path, current_cost
+
+        if (x,y) in city_locations:
+            # third city visited, update cache:
+            partial_path = _reconstruct_path(parents, start, (x,y))
+            cost = min_distance[x][y]
+            if start < (x, y):
+                key = (start, (x, y))
+                path_to_store = partial_path
+            else:
+                key = ((x, y), start)
+                path_to_store = list(reversed(partial_path))
+            world.path_cache[key] = (path_to_store, cost, world.turn)
 
         neighbours = [(x - 1, y), (x + 1, y), (x, y - 1), (x, y + 1)]
         for nx, ny in neighbours:

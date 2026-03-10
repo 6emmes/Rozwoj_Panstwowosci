@@ -13,7 +13,7 @@ BLUE = np.array([0, 105, 150])  # Water
 GREEN = np.array([100, 220, 100])  # Land low
 BROWN = np.array([120, 70, 20])  # Land high
 RED = np.array([250, 0, 0])  # City
-GRAY = np.array([40, 40, 40]) # Path
+GRAY = np.array([40, 40, 40])  # Path
 
 gradient = np.linspace(GREEN, BROWN, MAX_LAND_HEIGHT).astype(np.int8)
 

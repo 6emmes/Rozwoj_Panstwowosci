@@ -7,8 +7,8 @@ COLOR_GROUND = [0, 250, 0]
 COLOR_WATER = [0, 0, 250]
 COLOR_BLACK = [0, 0, 0]
 
-class Display:
 
+class Display:
     def __init__(self, world: "World"):
         self.world = world
         self.camera_scale = 1.0
@@ -22,12 +22,16 @@ class Display:
         self.screen = pygame.display.set_mode(win_size)
 
         heightmap = self.world.layers["height_map"]
+        rivermap = self.world.layers["river_map"]
 
         terrain_array = np.zeros(
-            (self.world.width, self.world.height, 3), dtype=np.uint8)
+            (self.world.width, self.world.height, 3), dtype=np.uint8
+        )
         terrain_array[:] = COLOR_GROUND
         water_mask = heightmap == 0
+        river_mask = rivermap != 0
         terrain_array[water_mask] = COLOR_WATER
+        terrain_array[river_mask] = COLOR_WATER
 
         shademap = self.world.layers["shade_map"]
 
@@ -59,13 +63,13 @@ class Display:
             # --- Mouse wheel zoom ---
             if event.type == pygame.MOUSEWHEEL:
                 old_scale = self.camera_scale
-                self.camera_scale *= (1 + self.zoom_speed * event.y)
+                self.camera_scale *= 1 + self.zoom_speed * event.y
                 self.camera_scale = max(0.1, min(5.0, self.camera_scale))
                 mx, my = pygame.mouse.get_pos()
                 mouse = pygame.Vector2(mx, my)
-                self.camera_offset = mouse - \
-                    (mouse - self.camera_offset) * \
-                    (self.camera_scale / old_scale)
+                self.camera_offset = mouse - (mouse - self.camera_offset) * (
+                    self.camera_scale / old_scale
+                )
 
             # --- Arrow key panning ---
             if event.type == pygame.KEYDOWN:
@@ -81,14 +85,18 @@ class Display:
         # --- Apply camera transform ---
         terrain_scaled = pygame.transform.scale(
             self.terrain_surface,
-            (int(self.world.width * self.camera_scale),
-             int(self.world.height * self.camera_scale))
+            (
+                int(self.world.width * self.camera_scale),
+                int(self.world.height * self.camera_scale),
+            ),
         )
 
         roads_scaled = pygame.transform.scale(
             self.roads_surface,
-            (int(self.world.width * self.camera_scale),
-             int(self.world.height * self.camera_scale))
+            (
+                int(self.world.width * self.camera_scale),
+                int(self.world.height * self.camera_scale),
+            ),
         )
 
         # Clear screen
@@ -103,8 +111,10 @@ class Display:
         for st in self.world.states.values():
             state_color.hsva = (st.hue, 100, 100, 100)
             for city in st.cities:
-                pos = pygame.Vector2(city.x, city.y) * \
-                self.camera_scale + self.camera_offset
+                pos = (
+                    pygame.Vector2(city.x, city.y) * self.camera_scale
+                    + self.camera_offset
+                )
 
                 pygame.draw.circle(self.screen, COLOR_BLACK, pos, 4)
                 pygame.draw.circle(self.screen, state_color, pos, 3)

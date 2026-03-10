@@ -1,5 +1,7 @@
 from world import World
 from utils.display import Display
+from utils.sim_types import BuildingType, ResourceType
+from world import World
 
 PYGAME = True
 
@@ -18,6 +20,7 @@ def main() -> None:
             print(f"turn{i}")
             sim_world.update_prices()
             print(sim_world.prices)
+
         sim_world.next_turn()
 
         if PYGAME:
