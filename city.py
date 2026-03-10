@@ -455,18 +455,6 @@ class City:
                 new_queue.append((building, i - 1))
 
         self.building_queue = new_queue
-        
-        self.calculate_use_rate()
-        self.use_resources()
-
-        # Population control
-        if self.resources[ResourceType.FOOD][0] == 0:
-            self.citizens.pop()
-        elif self.resources[ResourceType.FOOD][0] >= POP_GROWTH_COST + BUFFER:
-            self._grow_population()
-
-        self.calculate_use_rate()
-        self.use_resources()
 
     def _grow_population(self):
         for _ in range(0, int(math.sqrt(len(self.citizens)))):
