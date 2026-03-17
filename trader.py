@@ -186,7 +186,8 @@ class Trader(Citizen):
         return cost
 
     def plan_travel(self) -> None:
-        from utils.pathfinder import find_path
+        # from utils.pathfinder import find_path
+        from utils.turbofinder import find_path
 
         home_x = self.city.x
         home_y = self.city.y
