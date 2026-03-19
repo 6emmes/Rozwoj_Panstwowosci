@@ -1,14 +1,9 @@
-import matplotlib.pyplot as plt
-import pandas as pd
-import seaborn as sns
-
+from world import World
 from utils.display import Display
 from utils.sim_types import BuildingType, ResourceType
 from world import World
 
 PYGAME = True
-PLOTTED_CITY = 3
-
 
 def main() -> None:
     sim_world = World()
@@ -16,17 +11,7 @@ def main() -> None:
         display_obj = Display(sim_world)
         display_obj.pygame_init()
 
-    sim_world.spawn_states(4, 5)
-
-    priorities = []
-    prod_priorities = []
-    use_rates = []
-    production_rates = []
-    gold = []
-    resources = {key: [] for key in sim_world.cities[0].resources}
-    prices = {key: [] for key in sim_world.cities[0].resources}
-    citizens = []
-    buildings = {key: [] for key in sim_world.cities[0].buildings}
+    sim_world.spawn_states(3, 5)
 
     turns = 600
     # Główna pętla symulacji
@@ -35,25 +20,6 @@ def main() -> None:
             print(f"turn{i}")
             sim_world.update_prices()
             print(sim_world.prices)
-            sum = 0
-            for s in sim_world.states.values():
-                sum += s.budget
-            for c in sim_world.cities:
-                sum += c.gold
-            print(f"Simulation gold level: {sum}")
-        priorities.append(sim_world.cities[PLOTTED_CITY].priorities.copy())
-        prod_priorities.append(sim_world.cities[PLOTTED_CITY].production_priorities.copy())
-        use_rates.append(sim_world.cities[PLOTTED_CITY].use_rate.copy())
-        production_rates.append(sim_world.cities[PLOTTED_CITY].accumulation_rate)
-        gold.append(sim_world.cities[PLOTTED_CITY].gold)
-        res = sim_world.cities[PLOTTED_CITY].resources
-        citizens.append(len(sim_world.cities[PLOTTED_CITY].citizens))
-        for key in res:
-            resources[key].append(res[key][0])
-            prices[key].append(res[key][1])
-        bld = sim_world.cities[0].buildings
-        for key in bld:
-            buildings[key].append(bld[key])
 
         sim_world.next_turn()
 
@@ -63,95 +29,10 @@ def main() -> None:
             continue_simulation = display_obj.pygame_loop()
             if not continue_simulation:
                 return
-
-    # Wizualizacja per produkt
-    plt.figure(figsize=(20, 10))
-
-    resource_names = [rt for rt in ResourceType]
-    for i, resource in enumerate(resource_names):
-        priority_data = [p[resource] for p in priorities]
-        prod_priorities_data = [p[resource] for p in prod_priorities]
-        use_rate_data = [u[resource] for u in use_rates]
-        production_rate_data = [pr[resource] for pr in production_rates]
-
-        df = pd.DataFrame(
-            {
-                "Tura": range(turns),
-                "Wskaźnik produkcji": production_rate_data,
-                "Priorytet": priority_data,
-                "Piorytet produkcji": prod_priorities_data,
-                "Wskaźnik zużycia": use_rate_data,
-            }
-        )
-
-        plt.subplot(3, 5, i + 1)
-        sns.lineplot(data=df, x="Tura", y="Priorytet", label="Priorytet")
-        sns.lineplot(data=df, x="Tura", y="Wskaźnik zużycia", label="Wskaźnik zużycia")
-        sns.lineplot(
-            data=df, x="Tura", y="Wskaźnik produkcji", label="Wskaźnik produkcji"
-        )
-        sns.lineplot(
-            data=df, x="Tura", y="Piorytet produkcji", label="Piorytet produkcji"
-        )
-        plt.ylim(0, 50)
-        plt.title(f"Zasób: {resource}")
-        plt.xlabel("Tura")
-        plt.ylabel("Wartość")
-        plt.legend()
-    offset = len(resource_names)
-
-    plt.subplot(3, 5, offset + 1)
-    sns.lineplot(x=range(turns), y=gold, label="Złoto", color="gold")
-    plt.title("Złoto")
-    plt.xlabel("Tura")
-    plt.ylabel("Ilość złota")
-    plt.legend()
-
-    plt.subplot(3, 5, offset + 2)
-    sns.lineplot(resources)
-    plt.title("Ilość zasobów")
-    plt.xlabel("Tura")
-    plt.ylabel("Zasób")
-    plt.ylim(0, 2_500)
-    plt.legend()
-
-    plt.subplot(3, 5, offset + 3)
-    sns.lineplot(prices)
-    plt.title("Ceny zasobów")
-    plt.xlabel("Tura")
-    plt.ylabel("Cena")
-    plt.legend()
-
-    plt.subplot(3, 5, offset + 4)
-    sns.lineplot(citizens)
-    plt.title("Populacja")
-    plt.xlabel("Tura")
-    plt.ylabel("Liczba osób")
-
-    plt.subplot(3, 5, offset + 5)
-    sns.lineplot(buildings)
-    plt.title("Liczba budynków")
-    plt.xlabel("Tura")
-    plt.ylabel("Budynek")
-    plt.legend()
-    plt.ylim(0, 16)
-
-    plt.tight_layout()
-    plt.savefig("visualization/prices.png", dpi=300)
-
-    # for c in sim_world.cities:
-    #     print(c.name, round(c.gold), len(c.citizens), end = '')
-    #     for b in c.buildings:
-    #         print(f"{b.name} : {c.buildings[b]} | ", end='')
-    #     print()
-    # print("~~~~~~ zasoby ~~~~~~")
-    # for c in sim_world.cities:
-    #     print(c.name, c.accumulation_rate)
+    if PYGAME:
+        display_obj.save()
     for c in sim_world.cities:
-        print(f"{c.name} : {c.gold}")
-    print()
-    for s in sim_world.states.values():
-        print(s.name, s.score)
+        print(c.name, c.gold, len(c.citizens), c.buildings)
 
 
 if __name__ == "__main__":

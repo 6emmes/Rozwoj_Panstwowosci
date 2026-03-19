@@ -6,11 +6,15 @@ from typing import TYPE_CHECKING
 
 from citizen import Citizen
 from resources import Resource
+from utils.log import LogEvent
 
 if TYPE_CHECKING:
     from city import City
     from utils.definitions import Point
 
+SPEED = 10
+CAPACITY_MIN = 30
+CAPACITY_MAX = 50
 
 class Trader(Citizen):
     UNIT_COST = 2
@@ -25,9 +29,9 @@ class Trader(Citizen):
         self.good_to_buy: Resource | None = None
         self.amount_of_good_to_buy: int = 0
         self.gold: float = 0.0
-        self.capacity: int = random.randint(30, 50)
+        self.capacity: int = random.randint(CAPACITY_MIN, CAPACITY_MAX)
         self.target_city: City | None = None
-        self.speed: int = 10  # jednostki na turę
+        self.speed: int = SPEED  # jednostki na turę
         self.last_path: list[Point] = []
         self.trade_partners: dict[
             City, int
@@ -241,9 +245,13 @@ class Trader(Citizen):
         self.city.trade_efficiency[self.good_to_buy] -= self.trade_efficiency
         self.city.recalculate_good_price(self.good_to_buy)
         self.strengthen_trade_partner()
-        # print(
-        #     f"    Handlarz dostarczył {self.amount_of_good_to_buy} {self.good_to_buy} do miasta {self.city.name}"
-        # )
+        self.city.world.logger.save_log(
+            LogEvent(
+                turn=self.city.world.turn,
+                location=self.city.name,
+                description=f"Handlarz dostarczył {self.amount_of_good_to_buy} {self.good_to_buy} do miasta {self.city.name}"
+            )
+        )
 
     def reset_trader(self):
         self.target_city_distance = 0
