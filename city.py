@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING
 
 from buildings import FACTORIES, PASSIVE_BUILDINGS, Building
 from citizen import Citizen
+from utils.log import LogCityEstablishment, LogConsumption, LogGenericResource, LogPopulation, LogProduction, LogResource, LogTrade
 from resources import (
     ALL_RESOURCES,
     MANUFACTURED_RESOURCES,
@@ -75,6 +76,7 @@ class City:
         self._randomize_initial_recources()  # Do celów testowych
         if self.world.layers["height_map"][self.x][self.y] == 0:
             print("Miasto tonie!")
+        self._log_city_establishment()
 
     def _randomize_initial_recources(self):
         possible_resources = RESOURCES
@@ -253,6 +255,61 @@ class City:
         amount_to_get = min(amount, self.gold)
         self.gold -= amount_to_get
         return amount
+    
+    def _log(self):
+        if self.world.turn % 5 != 0:
+            return
+        
+        logsProd = [LogProduction(
+                turn=self.world.turn,
+                location=self.name,
+                resource=acc.value,
+                amount=self.accumulation_rate[acc]
+            ) for acc in self.accumulation_rate.keys()]
+        
+        logsCons = [LogConsumption(
+                turn=self.world.turn,
+                location=self.name,
+                resource=acc.value,
+                amount=self.use_rate[acc]
+            ) for acc in self.use_rate.keys()]
+        
+        logsRes = [LogResource(
+                turn=self.world.turn,
+                location=self.name,
+                resource=acc.value,
+                amount=self.resources[acc][0],
+                price=self.resources[acc][1]
+            ) for acc in self.resources.keys()]
+        
+        logsGold = [LogGenericResource(
+                turn=self.world.turn,
+                location=self.name,
+                resource="gold",
+                amount=self.gold,
+            )]
+
+        logsPop = [LogPopulation(
+                turn=self.world.turn,
+                location=self.name,
+                population=len(self.citizens)
+            )]
+
+        self.world.logger.save_logs(
+            logsProd + logsCons + logsRes + logsPop + logsGold
+        )
+
+    def _log_city_establishment(self):
+        self.world.logger.save_log_est(
+            LogCityEstablishment(
+                turn=self.world.turn,
+                location=self.name,
+                land_id=self.land_id,
+                ocean_id=self.ocean_id,
+                X=self.x,
+                Y=self.y
+            )
+        )
 
     def turn(self):
         if len(self.citizens) == 0:
@@ -272,6 +329,7 @@ class City:
             self.citizens.pop()
         elif self.resources[ResourceType.FOOD][0] >= POP_GROWTH_COST + BUFFER:
             self._grow_population()
+        self._log()
 
     def _turn_trading(self):
         for resource, priority in self.import_priorities.items():
@@ -284,8 +342,16 @@ class City:
                 if trader is not None:
                     amount, price = trader.buy_asap(resource, 50)
                     if amount is not None:
-                        print(
-                            f"\tMiasto {self.name} wysyła handlarza kupić {amount} {resource} po cenie {price} czas: {trader.target_city_distance / trader.speed}"
+                        self.world.logger.save_log(
+                            LogTrade(
+                                turn=self.world.turn,
+                                location=self.name,
+                                destination=trader.target_city.name if trader.target_city else None,
+                                travel_time=trader.target_city_distance/trader.speed if trader.target_city_distance else None,
+                                resource=resource.value,
+                                amount=amount,
+                                price=price
+                            )
                         )
 
     def _turn_mining(self):
