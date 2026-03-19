@@ -167,7 +167,7 @@ class World:
             new_city.create_citizen()
 
         new_city.create_trader()
-        new_city.calcualate_use_rate()
+        new_city.calculate_use_rate()
         self.cities.append(new_city)
         state.add_city(new_city)
         new_city.state = state

@@ -49,7 +49,7 @@ class State:
                 self.settle_candidates[res] = (new[res], x, y)
     
     def _turn_settle(self):
-        if self.budget > 500:
+        if self.budget > 700:
             best_value = 0
             for res in self.settle_candidates.keys():
                 value = self.settle_candidates[res][0] * self.world.prices[res]
@@ -67,4 +67,4 @@ class State:
                 pass
             else:
                 # new_city.gold = 500 - already in city constructor
-                self.budget -= 500
+                self.budget -= 700
