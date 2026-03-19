@@ -1,8 +1,7 @@
-from utils.definitions import Grid, Point
+from utils.definitions import Point
 from world import World
 
 def _straight_path(start: Point, end: Point) -> list[Point]:
-    """Return a simple straight path using diagonal + cardinal moves."""
     path = []
     x, y = start
     ex, ey = end
@@ -21,7 +20,6 @@ def _straight_path(start: Point, end: Point) -> list[Point]:
 
 
 def _evaluate_path_straight(path: list[Point]) -> float:
-    """Cost is simply path length (no terrain)."""
     return float(len(path) - 1)
 
 
@@ -42,30 +40,10 @@ def find_path(world: World, start: Point, end: Point) -> tuple[list[Point], floa
         new_cost = _evaluate_path_straight(path)
         return path, new_cost
 
-    # actual straight-line pathfinding
+    # actual pathfinding
     path = _straight_path(start, end)
     cost = _evaluate_path_straight(path)
 
-    # write full path to cache
     world.write_path_cache(cache_line, (path, cost, world.turn))
-
-    # also write partial paths to intermediate cities
-    for c in world.cities:
-        point = (c.x, c.y)
-        if point == start or point == end:
-            continue
-        if point in path:
-            idx = path.index(point)
-            partial = path[: idx + 1]
-            partial_cost = float(idx)
-
-            if start < point:
-                key = (start, point)
-                to_store = partial
-            else:
-                key = (point, start)
-                to_store = list(reversed(partial))
-
-            world.write_path_cache(key, (to_store, partial_cost, world.turn))
 
     return path, cost
