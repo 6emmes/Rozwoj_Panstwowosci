@@ -36,6 +36,8 @@ MAX_FOG = 5
 BUFFER = 50
 POP_GROWTH_COST = 20
 
+SETTLER_SCOUTING_RANGE = (32, 128)
+
 
 class City:
     def __init__(self, x: int, y: int, name: str, world: World) -> None:
@@ -52,7 +54,7 @@ class City:
         self.religious_value: object = None
         self.gold: int = 500
         self.resources: dict[ResourceType, float] = {
-            resource: 0 for resource in RESOURCES
+            resource: (0.0, 5.0) for resource in RESOURCES
         }
         self.accumulation_rate: dict[ResourceType, float] = {
             resource: 0.0 for resource in RESOURCES
@@ -70,10 +72,13 @@ class City:
             resource: 0.0 for resource in RESOURCES
         }
         self.priorities: dict = {resource: 0.0 for resource in RESOURCES}
+        self.settle_candidates: dict = {}
         self.world: World = world  # placeholder attribute
+        self.state = None
+        self.DEBUG_bankruptcy = 0
         self.id_init()
         print(f"land id: {self.land_id}")
-        self._randomize_initial_recources()  # Do celów testowych
+        # self._randomize_initial_recources()  # Do celów testowych
         if self.world.layers["height_map"][self.x][self.y] == 0:
             print("Miasto tonie!")
         self._log_city_establishment()
@@ -90,7 +95,18 @@ class City:
         print(f"Miasto {self.name} zostało założone w ({self.x}, {self.y})")
 
     def id_init(self):
-        self.land_id: float = self.world.layers["id_map"][self.x][self.y]
+        try:
+            self.land_id: float = self.world.layers["id_map"][self.x][self.y]
+            if self.land_id < 0.5:
+                print(f"Miasto {self.name} znajduje się na wodzie!")
+                raise ValueError("City cannot be placed on water")
+        except ValueError:
+            a = self.land_id = self.world.layers["id_map"][self.x+2][self.y+2]
+            b = self.land_id = self.world.layers["id_map"][self.x-2][self.y-2]
+            self.land_id = max(a,b)
+            
+
+
         self.ocean_id: float = self.world.find_ocean((self.x, self.y))
         if self.ocean_id is None:
             print(f"Miasto {self.name} nie ma dostępu do oceanu")
@@ -169,7 +185,7 @@ class City:
         elif resource in MANUFACTURED_RESOURCES:
             production_rate = 0
             for input in MANUFACTURED_RESOURCES[resource].input_resources:
-                production_rate = max(production_rate, self.accumulation_rate[input])
+                production_rate = max(production_rate, self.accumulation_rate[input])/5
         return global_price * production_rate
 
     def calculate_use_rate(self):
@@ -208,7 +224,12 @@ class City:
             amount, price = self.resources[resource]
             amount -= rate
             if amount < 0:
+                self.gold -= amount
+                if self.gold < 0:
+                    self.gold = 0
                 amount = 0
+                self.DEBUG_bankruptcy +=1
+                # print(f"No {resource}")
             self.resources[resource] = (amount, price)
 
     def recalculate_good_price(self, good: ResourceType) -> float:
@@ -320,6 +341,8 @@ class City:
         self._turn_trading()
         self._turn_mining()
         self._turn_building()
+        self._turn_settle()
+        self._turn_tax()
 
         self.calculate_use_rate()
         self.use_resources()
@@ -397,6 +420,8 @@ class City:
                 # should be even more
                 if self.production_priorities[res] < 1.0:
                     continue
+                if res == ResourceType.FOOD and self.buildings[BuildingType.FARM] > factory_count * 0.5:
+                    continue    #keep farms less than 50% of buildings
                 if res in RAW_RESOURCES:
                     building = FACTORIES[RAW_RESOURCES[res].factory]
                 elif res in MANUFACTURED_RESOURCES:
@@ -456,7 +481,34 @@ class City:
 
         self.building_queue = new_queue
 
+
+    def _turn_settle(self):
+        if self.world.turn%10 > 0: #execute only sometimes
+            return
+        PI = 3.14159265359
+        #settle spot exploration:
+        sample_angle = random.uniform(0.0, 2 * PI)
+        sample_radius = random.uniform(*SETTLER_SCOUTING_RANGE)
+        sample_x = int(sample_radius * math.cos(sample_angle)) + self.x
+        sample_y = int(sample_radius * math.sin(sample_angle)) + self.y
+        if sample_x < 0 or sample_x >= self.world.width or sample_y < 0 or sample_y >= self.world.height:
+            return
+        if self.world.heightmap[sample_x][sample_y] == 0:
+            return
+        map_value = {resource: 0 for resource in RAW_RESOURCES}
+        for res in RAW_RESOURCES:
+            if RAW_RESOURCES[res].map_layer is None:
+                map_value[res] = 0.25
+            else:
+                map_value[res] = self.world.layers[RAW_RESOURCES[res].map_layer][sample_x][sample_y]
+                map_value[res] = map_value[res] * RAW_RESOURCES[res].map_flat_scale
+
+        self.state.update_settle_candidates(map_value, sample_x, sample_y)
+
+
     def _grow_population(self):
+        if self.unemployed > 5:
+            return #no jobs for new people
         for _ in range(0, int(math.sqrt(len(self.citizens)))):
             if self.resources[ResourceType.FOOD][0] >= POP_GROWTH_COST + BUFFER:
                 self.create_citizen()
@@ -464,6 +516,14 @@ class City:
                 self.resources[ResourceType.FOOD] = amount - POP_GROWTH_COST, cost
             else:
                 return
+
+    def _turn_tax(self):
+        if self.gold < 250:
+            return
+        tax = (self.gold - 250) // 10
+        self.gold -= tax
+        self.state.budget += tax
+        self.state.score += tax
 
     def __repr__(self):
         return f"Miasto({self.name}, mieszkańcy: {len(self.citizens)})"

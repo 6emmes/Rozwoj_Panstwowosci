@@ -62,14 +62,14 @@ RAW_RESOURCES: dict[ResourceType, RawResource] = {
         factory=BuildingType.LUMBER_CAMP,
         human_harvesting=0.75,
         factory_harvesting=1.2,
-        map_flat_scale=5.0,
+        map_flat_scale=8.0,
     ),
     ResourceType.WOOD_DECI: RawResource(
         map_layer="deciduous_map",
         factory=BuildingType.LUMBER_CAMP,
         human_harvesting=0.75,
         factory_harvesting=1.2,
-        map_flat_scale=5.0,
+        map_flat_scale=8.0,
     ),
     # TODO: replace with wheat, move food to secondary resources
     ResourceType.FOOD: RawResource(
@@ -77,7 +77,7 @@ RAW_RESOURCES: dict[ResourceType, RawResource] = {
         factory=BuildingType.FARM,
         human_harvesting=0.25,
         factory_harvesting=2.0,
-        map_flat_scale=5.5,
+        map_flat_scale=4.0,
     ),
     ResourceType.MARBLE: RawResource(
         map_layer="marble_map",
@@ -134,7 +134,7 @@ MANUFACTURED_RESOURCES: dict[ResourceType, ManufacturedResource] = {
         factory=BuildingType.SAWMILL,
         human_production=0.5,
         factory_production=1.0,
-        input_resources={ResourceType.WOOD_DECI: 1.0, ResourceType.WOOD_CONI: 1.0},
+        input_resources={ResourceType.WOOD_DECI: 1.0, ResourceType.WOOD_CONI: 2.0},
     ),
     ResourceType.BRICKS: ManufacturedResource(
         factory=BuildingType.KILN,
