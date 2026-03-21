@@ -17,6 +17,7 @@ FRIENDLY_CITY_DENSITY = 32
 HOSTILE_CITY_DENSITY = 64
 
 STATIC_RANGE = 10
+INFLUENCE_THRESHOLD = 15.0
 
 class World:
     def __init__(self) -> None:
@@ -287,7 +288,7 @@ class World:
 
                     influence_grid[state_name][cx][cy] += current_influence
 
-                    for dx, dy in [(-1, 0), (1, 0), (0, -1), (0, 1)]:
+                    for dx, dy in [(-1, 0), (1, 0), (0, -1), (0, 1), (-1, -1), (-1, 1), (1, -1), (1, 1)]:
                         nx, ny = cx + dx, cy + dy
 
                         if 0 <= nx < self.width and 0 <= ny < self.height:
@@ -298,31 +299,27 @@ class World:
                                 height = self.layers["height_map"][nx][ny]
                                 terrain_cost = 3.0 + (height * 10.0)
                                 road_level = self.roads[nx][ny]
-                                cost = terrain_cost * (1.0 - (road_level * 0.85))
 
-                                next_influence = current_influence - cost
+                                step_cost = terrain_cost * (1.0 - (road_level * 0.85))
+
+                                if dx != 0 and dy != 0:
+                                    step_cost *= 1.414
+
+                                next_influence = current_influence - step_cost
 
                                 if next_influence > 0.1:
                                     heapq.heappush(queue, (-next_influence, nx, ny))
 
-        # --- NOWE: SZTYWNA REZERWACJA TERENU (CORE TERRITORY) ---
-        # Niezależnie od tego, jak silne wpływy wygenerowało obce państwo na tych polach,
-        # miasto zawsze rezerwuje swój najbliższy obszar (np. promień 3 kafelków).
         for state_name, state in self.states.items():
             for city in state.cities:
-                # Obejmujemy kafelki w odległości Manhattan <= 3 wokół miasta
                 for dx in range(-STATIC_RANGE, STATIC_RANGE + 1):
                     for dy in range(-STATIC_RANGE, STATIC_RANGE + 1):
-                        if abs(dx) + abs(dy) <= STATIC_RANGE:
+                        if dx ** 2 + dy ** 2 <= pow(STATIC_RANGE, 2):
                             nx, ny = city.x + dx, city.y + dy
                             if 0 <= nx < self.width and 0 <= ny < self.height:
-                                # Rezerwujemy tylko ląd
                                 if self.layers["water_map"][nx][ny] != 0.0:
-                                    # Ustawiamy wpływ na nieskończoność - nikt tego nie przebije
                                     influence_grid[state_name][nx][ny] = float('inf')
-        # --------------------------------------------------------
 
-        INFLUENCE_THRESHOLD = 15.0
 
         for x in range(self.width):
             for y in range(self.height):
