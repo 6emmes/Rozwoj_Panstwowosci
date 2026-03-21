@@ -97,6 +97,8 @@ class Trader(Citizen):
         best_score: float = 0
         best_amount: int = 0
         for city in cities:
+            if city.state == self.city.state and city not in self.trade_partners.keys():
+                self.trade_partners[city] = 0 # zerowy fog w kraju
             if city == self.city:
                 continue
             if city in self.trade_partners:
@@ -109,7 +111,7 @@ class Trader(Citizen):
             city_amount = math.floor(
                 city_amount[0] + (city_amount[1] - city_amount[0]) * self.risk_factor
             )
-            price = math.floor(price[1] - (price[1] - price[0]) * self.risk_factor)
+            price = math.floor(price[1] - (price[1] - price[0]) * self.risk_factor) * (1 + city.state.tariff)
 
             trade_amount = min(self.capacity, city_amount)
 
