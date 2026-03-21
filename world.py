@@ -8,12 +8,14 @@ from city import City
 from state import State
 from utils.definitions import Grid, Point
 from utils.log import Logger
+
 SETTLERSTEPCOUNT = 32
 
 ROAD_K = 0.04
 
 FRIENDLY_CITY_DENSITY = 32
 HOSTILE_CITY_DENSITY = 64
+
 
 class World:
     def __init__(self) -> None:
@@ -70,7 +72,7 @@ class World:
     def build_road(self, path: list[Point]):
         for x, y in path:
             old_road = self.roads[x][y]
-            self.roads[x][y] = old_road + ROAD_K * (1-old_road)
+            self.roads[x][y] = old_road + ROAD_K * (1 - old_road)
 
     def next_turn(self):
         for s in self.states.values():
@@ -100,7 +102,7 @@ class World:
             new_city._randomize_initial_recources()
             new_city.state = self.states[state_name]
 
-    def spawn_settler_rand(self, name, no_citizens, goal = "fertility_map"):
+    def spawn_settler_rand(self, name, no_citizens, goal="fertility_map"):
         NEIGHBOR_OFFSETS = [(0, -1), (-1, 0), (1, 0), (0, 1)]
         while True:
             contflag = 1
@@ -152,7 +154,7 @@ class World:
         new_city.calculate_use_rate()
         self.cities.append(new_city)
         return new_city
-    
+
     def settle(self, state: State, no_citizens, x, y):
         for c in self.cities:
             if c.state == state:
@@ -163,7 +165,7 @@ class World:
                     return None
         if len(state.city_names) == 0:
             return None
-        new_city = City(x, y, state.city_names.pop(), self)
+        new_city = City(x, y, state.city_names.pop(), self, state.cities[0].culture)
         for _ in range(no_citizens):
             new_city.create_citizen()
 
@@ -173,7 +175,6 @@ class World:
         state.add_city(new_city)
         new_city.state = state
         return new_city
-
 
     def spawn_settlers(self, names: list[str], no_citizens: int, seed=10):
         random.seed(seed)
@@ -198,21 +199,20 @@ class World:
                 if self.heightmap[cur_pos[0]][cur_pos[1]] == 0.0:
                     return self.layers["id_map"][cur_pos[0]][cur_pos[1]]
         return None
-    
+
     def check_path_cache(self, line):
         if line not in self.path_cache:
             return False
-        cache_value_age = self.turn-self.path_cache[line][2]
-        cache_age = self.turn-self.path_cache_start[line]
+        cache_value_age = self.turn - self.path_cache[line][2]
+        cache_age = self.turn - self.path_cache_start[line]
         if cache_value_age < 0.5 * cache_age:
             return True
         return False
-    
+
     def write_path_cache(self, line, value):
         if line not in self.path_cache:
             self.path_cache_start[line] = self.turn
         self.path_cache[line] = value
-        
 
     def update_prices(self):
         self.prices = {}
@@ -243,4 +243,5 @@ class World:
                     if self.roads[x][y] < ROAD_K:
                         self.roads[x][y] = 0
                     else:
-                        self.roads[x][y] -= ROAD_K/2
+                        self.roads[x][y] -= ROAD_K / 2
+
