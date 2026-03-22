@@ -6,8 +6,7 @@ from city import City
 if TYPE_CHECKING:
     from world import World
 
-from resources import RAW_RESOURCES, RawResource
-from utils.sim_types import ResourceType
+from resources import RAW_RESOURCES
 
 if TYPE_CHECKING:
     from world import World
@@ -45,6 +44,7 @@ class State:
             for trader in c.traders:
                 trader.trader_action()
         self._turn_settle()
+        self._turn_diplomacy()
 
     def update_settle_candidates(self, new, x, y):
         for res in new.keys():
@@ -72,3 +72,5 @@ class State:
                 # new_city.gold = 500 - already in city constructor
                 self.budget -= 700
 
+    def _turn_diplomacy(self):
+        pass
