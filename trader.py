@@ -16,6 +16,8 @@ SPEED = 10
 CAPACITY_MIN = 30
 CAPACITY_MAX = 50
 
+TURBO = False
+
 class Trader(Citizen):
     UNIT_COST = 2
     SCAN_CITIES = 3
@@ -187,7 +189,10 @@ class Trader(Citizen):
         return cost
 
     def plan_travel(self) -> None:
-        from utils.pathfinder import find_path
+        if TURBO:
+            from utils.turbofinder import find_path
+        else:
+            from utils.pathfinder import find_path
 
         home_x = self.city.x
         home_y = self.city.y
