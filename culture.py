@@ -11,7 +11,7 @@ NO_FLAVOURS = 5
 @dataclass
 class Culture:
     # All float values should be in <0, 1> range
-    inwords_focus: float
+    isolationism: float
     aggressiveness: float
     flavour: list[float]
 
@@ -24,7 +24,7 @@ def random_culture() -> Culture:
 
 def distance(c1: Culture, c2: Culture) -> float:
     sqrs = pow(c1.aggressiveness - c2.aggressiveness, 2)
-    sqrs += pow(c1.inwords_focus - c2.inwords_focus, 2)
+    sqrs += pow(c1.isolationism - c2.isolationism, 2)
     sqrs += sum(pow(x - y, 2) for (x, y) in zip(c1.flavour, c2.flavour))
     return math.sqrt(sqrs)
 
