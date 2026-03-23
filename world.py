@@ -18,6 +18,7 @@ HOSTILE_CITY_DENSITY = 64
 
 STATIC_RANGE = 10
 INFLUENCE_THRESHOLD = 15.0
+POPULATION_PREMIUM = 2.0
 
 class World:
     def __init__(self) -> None:
@@ -269,9 +270,9 @@ class World:
 
             for city in state.cities:
                 if is_true_state:
-                    base_influence = 50.0 + (len(city.citizens) * 3.0)
+                    base_influence = 30.0 + (len(city.citizens) * POPULATION_PREMIUM)
                 else:
-                    base_influence = 50.0
+                    base_influence = 30.0
 
                 if base_influence <= 0:
                     continue
@@ -301,7 +302,7 @@ class World:
                                 terrain_cost = 3.0 + (height * 10.0)
                                 road_level = self.roads[nx][ny]
 
-                                step_cost = terrain_cost * (1.0 - (road_level * 0.85))
+                                step_cost = terrain_cost * (1.0 - (road_level * 0.5))
 
                                 if dx != 0 and dy != 0:
                                     step_cost *= 1.414
