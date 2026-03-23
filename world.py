@@ -257,6 +257,7 @@ class World:
                         self.roads[x][y] -= ROAD_K/2
 
     def update_territories(self):
+        directions = [(-1, 0), (1, 0), (0, -1), (0, 1), (-1, -1), (-1, 1), (1, -1), (1, 1)]
         influence_grid = {
             state_name: [[0.0 for _ in range(self.width)] for _ in range(self.height)]
             for state_name in self.states.keys()
@@ -288,7 +289,7 @@ class World:
 
                     influence_grid[state_name][cx][cy] += current_influence
 
-                    for dx, dy in [(-1, 0), (1, 0), (0, -1), (0, 1), (-1, -1), (-1, 1), (1, -1), (1, 1)]:
+                    for dx, dy in directions:
                         nx, ny = cx + dx, cy + dy
 
                         if 0 <= nx < self.width and 0 <= ny < self.height:
