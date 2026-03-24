@@ -323,8 +323,8 @@ class World:
                                     influence_grid[state_name][nx][ny] = float('inf')
 
 
-        for x in range(self.width):
-            for y in range(self.height):
+        for x in range(0, self.width, 2):
+            for y in range(0, self.height, 2):
                 best_state = None
                 max_inf = INFLUENCE_THRESHOLD
                 for state_name, grid in influence_grid.items():
