@@ -1,9 +1,9 @@
-from world import World
 from utils.display import Display
 from utils.sim_types import BuildingType, ResourceType
 from world import World
 
 PYGAME = True
+
 
 def main() -> None:
     sim_world = World()
@@ -13,7 +13,7 @@ def main() -> None:
 
     sim_world.spawn_states(3, 5)
 
-    turns = 600
+    turns = 1000
     # Główna pętla symulacji
     for i in range(turns):
         if i % 100 == 0:
