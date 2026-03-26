@@ -6,19 +6,19 @@ from utils.definitions import Grid, Point
 from world import World
 
 SQRT_2 = np.sqrt(2)
-H = 3
-A = 5
-B = 4.6
+PATH_BEAUTY = 25
+PATH_COST_SCALE = 0.9
 
-heigit_eff = lambda x: H * (np.exp(x) - 1) + 1
-river_eff = lambda x: A * np.exp(-B * x)
-
-
-def _cost(world: World, x: int, y: int) -> float:
+def _cost(world: World, xold: int, yold: int, x: int, y: int) -> float:
     if world.water[x][y] == 0:
         return float("inf")
-    river = river_eff(world.heightmap[x][y]) if world.rivers[x][y] > 0 else 0
-    return max(0.1, heigit_eff(world.heightmap[x][y]) + river - world.roads[x][y])
+    river = 2*world.rivers[x][y]
+    height = 1 + \
+        (PATH_BEAUTY*(world.heightmap[x][y] -
+         world.heightmap[xold][yold]) + 0.5) ** 3
+    cost = river + height - world.roads[x][y]
+    assert cost > 0
+    return max(0.1, cost * PATH_COST_SCALE)
 
 
 def _reconstruct_path(parents: Grid[Point], start: Point, end: Point) -> list[Point]:
@@ -31,6 +31,7 @@ def _reconstruct_path(parents: Grid[Point], start: Point, end: Point) -> list[Po
         current = parents[current[0]][current[1]]
     return path
 
+
 def _evaluate_path(world: World, path: list[Point]) -> float:
     total_cost = 0
     oldx, oldy = path[0]
@@ -38,14 +39,16 @@ def _evaluate_path(world: World, path: list[Point]) -> float:
         xdist = abs(x - oldx)
         ydist = abs(y - oldy)
         if xdist == 1 and ydist == 1:
-            total_cost += _cost(world, x, y) * SQRT_2
+            total_cost += _cost(world, oldx, oldy, x, y) * SQRT_2
         else:
-            total_cost += _cost(world, x, y)
+            total_cost += _cost(world, oldx, oldy, x, y)
         oldx, oldy = x, y
     return total_cost
 
+
 # TODO: optimise for multiple goals
 def find_path(world: World, start: Point, end: Point) -> tuple[list[Point], float]:
+    # cache check
     reverse = False
     if start[0] > end[0]:
         reverse = True
@@ -53,19 +56,23 @@ def find_path(world: World, start: Point, end: Point) -> tuple[list[Point], floa
     else:
         cache_line = (start, end)
 
-    if cache_line in world.path_cache:
-        #cache found
-        if world.path_cache[cache_line][2] < world.turn - world.path_cache_timeout:
-            #cache is old, recalculate
-            del world.path_cache[cache_line]
-        else:
-            print(f"cache hit, age: {world.turn - world.path_cache[cache_line][2]}/{world.path_cache_timeout} turns")
-            path, _, _ = world.path_cache[cache_line]
-            if reverse:
-                print("reversed chache line hit")
-                path.reverse()
-            new_cost = _evaluate_path(world, path)
-            return (path, new_cost)
+    if world.check_path_cache(cache_line):
+        # cache found
+        path, _, _ = world.path_cache[cache_line]
+        if reverse:
+            # print("reversed chache line hit")
+            path.reverse()
+        new_cost = _evaluate_path(world, path)
+        return (path, new_cost)
+
+    # actual pathfinding:
+
+    city_locations = []
+    for c in world.cities:
+        point = (c.x, c.y)
+        if point == start or point == end:
+            continue
+        city_locations.append((c.x, c.y))
 
     width = world.width
     height = world.height
@@ -80,16 +87,31 @@ def find_path(world: World, start: Point, end: Point) -> tuple[list[Point], floa
 
     while pq:
         current_cost, x, y = heapq.heappop(pq)
+        if current_cost != min_distance[x][y]:
+            continue
+        
         if (x, y) == end:
             path = _reconstruct_path(parents, start, end)
-            world.path_cache[cache_line] = (path, current_cost, world.turn)
+            world.write_path_cache(cache_line, (path, current_cost, world.turn))
             return path, current_cost
+
+        if (x, y) in city_locations:
+            # third city visited, update cache:
+            partial_path = _reconstruct_path(parents, start, (x, y))
+            cost = min_distance[x][y]
+            if start < (x, y):
+                key = (start, (x, y))
+                path_to_store = partial_path
+            else:
+                key = ((x, y), start)
+                path_to_store = list(reversed(partial_path))
+            world.write_path_cache(key, (path_to_store, cost, world.turn))
 
         neighbours = [(x - 1, y), (x + 1, y), (x, y - 1), (x, y + 1)]
         for nx, ny in neighbours:
             if not (0 <= nx < world.width and 0 <= ny < world.height):
                 continue
-            p_cost = _cost(world, nx, ny)
+            p_cost = _cost(world, x, y, nx, ny)
             new_cost = current_cost + p_cost
             if new_cost < min_distance[nx][ny]:
                 min_distance[nx][ny] = new_cost
@@ -105,7 +127,7 @@ def find_path(world: World, start: Point, end: Point) -> tuple[list[Point], floa
         for nx, ny in neighbours_diag:
             if not (0 <= nx < world.width and 0 <= ny < world.height):
                 continue
-            p_cost = SQRT_2 * _cost(world, nx, ny)
+            p_cost = SQRT_2 * _cost(world, x, y, nx, ny)
             new_cost = current_cost + p_cost
             if new_cost < min_distance[nx][ny]:
                 min_distance[nx][ny] = new_cost
