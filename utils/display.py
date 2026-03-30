@@ -5,6 +5,7 @@ import numpy as np
 COLOR_PATH = [120, 120, 120]
 COLOR_GROUND = [0, 250, 0]
 COLOR_WATER = [0, 0, 250]
+COLOR_SAIL = [0, 128, 255]
 COLOR_BLACK = [0, 0, 0]
 
 
@@ -126,6 +127,10 @@ class Display:
                 if len(city.citizens) > 0:
                     pygame.draw.circle(self.screen, state_color, pos, 3)
 
+        for A, B in self.world.sailing_cache.keys():
+            posA = pygame.Vector2(A[0], A[1]) * self.camera_scale + self.camera_offset
+            posB = pygame.Vector2(B[0], B[1]) * self.camera_scale + self.camera_offset
+            pygame.draw.aaline(self.screen, COLOR_SAIL, posA, posB, 1)
         self.screen.blit(self.text_surface, (0,0))
         pygame.display.flip()
         # pygame.time.wait(8) #should be 16 for 60fps but simulation is bottleneck here

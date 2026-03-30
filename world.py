@@ -1,6 +1,6 @@
 import os
 import random
-import struct
+import math
 
 import tifffile
 
@@ -8,12 +8,36 @@ from city import City
 from state import State
 from utils.definitions import Grid, Point
 from utils.log import Logger
-SETTLERSTEPCOUNT = 32
+SETTLERSTEPCOUNT = 48
 
 ROAD_K = 0.04
 
 FRIENDLY_CITY_DENSITY = 32
 HOSTILE_CITY_DENSITY = 64
+ROOT2 = math.sqrt(0.5)
+
+RAMP = [
+    (-90.0,  ( ROOT2,  ROOT2)),   # Polar Easterlies
+    (-60.0,  ( 0.0,    0.0   )),  # Subpolar Low
+    (-45.0,  (-ROOT2, -ROOT2)),   # Westerlies
+    (-30.0,  ( 0.0,    0.0   )),  # Subtropical High
+    (-15.0,  ( ROOT2,  ROOT2)),   # SE Trade
+    (  0.0,  ( 1.0,    0.0   )),  # ITCZ
+    ( 15.0,  ( ROOT2, -ROOT2)),   # NE Trade
+    ( 30.0,  ( 0.0,    0.0   )),  # Subtropical High
+    ( 45.0,  (-ROOT2,  ROOT2)),   # Westerlies
+    ( 60.0,  ( 0.0,    0.0   )),  # Subpolar Low
+    ( 90.0,  ( ROOT2, -ROOT2)),   # Polar Easterlies
+]
+
+def lerp(a, b, t):
+    return a + (b - a) * t
+
+def lerp_vec2(v1, v2, t):
+    return (
+        lerp(v1[0], v2[0], t),
+        lerp(v1[1], v2[1], t)
+    )
 
 class World:
     def __init__(self) -> None:
@@ -25,9 +49,11 @@ class World:
         self.avaiable_states: list[str] = []
         self.turn: int = 0
         self.layers = {}
-        self.compatibility(self.load_new_map8("maps/m_continent.tiff"))
+        self.compatibility(self.load_new_map8("maps/m_isles.tiff"))
         self.path_cache = {}
         self.path_cache_start = {}
+        self.sailing_cache = {}
+        self.sailing_cache_start = {}
         self.load_state_names()
 
         # TODO: zamienić to na państwa po skończeniu dema
@@ -209,14 +235,25 @@ class World:
             return False
         cache_value_age = self.turn-self.path_cache[line][2]
         cache_age = self.turn-self.path_cache_start[line]
-        if cache_value_age < 0.5 * cache_age:
-            return True
-        return False
+        return cache_value_age < 0.5 * cache_age
     
     def write_path_cache(self, line, value):
         if line not in self.path_cache:
             self.path_cache_start[line] = self.turn
         self.path_cache[line] = value
+
+
+    def check_sailing_cache(self, line):
+        if line not in self.sailing_cache:
+            return False
+        cache_value_age = self.turn - self.sailing_cache[line][1]
+        cache_age = self.turn - self.sailing_cache_start[line]
+        return cache_value_age < 0.5 * cache_age
+
+    def write_sailing_path_cache(self, line, value):
+        if line not in self.sailing_cache:
+            self.sailing_cache_start[line] = self.turn
+        self.sailing_cache[line] = value
         
 
     def update_prices(self):
@@ -249,3 +286,24 @@ class World:
                         self.roads[x][y] = 0
                     else:
                         self.roads[x][y] -= ROAD_K/2
+
+    def get_wind(self, pos: Point):
+        x, y = pos
+        if not (0 <= x < self.width and 0 <= y < self.height):
+            return (0.0, 0.0)
+
+        lat_delta = self.top_latitude - self.bot_latitude
+        latitude = self.top_latitude - (lat_delta * (y / self.height))
+
+        if latitude <= RAMP[0][0]:
+            return RAMP[0][1]
+        if latitude >= RAMP[-1][0]:
+            return RAMP[-1][1]
+
+        for i in range(len(RAMP) - 1):
+            lat0, v0 = RAMP[i]
+            lat1, v1 = RAMP[i + 1]
+            if lat0 <= latitude <= lat1:
+                t = (latitude - lat0) / (lat1 - lat0)
+                return lerp_vec2(v0, v1, t)
+        return (0.0, 0.0)

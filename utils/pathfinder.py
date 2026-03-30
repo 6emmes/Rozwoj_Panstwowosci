@@ -6,7 +6,7 @@ from utils.definitions import Grid, Point
 from world import World
 
 SQRT_2 = np.sqrt(2)
-PATH_BEAUTY = 25
+PATH_BEAUTY = 15
 PATH_COST_SCALE = 0.9
 
 def _cost(world: World, xold: int, yold: int, x: int, y: int) -> float:

@@ -11,7 +11,7 @@ def main() -> None:
         display_obj = Display(sim_world)
         display_obj.pygame_init()
 
-    sim_world.spawn_states(3, 5)
+    sim_world.spawn_states(7, 5, 34)
 
     turns = 600
     # Główna pętla symulacji

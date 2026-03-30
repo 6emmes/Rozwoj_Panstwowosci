@@ -60,7 +60,7 @@ class Trader(Citizen):
         for city in self.city.world.cities:
             if city == self.city:
                 continue
-            if city.land_id != self.city.land_id:
+            if city.land_id != self.city.land_id and (city.ocean_id != self.city.ocean_id or city.ocean_id is None):
                 continue  # miasto jest na innym lądzie
             # TODO duże uproszczenie że kupuje tylko jak city ma tyle zasobu ile potrzeba domyślnie powinien albo zwiedzać tyle miast aż kupi zadaną ilość albo kupić tyle ile jest dostępne i wracać
             if city in self.trade_partners:
@@ -189,6 +189,7 @@ class Trader(Citizen):
         return cost
 
     def plan_travel(self) -> None:
+        from utils.sailor import sailing
         if TURBO:
             from utils.turbofinder import find_path
         else:
@@ -198,8 +199,14 @@ class Trader(Citizen):
         home_y = self.city.y
         target_x = self.target_city.x
         target_y = self.target_city.y
-        path, cost = find_path(self.city.world, (home_x, home_y), (target_x, target_y))
-        if len(path) == 0:
+        
+        if self.target_city.land_id != self.city.land_id:
+            # zegluj
+            assert self.target_city.ocean_id == self.city.ocean_id
+            path, cost = sailing(self.city.world, (home_x, home_y), (target_x, target_y))
+        else:
+            path, cost = find_path(self.city.world, (home_x, home_y), (target_x, target_y))
+        if cost == 0:
             return
         print(
             f"    Handlarz planuje podróż z miasta {self.city} do miasta {self.target_city.name} kosztem {int(cost)}"

@@ -104,9 +104,6 @@ class City:
             a = self.land_id = self.world.layers["id_map"][self.x+2][self.y+2]
             b = self.land_id = self.world.layers["id_map"][self.x-2][self.y-2]
             self.land_id = max(a,b)
-            
-
-
         self.ocean_id: float = self.world.find_ocean((self.x, self.y))
         if self.ocean_id is None:
             print(f"Miasto {self.name} nie ma dostępu do oceanu")
@@ -371,6 +368,7 @@ class City:
                                 location=self.name,
                                 destination=trader.target_city.name if trader.target_city else None,
                                 travel_time=trader.target_city_distance/trader.speed if trader.target_city_distance else None,
+                                walking=1 if trader.target_city.land_id==self.land_id else 0,
                                 resource=resource.value,
                                 amount=amount,
                                 price=price
