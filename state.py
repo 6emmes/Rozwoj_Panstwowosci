@@ -26,6 +26,7 @@ class State:
         self.settle_candidates: dict = {resource: (0.0, 1, 1) for resource in RAW_RESOURCES}
         self.budget:float = 0
         self.score:float = 0
+        self.tariff: float = 0.1
 
     def add_city(self, city: City) -> None:
         city.state = self
