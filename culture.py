@@ -12,19 +12,15 @@ NO_FLAVOURS = 5
 class Culture:
     # All float values should be in <0, 1> range
     isolationism: float
-    aggressiveness: float
     flavour: list[float]
 
 
 def random_culture() -> Culture:
-    return Culture(
-        random.random(), random.random(), [random.random() for _ in range(NO_FLAVOURS)]
-    )
+    return Culture(random.random(1.0), [random.random(1.0) for _ in range(NO_FLAVOURS)])
 
 
 def distance(c1: Culture, c2: Culture) -> float:
-    sqrs = pow(c1.aggressiveness - c2.aggressiveness, 2)
-    sqrs += pow(c1.isolationism - c2.isolationism, 2)
+    sqrs = pow(c1.isolationism - c2.isolationism, 2)
     sqrs += sum(pow(x - y, 2) for (x, y) in zip(c1.flavour, c2.flavour))
     return math.sqrt(sqrs)
 
