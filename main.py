@@ -13,7 +13,7 @@ def main() -> None:
 
     sim_world.spawn_states(7, 5, 34)
 
-    turns = 600
+    turns = 1_000
     # Główna pętla symulacji
     for i in range(turns):
         if i % 100 == 0:
