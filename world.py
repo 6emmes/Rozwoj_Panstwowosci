@@ -1,3 +1,4 @@
+import heapq
 import os
 import random
 import struct
@@ -16,6 +17,10 @@ ROAD_K = 0.04
 FRIENDLY_CITY_DENSITY = 32
 HOSTILE_CITY_DENSITY = 64
 
+STATIC_RANGE = 10
+INFLUENCE_THRESHOLD = 15.0
+POPULATION_PREMIUM = 2.0
+
 
 class World:
     def __init__(self) -> None:
@@ -31,6 +36,9 @@ class World:
         self.path_cache = {}
         self.path_cache_start = {}
         self.load_state_names()
+        self.territory_map = [
+            [None for _ in range(self.width)] for _ in range(self.height)
+        ]
 
         # TODO: zamienić to na państwa po skończeniu dema
         self.cities: list[City] = []
@@ -79,6 +87,8 @@ class World:
             s.turn()
         if self.turn % 150 == 0:
             self.road_decay()
+        if self.turn % 10 == 0:
+            self.update_territories()
         self.turn += 1
 
     def manhattan(self, x1, y1, x2, y2):
@@ -156,6 +166,10 @@ class World:
         return new_city
 
     def settle(self, state: State, no_citizens, x, y):
+        owner = self.territory_map[x][y]
+        if owner is not None and owner != state.name:
+            return None
+
         for c in self.cities:
             if c.state == state:
                 if self.manhattan(x, y, c.x, c.y) < FRIENDLY_CITY_DENSITY:
@@ -245,3 +259,86 @@ class World:
                     else:
                         self.roads[x][y] -= ROAD_K / 2
 
+    def update_territories(self):
+        directions = [
+            (-1, 0),
+            (1, 0),
+            (0, -1),
+            (0, 1),
+            (-1, -1),
+            (-1, 1),
+            (1, -1),
+            (1, 1),
+        ]
+        influence_grid = {
+            state_name: [[0.0 for _ in range(self.width)] for _ in range(self.height)]
+            for state_name in self.states.keys()
+        }
+
+        for state_name, state in self.states.items():
+            total_population = sum(len(city.citizens) for city in state.cities)
+            is_true_state = len(state.cities) >= 3 and total_population >= 50
+
+            for city in state.cities:
+                if is_true_state:
+                    base_influence = 30.0 + (len(city.citizens) * POPULATION_PREMIUM)
+                else:
+                    base_influence = 30.0
+
+                if base_influence <= 0:
+                    continue
+
+                queue = [(-base_influence, city.x, city.y)]
+                visited = set()
+
+                while queue:
+                    current_influence_neg, cx, cy = heapq.heappop(queue)
+                    current_influence = -current_influence_neg
+
+                    if (cx, cy) in visited:
+                        continue
+                    visited.add((cx, cy))
+
+                    influence_grid[state_name][cx][cy] += current_influence
+
+                    for dx, dy in directions:
+                        nx, ny = cx + dx, cy + dy
+
+                        if 0 <= nx < self.width and 0 <= ny < self.height:
+                            if (nx, ny) not in visited:
+                                if self.layers["water_map"][nx][ny] == 0.0:
+                                    continue
+
+                                height = self.layers["height_map"][nx][ny]
+                                terrain_cost = 3.0 + (height * 10.0)
+                                road_level = self.roads[nx][ny]
+
+                                step_cost = terrain_cost * (1.0 - (road_level * 0.5))
+
+                                if dx != 0 and dy != 0:
+                                    step_cost *= 1.414
+
+                                next_influence = current_influence - step_cost
+
+                                if next_influence > 0.1:
+                                    heapq.heappush(queue, (-next_influence, nx, ny))
+
+        for state_name, state in self.states.items():
+            for city in state.cities:
+                for dx in range(-STATIC_RANGE, STATIC_RANGE + 1):
+                    for dy in range(-STATIC_RANGE, STATIC_RANGE + 1):
+                        if dx**2 + dy**2 <= pow(STATIC_RANGE, 2):
+                            nx, ny = city.x + dx, city.y + dy
+                            if 0 <= nx < self.width and 0 <= ny < self.height:
+                                if self.layers["water_map"][nx][ny] != 0.0:
+                                    influence_grid[state_name][nx][ny] = float("inf")
+
+        for x in range(0, self.width, 2):
+            for y in range(0, self.height, 2):
+                best_state = None
+                max_inf = INFLUENCE_THRESHOLD
+                for state_name, grid in influence_grid.items():
+                    if grid[x][y] > max_inf:
+                        max_inf = grid[x][y]
+                        best_state = state_name
+                self.territory_map[x][y] = best_state

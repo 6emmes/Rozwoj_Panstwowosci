@@ -28,6 +28,7 @@ class State:
         }
         self.budget: float = 0
         self.score: float = 0
+        self.tariff: float = 0.1
 
     def add_city(self, city: City) -> None:
         city.state = self
