@@ -56,13 +56,9 @@ class Trader(Citizen):
     def buy_asap(
         self, good: Resource, amount: int
     ) -> tuple[float | None, float | None]:
-        # na razie przeszukanie różnych miast w obrębie państwa, potem po odległości byłoby to wskazane
-        for city in self.city.world.cities:
-            if city == self.city:
-                continue
-            if city.land_id != self.city.land_id:
-                continue  # miasto jest na innym lądzie
-            # TODO duże uproszczenie że kupuje tylko jak city ma tyle zasobu ile potrzeba domyślnie powinien albo zwiedzać tyle miast aż kupi zadaną ilość albo kupić tyle ile jest dostępne i wracać
+        valid_cities = self.get_valid_targets(good)
+        
+        for city in valid_cities:
             if city in self.trade_partners:
                 fog = self.trade_partners[city]
                 city_amount, price = city.get_resource(good, fog)
@@ -266,6 +262,37 @@ class Trader(Citizen):
         self.good_to_buy = None
         self.amount_of_good_to_buy = 0
         self.target_city = None
+
+    def get_valid_targets(self, good: Resource) -> list[City]:
+        valid_targets = []
+        
+        for city in self.city.world.cities:
+            if city == self.city:
+                continue
+
+            can_reach = False
+            if city.land_id == self.city.land_id:
+                can_reach = True  # can walk
+            elif city.land_id != self.city.land_id:
+                if city.ocean_id is not None and self.city.ocean_id is not None:
+                    if city.ocean_id == self.city.ocean_id:
+                        can_reach = True  # can sail
+            if not can_reach:
+                continue
+            
+            # Check if city has the resource
+            city_amount, _ = city.get_resource(good)
+            if city_amount[0] > 0:
+                valid_targets.append(city)
+
+        valid_targets.sort(key=lambda c: self._calculate_path_cost_sqrd(c))
+        return valid_targets
+
+
+    def _calculate_path_cost_sqrd(self, target_city: City) -> float:
+        cost = (self.city.x-target_city.x) ** 2 + (self.city.y-target_city.y) ** 2
+        return cost
+
 
     def __str__(self):
         return f"Handlarz z miasta {self.city.name} (cel: {self.target_city.name if self.target_city else 'brak'}, towar: {self.good_to_buy}, ilość: {self.amount_of_good_to_buy}, złoto: {self.gold})"
