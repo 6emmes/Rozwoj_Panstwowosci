@@ -44,6 +44,8 @@ class Display:
         terrain_array = np.clip(terrain_array, 0, 255).astype(np.uint8)
         self.terrain_surface = pygame.surfarray.make_surface(terrain_array)
 
+        self.territory_surface = pygame.Surface((self.world.width, self.world.height), pygame.SRCALPHA)
+
         self.font = pygame.font.SysFont('Verdana', 16)
         self.text_surface = self.font.render('Some Text', False, (128, 128, 128))
 
@@ -57,6 +59,32 @@ class Display:
         self.roads_surface = pygame.image.frombuffer(
             road_rgba.transpose((1, 0, 2)).copy(), (w, h), "RGBA"
         ).convert_alpha()
+
+        territory_rgba = np.zeros((self.world.width, self.world.height, 4), dtype=np.uint8)
+
+        # Słownik do szybkiego wyszukiwania koloru państwa
+        color_map = {}
+        for state_name, state in self.world.states.items():
+            c = pygame.Color(0)
+            c.hsva = (state.hue % 360, 70, 90,
+                      100)  # Saturacja 70, Value 90. Ostatnia wartość w hsva nie kontroluje alphy bezpośrednio
+            # Tworzymy krotkę RGBA (z alphą ustawioną na 100/255 -> półprzezroczystość)
+            color_map[state_name] = (c.r, c.g, c.b, 100)
+
+            # Sprawdzamy, czy world ma już territory_map (dla bezpieczeństwa pierwszych tur)
+        if hasattr(self.world, 'territory_map'):
+            for x in range(self.world.width):
+                for y in range(self.world.height):
+                    owner = self.world.territory_map[x][y]
+                    if owner is not None and owner in color_map:
+                        territory_rgba[x, y] = color_map[owner]
+
+        # Konwersja na pygame Surface w ten sam sposób co drogi
+        h_t, w_t = territory_rgba.shape[:2]
+        self.territory_surface = pygame.image.frombuffer(
+            territory_rgba.transpose((1, 0, 2)).copy(), (w_t, h_t), "RGBA"
+        ).convert_alpha()
+
         self.text_surface = self.font.render(str(self.world.turn), False, (128, 128, 128))
 
     def pygame_loop(self):
@@ -104,11 +132,20 @@ class Display:
             ),
         )
 
+        territory_scaled = pygame.transform.scale(
+            self.territory_surface,
+            (
+                int(self.world.width * self.camera_scale),
+                int(self.world.height * self.camera_scale),
+            ),
+        )
+
         # Clear screen
         self.screen.fill((0, 0, 0))
 
         # Draw terrain + roads with offset
         self.screen.blit(terrain_scaled, self.camera_offset)
+        self.screen.blit(territory_scaled, self.camera_offset)
         self.screen.blit(roads_scaled, self.camera_offset)
 
         # Draw cities (scaled + offset)
