@@ -5,7 +5,7 @@ from utils.definitions import Point
 from world import World
 
 # Base speed (units per turn) – can be tuned if needed
-BASE_SPEED = 1.0
+BASE_SPEED = 2.0
 
 def _straight_path(start: Point, end: Point) -> list[Point]:
     path = []
@@ -57,8 +57,6 @@ def sailing(world: World, start: Point, end: Point) -> Tuple[List[Point], float]
 
     if world.check_sailing_cache(cache_line):
         cost, _ = world.sailing_cache[cache_line]
-        if reverse:
-            print("reversed cache line hit")
         return [], cost
 
     # actual pathfinding
