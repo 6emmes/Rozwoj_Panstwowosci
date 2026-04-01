@@ -95,8 +95,10 @@ class World:
     def manhattan(self, x1, y1, x2, y2):
         return abs(x1 - x2) + abs(y1 - y2)
 
-    def spawn_states(self, count: int, no_citizens: int, seed=10):
-        random.seed(seed)
+    def spawn_states(
+        self, count: int, no_citizens: int, cultures: list[Culture] | None = None
+    ):
+        assert cultures is None or len(cultures) == count
         print(no_citizens)
         for i in range(count):
             state_name = self.avaiable_states.pop()
@@ -107,14 +109,18 @@ class World:
                     self, state_name, i * 360 / count, content
                 )
             new_city = self.spawn_settler_rand(
-                self.states[state_name].city_names.pop(), no_citizens
+                self.states[state_name].city_names.pop(),
+                no_citizens,
+                cultures[i] if cultures is not None else None,
             )
             self.states[state_name].add_city(new_city)
             new_city._randomize_initial_recources()
             new_city.state = self.states[state_name]
             new_city.state.update_tarrif()
 
-    def spawn_settler_rand(self, name, no_citizens, goal="fertility_map"):
+    def spawn_settler_rand(
+        self, name, no_citizens, culture: Culture | None = None, goal="fertility_map"
+    ):
         NEIGHBOR_OFFSETS = [(0, -1), (-1, 0), (1, 0), (0, 1)]
         while True:
             contflag = 1
@@ -158,7 +164,7 @@ class World:
 
             # Move to the best neighbor
             x_curr, y_curr = best_pos
-        new_city = City(x_curr, y_curr, name, self)
+        new_city = City(x_curr, y_curr, name, self, culture)
         for _ in range(no_citizens):
             new_city.create_citizen()
 
