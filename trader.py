@@ -210,7 +210,7 @@ class Trader(Citizen):
         sail_cost = float('inf')
         walk_cost = float('inf')
         
-        if self.target_city.ocean_id == self.city.ocean_id:
+        if self.target_city.ocean_id == self.city.ocean_id and self.city.ocean_id != None:
             # zegluj
             sail_path, sail_cost = sailing(self.city.world, (home_x, home_y), (target_x, target_y))
         if self.target_city.land_id == self.city.land_id:
