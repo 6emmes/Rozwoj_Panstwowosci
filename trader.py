@@ -76,7 +76,11 @@ class Trader(Citizen):
                 self.good_to_buy = good
                 self.amount_of_good_to_buy = amount_to_buy
                 self.gold = self.city.get_gold(price * amount)
-                self.plan_travel()
+                path, cost = self.plan_travel()
+                self.last_path = path
+                self.target_city_distance = int(cost)
+                self.home_city_distance = 0
+                
                 if len(self.last_path) == 0:  # Path is unavaiable
                     continue
                 self.trade_efficiency = math.ceil(
@@ -94,6 +98,8 @@ class Trader(Citizen):
         best_city: City | None = None
         best_score: float = 0
         best_amount: int = 0
+        best_path: list[Point] = []
+        best_cost = 0
         for city in cities:
             if city.state == self.city.state and city not in self.trade_partners.keys():
                 self.trade_partners[city] = 0 # zerowy fog w kraju
@@ -140,12 +146,16 @@ class Trader(Citizen):
                 best_score = score
                 best_city = city
                 best_amount = trade_amount
+                best_path = path
+                best_cost = travel_cost
         if best_city is not None:
             self.target_city = best_city
             self.good_to_buy = good
             self.amount_of_good_to_buy = best_amount
             self.gold = self.city.get_gold(best_amount * price)
-            self.plan_travel()
+            self.last_path = best_path
+            self.target_city_distance = best_cost
+            self.home_city_distance = 0
             self.trade_efficiency = math.ceil(
                 best_amount / (self.target_city_distance / self.speed)
             )
@@ -186,7 +196,8 @@ class Trader(Citizen):
         cost = distance * self.UNIT_COST
         return cost
 
-    def plan_travel(self) -> None:
+    def plan_travel(self) -> tuple[list[Point], int]:
+        from utils.sailor import sailing
         if TURBO:
             from utils.turbofinder import find_path
         else:
@@ -196,16 +207,31 @@ class Trader(Citizen):
         home_y = self.city.y
         target_x = self.target_city.x
         target_y = self.target_city.y
-        path, cost = find_path(self.city.world, (home_x, home_y), (target_x, target_y))
-        if len(path) == 0:
-            return
-        print(
-            f"    Handlarz planuje podróż z miasta {self.city} do miasta {self.target_city.name} kosztem {int(cost)}"
-        )
+        sail_cost = float('inf')
+        walk_cost = float('inf')
+        
+        if self.target_city.ocean_id == self.city.ocean_id:
+            # zegluj
+            sail_path, sail_cost = sailing(self.city.world, (home_x, home_y), (target_x, target_y))
+        if self.target_city.land_id == self.city.land_id:
+            walk_path, walk_cost = find_path(self.city.world, (home_x, home_y), (target_x, target_y))
+        if sail_cost < walk_cost:
+            cost = sail_cost
+            path = sail_path
+            if walk_cost < 2000:
+                print(f"sailing {sail_cost} <- walking {walk_cost}")
+        else:
+            cost = walk_cost
+            path = walk_path
+            if sail_cost < 2000:
+                print(f"walking {walk_cost} <- sailing {sail_cost}")
 
-        self.last_path = path
-        self.target_city_distance = int(cost)
-        self.home_city_distance = 0
+        if cost == 0:
+            return
+        # print(
+        #     f"    Handlarz planuje podróż z miasta {self.city} do miasta {self.target_city.name} kosztem {int(cost)}"
+        # )
+        return path, cost
 
     def sell_good(self):  # Handlarz nie sprzedaje zasobów, tylko kupuje od miasta
         pass
