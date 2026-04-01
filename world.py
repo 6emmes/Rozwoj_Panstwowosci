@@ -1,11 +1,12 @@
 import heapq
 import os
 import random
-import struct
+from copy import deepcopy
 
 import tifffile
 
 from city import City
+from culture import Culture
 from state import State
 from utils.definitions import Grid, Point
 from utils.log import Logger
@@ -111,6 +112,7 @@ class World:
             self.states[state_name].add_city(new_city)
             new_city._randomize_initial_recources()
             new_city.state = self.states[state_name]
+            new_city.state.update_tarrif()
 
     def spawn_settler_rand(self, name, no_citizens, goal="fertility_map"):
         NEIGHBOR_OFFSETS = [(0, -1), (-1, 0), (1, 0), (0, 1)]
@@ -179,7 +181,7 @@ class World:
                     return None
         if len(state.city_names) == 0:
             return None
-        new_city = City(x, y, state.city_names.pop(), self, state.cities[0].culture)
+        new_city = City(x, y, state.city_names.pop(), self, deepcopy(state.culture))
         for _ in range(no_citizens):
             new_city.create_citizen()
 
@@ -190,8 +192,7 @@ class World:
         new_city.state = state
         return new_city
 
-    def spawn_settlers(self, names: list[str], no_citizens: int, seed=10):
-        random.seed(seed)
+    def spawn_settlers(self, names: list[str], no_citizens: int):
         for n in names:
             new_city = self.spawn_settler_rand(n, no_citizens)
             self.cities.append(new_city)

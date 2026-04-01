@@ -6,10 +6,13 @@ from city import City
 if TYPE_CHECKING:
     from world import World
 
+from culture import Culture
 from resources import RAW_RESOURCES
 
 if TYPE_CHECKING:
     from world import World
+
+BASE_TARIF = 0.1
 
 
 class State:
@@ -28,7 +31,14 @@ class State:
         }
         self.budget: float = 0
         self.score: float = 0
-        self.tariff: float = 0.1
+        self.tariff: float = BASE_TARIF
+
+    @property
+    def culture(self) -> Culture:
+        return self.cities[0].culture
+
+    def update_tarrif(self):
+        self.tariff += self.culture.isolationism / 5
 
     def add_city(self, city: City) -> None:
         city.state = self

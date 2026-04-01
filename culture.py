@@ -1,40 +1,54 @@
 import math
-import random
 from dataclasses import dataclass
-from random import randint
+from random import randint, uniform
 
 FUSION_STEP = 0.05
 FUSION_THRESHOLD = 0.1
-NO_FLAVOURS = 5
+NO_TRAITS = 5
 
 
 @dataclass
 class Culture:
     # All float values should be in <0, 1> range
-    isolationism: float
-    flavour: list[float]
+    traits: list[float]
+
+    @property
+    def isolationism(self) -> float:
+        return self.traits[0]
+
+    @property
+    def expansionism(self) -> float:
+        return self.traits[1]
+
+    def noise(self):
+        for f in self.traits:
+            r = randint(-1, 1)
+            f += r * FUSION_STEP
+
+    def __repr__(self) -> str:
+        traits_str = ", ".join(f"{t:.4f}" for t in self.traits)
+        return f"Culture({traits_str})"
 
 
 def random_culture() -> Culture:
-    return Culture(random.random(1.0), [random.random(1.0) for _ in range(NO_FLAVOURS)])
+    return Culture([uniform(0.0, 1.0) for _ in range(NO_TRAITS)])
 
 
 def distance(c1: Culture, c2: Culture) -> float:
-    sqrs = pow(c1.isolationism - c2.isolationism, 2)
-    sqrs += sum(pow(x - y, 2) for (x, y) in zip(c1.flavour, c2.flavour))
+    sqrs = sum(pow(x - y, 2) for (x, y) in zip(c1.traits, c2.traits))
     return math.sqrt(sqrs)
 
 
 def fuse_cultures(c1: Culture, c2: Culture):
-    i = randint(NO_FLAVOURS)
-    delta = abs(c1.flavour[i] - c2.flavour[i])
+    i = randint(0, NO_TRAITS - 1)
+    delta = abs(c1.traits[i] - c2.traits[i])
     if delta <= FUSION_THRESHOLD:
         return
 
-    fusion = FUSION_STEP * delta / 2
-    if c1.flavour[i] < c2.flavour[i]:
-        c1.flavour[i] += fusion
-        c2.flavour[i] -= fusion
+    fusion = FUSION_STEP * delta
+    if c1.traits[i] < c2.traits[i]:
+        c1.traits[i] += fusion
+        c2.traits[i] -= fusion
     else:
-        c1.flavour[i] -= fusion
-        c2.flavour[i] += fusion
+        c1.traits[i] -= fusion
+        c2.traits[i] += fusion

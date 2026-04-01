@@ -85,6 +85,7 @@ class City:
         self.priorities: dict = {resource: 0.0 for resource in RESOURCES}
         self.settle_candidates: dict = {}
         self.culture: Culture = culture if culture is not None else random_culture()
+        self.culture.noise()
         self.world: World = world  # placeholder attribute
         self.state = None
         self.DEBUG_bankruptcy = 0
@@ -515,7 +516,9 @@ class City:
         PI = 3.14159265359
         # settle spot exploration:
         sample_angle = random.uniform(0.0, 2 * PI)
-        sample_radius = random.uniform(*SETTLER_SCOUTING_RANGE)
+        sample_radius = random.uniform(*SETTLER_SCOUTING_RANGE) * (
+            1 + self.culture.expansionism
+        )
         sample_x = int(sample_radius * math.cos(sample_angle)) + self.x
         sample_y = int(sample_radius * math.sin(sample_angle)) + self.y
         if (
@@ -559,4 +562,4 @@ class City:
         self.state.score += tax
 
     def __repr__(self):
-        return f"Miasto({self.name}, mieszkańcy: {len(self.citizens)})"
+        return f"Miasto({self.name}, mieszkańcy: {len(self.citizens)}), kultura: {self.culture}"

@@ -5,6 +5,7 @@ import random
 from typing import TYPE_CHECKING
 
 from citizen import Citizen
+from culture import fuse_cultures
 from resources import Resource
 from utils.log import LogEvent
 
@@ -17,6 +18,7 @@ CAPACITY_MIN = 30
 CAPACITY_MAX = 50
 
 TURBO = False
+
 
 class Trader(Citizen):
     UNIT_COST = 2
@@ -100,7 +102,7 @@ class Trader(Citizen):
         best_amount: int = 0
         for city in cities:
             if city.state == self.city.state and city not in self.trade_partners.keys():
-                self.trade_partners[city] = 0 # zerowy fog w kraju
+                self.trade_partners[city] = 0  # zerowy fog w kraju
             if city == self.city:
                 continue
             if city in self.trade_partners:
@@ -113,7 +115,9 @@ class Trader(Citizen):
             city_amount = math.floor(
                 city_amount[0] + (city_amount[1] - city_amount[0]) * self.risk_factor
             )
-            price = math.floor(price[1] - (price[1] - price[0]) * self.risk_factor) * (1 + city.state.tariff)
+            price = math.floor(price[1] - (price[1] - price[0]) * self.risk_factor) * (
+                1 + city.state.tariff
+            )
 
             trade_amount = min(self.capacity, city_amount)
 
@@ -134,6 +138,9 @@ class Trader(Citizen):
             good_cost = trade_amount * price
 
             total_cost = good_cost + travel_cost
+            if self.target_city not in self.city.state.cities:
+                isolationism_modifier = 1 + self.city.culture.isolationism / 2
+            total_cost *= isolationism_modifier
 
             if total_cost > self.city.gold:
                 continue
@@ -252,11 +259,12 @@ class Trader(Citizen):
         self.city.trade_efficiency[self.good_to_buy] -= self.trade_efficiency
         self.city.recalculate_good_price(self.good_to_buy)
         self.strengthen_trade_partner()
+        fuse_cultures(self.city.culture, self.target_city.culture)
         self.city.world.logger.save_log(
             LogEvent(
                 turn=self.city.world.turn,
                 location=self.city.name,
-                description=f"Handlarz dostarczył {self.amount_of_good_to_buy} {self.good_to_buy} do miasta {self.city.name}"
+                description=f"Handlarz dostarczył {self.amount_of_good_to_buy} {self.good_to_buy} do miasta {self.city.name}",
             )
         )
 
