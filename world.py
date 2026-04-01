@@ -47,6 +47,8 @@ class World:
         self.roads: Grid[float] = [[0.0] * self.width for _ in range(self.height)]
         self.logger = Logger("log")
 
+        self.cities_pos()
+
     def action(self):
         pass
 
@@ -196,12 +198,15 @@ class World:
         self.cities.append(new_city)
         state.add_city(new_city)
         new_city.state = state
+
+        self.cities_pos()
         return new_city
 
     def spawn_settlers(self, names: list[str], no_citizens: int):
         for n in names:
             new_city = self.spawn_settler_rand(n, no_citizens)
             self.cities.append(new_city)
+        self.cities_pos()
 
     def find_ocean(self, pos: Point):
         RADIUS = 5
@@ -265,6 +270,9 @@ class World:
                         self.roads[x][y] = 0
                     else:
                         self.roads[x][y] -= ROAD_K / 2
+
+    def cities_pos(self):
+        self.cities_map = [(c.x, c.y) for c in self.cities]
 
     def update_territories(self):
         directions = [
