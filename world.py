@@ -1,7 +1,7 @@
+import heapq
 import os
 import random
 import struct
-import heapq
 
 import tifffile
 
@@ -9,6 +9,7 @@ from city import City
 from state import State
 from utils.definitions import Grid, Point
 from utils.log import Logger
+
 SETTLERSTEPCOUNT = 32
 
 ROAD_K = 0.04
@@ -19,6 +20,7 @@ HOSTILE_CITY_DENSITY = 64
 STATIC_RANGE = 10
 INFLUENCE_THRESHOLD = 15.0
 POPULATION_PREMIUM = 2.0
+
 
 class World:
     def __init__(self) -> None:
@@ -34,13 +36,17 @@ class World:
         self.path_cache = {}
         self.path_cache_start = {}
         self.load_state_names()
-        self.territory_map = [[None for _ in range(self.width)] for _ in range(self.height)]
+        self.territory_map = [
+            [None for _ in range(self.width)] for _ in range(self.height)
+        ]
 
         # TODO: zamienić to na państwa po skończeniu dema
         self.cities: list[City] = []
         self.states: dict[str, State] = {}
         self.roads: Grid[float] = [[0.0] * self.width for _ in range(self.height)]
         self.logger = Logger("log")
+
+        self.cities_pos()
 
     def action(self):
         pass
@@ -76,7 +82,7 @@ class World:
     def build_road(self, path: list[Point]):
         for x, y in path:
             old_road = self.roads[x][y]
-            self.roads[x][y] = old_road + ROAD_K * (1-old_road)
+            self.roads[x][y] = old_road + ROAD_K * (1 - old_road)
 
     def next_turn(self):
         for s in self.states.values():
@@ -108,7 +114,7 @@ class World:
             new_city._randomize_initial_recources()
             new_city.state = self.states[state_name]
 
-    def spawn_settler_rand(self, name, no_citizens, goal = "fertility_map"):
+    def spawn_settler_rand(self, name, no_citizens, goal="fertility_map"):
         NEIGHBOR_OFFSETS = [(0, -1), (-1, 0), (1, 0), (0, 1)]
         while True:
             contflag = 1
@@ -160,7 +166,7 @@ class World:
         new_city.calculate_use_rate()
         self.cities.append(new_city)
         return new_city
-    
+
     def settle(self, state: State, no_citizens, x, y):
         owner = self.territory_map[x][y]
         if owner is not None and owner != state.name:
@@ -184,14 +190,16 @@ class World:
         self.cities.append(new_city)
         state.add_city(new_city)
         new_city.state = state
-        return new_city
 
+        self.cities_pos()
+        return new_city
 
     def spawn_settlers(self, names: list[str], no_citizens: int, seed=10):
         random.seed(seed)
         for n in names:
             new_city = self.spawn_settler_rand(n, no_citizens)
             self.cities.append(new_city)
+        self.cities_pos()
 
     def find_ocean(self, pos: Point):
         RADIUS = 5
@@ -210,21 +218,20 @@ class World:
                 if self.heightmap[cur_pos[0]][cur_pos[1]] == 0.0:
                     return self.layers["id_map"][cur_pos[0]][cur_pos[1]]
         return None
-    
+
     def check_path_cache(self, line):
         if line not in self.path_cache:
             return False
-        cache_value_age = self.turn-self.path_cache[line][2]
-        cache_age = self.turn-self.path_cache_start[line]
+        cache_value_age = self.turn - self.path_cache[line][2]
+        cache_age = self.turn - self.path_cache_start[line]
         if cache_value_age < 0.5 * cache_age:
             return True
         return False
-    
+
     def write_path_cache(self, line, value):
         if line not in self.path_cache:
             self.path_cache_start[line] = self.turn
         self.path_cache[line] = value
-        
 
     def update_prices(self):
         self.prices = {}
@@ -255,10 +262,22 @@ class World:
                     if self.roads[x][y] < ROAD_K:
                         self.roads[x][y] = 0
                     else:
-                        self.roads[x][y] -= ROAD_K/2
+                        self.roads[x][y] -= ROAD_K / 2
+
+    def cities_pos(self):
+        self.cities_map = [(c.x, c.y) for c in self.cities]
 
     def update_territories(self):
-        directions = [(-1, 0), (1, 0), (0, -1), (0, 1), (-1, -1), (-1, 1), (1, -1), (1, 1)]
+        directions = [
+            (-1, 0),
+            (1, 0),
+            (0, -1),
+            (0, 1),
+            (-1, -1),
+            (-1, 1),
+            (1, -1),
+            (1, 1),
+        ]
         influence_grid = {
             state_name: [[0.0 for _ in range(self.width)] for _ in range(self.height)]
             for state_name in self.states.keys()
@@ -266,7 +285,7 @@ class World:
 
         for state_name, state in self.states.items():
             total_population = sum(len(city.citizens) for city in state.cities)
-            is_true_state = (len(state.cities) >= 3 and total_population >= 50)
+            is_true_state = len(state.cities) >= 3 and total_population >= 50
 
             for city in state.cities:
                 if is_true_state:
@@ -316,12 +335,11 @@ class World:
             for city in state.cities:
                 for dx in range(-STATIC_RANGE, STATIC_RANGE + 1):
                     for dy in range(-STATIC_RANGE, STATIC_RANGE + 1):
-                        if dx ** 2 + dy ** 2 <= pow(STATIC_RANGE, 2):
+                        if dx**2 + dy**2 <= pow(STATIC_RANGE, 2):
                             nx, ny = city.x + dx, city.y + dy
                             if 0 <= nx < self.width and 0 <= ny < self.height:
                                 if self.layers["water_map"][nx][ny] != 0.0:
-                                    influence_grid[state_name][nx][ny] = float('inf')
-
+                                    influence_grid[state_name][nx][ny] = float("inf")
 
         for x in range(0, self.width, 2):
             for y in range(0, self.height, 2):

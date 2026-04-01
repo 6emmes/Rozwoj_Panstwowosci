@@ -1,9 +1,9 @@
-from world import World
 from utils.display import Display
 from utils.sim_types import BuildingType, ResourceType
 from world import World
 
 PYGAME = True
+
 
 def main() -> None:
     sim_world = World()

@@ -9,16 +9,21 @@ SQRT_2 = np.sqrt(2)
 PATH_BEAUTY = 25
 PATH_COST_SCALE = 0.9
 
+
 def _cost(world: World, xold: int, yold: int, x: int, y: int) -> float:
     if world.water[x][y] == 0:
         return float("inf")
-    river = 2*world.rivers[x][y]
-    height = 1 + \
-        (PATH_BEAUTY*(world.heightmap[x][y] -
-         world.heightmap[xold][yold]) + 0.5) ** 3
+    river = 2 * world.rivers[x][y]
+    height = (
+        1
+        + (PATH_BEAUTY * (world.heightmap[x][y] - world.heightmap[xold][yold]) + 0.5)
+        ** 3
+    )
+    if (x, y) in world.cities_map:
+        height /= 2
     cost = river + height - world.roads[x][y]
-    assert cost > 0
-    return max(0.1, cost * PATH_COST_SCALE)
+    cost = max(0.1, cost * PATH_COST_SCALE)
+    return cost
 
 
 def _reconstruct_path(parents: Grid[Point], start: Point, end: Point) -> list[Point]:
@@ -89,7 +94,7 @@ def find_path(world: World, start: Point, end: Point) -> tuple[list[Point], floa
         current_cost, x, y = heapq.heappop(pq)
         if current_cost != min_distance[x][y]:
             continue
-        
+
         if (x, y) == end:
             path = _reconstruct_path(parents, start, end)
             world.write_path_cache(cache_line, (path, current_cost, world.turn))
