@@ -4,7 +4,7 @@ from random import randint, uniform
 
 FUSION_STEP = 0.02
 FUSION_THRESHOLD = 0.1
-NO_TRAITS = 5
+NO_TRAITS = 4
 
 
 @dataclass
@@ -23,6 +23,10 @@ class Culture:
     @property
     def hard_working(self) -> float:
         return self.traits[2]
+
+    @property
+    def avarice(self) -> float:
+        return self.traits[3]
 
     def noise(self):
         for f in self.traits:
