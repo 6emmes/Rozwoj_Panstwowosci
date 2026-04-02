@@ -20,6 +20,10 @@ class Culture:
     def expansionism(self) -> float:
         return self.traits[1]
 
+    @property
+    def hard_working(self) -> float:
+        return self.traits[2]
+
     def noise(self):
         for f in self.traits:
             r = randint(-1, 1)

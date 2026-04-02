@@ -443,6 +443,7 @@ class City:
             )
 
             resources, price = self.resources[res]
+            resources *= 1 + self.culture.hard_working / 2
             self.resources[res] = (resources + self.accumulation_rate[res], price)
 
     def _turn_building(self):
