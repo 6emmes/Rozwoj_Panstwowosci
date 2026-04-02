@@ -18,6 +18,7 @@ from trader import Trader
 from utils.log import (
     LogCityEstablishment,
     LogConsumption,
+    LogCulture,
     LogGenericResource,
     LogPopulation,
     LogProduction,
@@ -340,7 +341,15 @@ class City:
             )
         ]
 
-        self.world.logger.save_logs(logsProd + logsCons + logsRes + logsPop + logsGold)
+        logsCulture = [
+            LogCulture(
+                turn=self.world.turn, location=self.name, traits=self.culture.traits
+            )
+        ]
+
+        self.world.logger.save_logs(
+            logsProd + logsCons + logsRes + logsPop + logsGold + logsCulture
+        )
 
     def _log_city_establishment(self):
         self.world.logger.save_log_est(
