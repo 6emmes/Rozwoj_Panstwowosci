@@ -2,7 +2,7 @@ import math
 from dataclasses import dataclass
 from random import randint, uniform
 
-FUSION_STEP = 0.05
+FUSION_STEP = 0.02
 FUSION_THRESHOLD = 0.1
 NO_TRAITS = 5
 
@@ -26,7 +26,7 @@ class Culture:
             f += r * FUSION_STEP
 
     def __repr__(self) -> str:
-        traits_str = ", ".join(f"{t:.4f}" for t in self.traits)
+        traits_str = ", ".join(f"{t:.2f}" for t in self.traits)
         return f"Culture({traits_str})"
 
 
