@@ -19,7 +19,7 @@ def main() -> None:
         if i % 100 == 0:
             print(f"turn{i}")
             sim_world.update_prices()
-            print(sim_world.prices)
+            # print(sim_world.prices)
 
         sim_world.next_turn()
 

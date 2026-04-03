@@ -205,14 +205,12 @@ class Trader(Citizen):
         if self.target_city.land_id != self.city.land_id:
             # zegluj
             assert self.target_city.ocean_id == self.city.ocean_id
-            path, cost = sailing(self.city.world, (home_x, home_y), (target_x, target_y))
+            path, cost = sailing(self.city.world, (self.city.ocean_pos[0], self.city.ocean_pos[1]),
+                                 (self.target_city.ocean_pos[0], self.target_city.ocean_pos[1]))
         else:
             path, cost = find_path(self.city.world, (home_x, home_y), (target_x, target_y))
         if cost == 0:
             return
-        print(
-            f"    Handlarz planuje podróż z miasta {self.city} do miasta {self.target_city.name} kosztem {int(cost)}"
-        )
 
         self.last_path = path
         self.target_city_distance = int(cost)

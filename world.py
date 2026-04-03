@@ -240,8 +240,8 @@ class World:
                 ):
                     continue
                 if self.heightmap[cur_pos[0]][cur_pos[1]] == 0.0:
-                    return self.layers["id_map"][cur_pos[0]][cur_pos[1]]
-        return None
+                    return self.layers["id_map"][cur_pos[0]][cur_pos[1]], cur_pos
+        return None, None
     
     def check_path_cache(self, line):
         if line not in self.path_cache:
@@ -257,11 +257,7 @@ class World:
 
 
     def check_sailing_cache(self, line):
-        if line not in self.sailing_cache:
-            return False
-        cache_value_age = self.turn - self.sailing_cache[line][1]
-        cache_age = self.turn - self.sailing_cache_start[line]
-        return cache_value_age < 0.5 * cache_age
+        return line in self.sailing_cache
 
     def write_sailing_path_cache(self, line, value):
         if line not in self.sailing_cache:
