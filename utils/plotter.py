@@ -89,6 +89,7 @@ def plot_logs(db_path: str,
         axes[0].set_title("Resource Amount Over Time")
         axes[0].set_xlabel("Turn")
         axes[0].set_ylabel("Amount")
+        axes[0].set_ylim(0, 10_000)
 
     # 2. Net resource income
     
@@ -130,6 +131,7 @@ def plot_logs(db_path: str,
 
     # 4. Population over time
     df_pop = df[df["population"].notna()]
+    df_pop = df_pop[df_pop["population"] > 25]
     if not df_pop.empty:
         sns.lineplot(
             data=df_pop,

@@ -16,7 +16,9 @@ SPEED = 10
 CAPACITY_MIN = 30
 CAPACITY_MAX = 50
 
-TURBO = False
+CITY_SELL_LOCK = 200 # city wont sell everything it has
+
+TURBO = True
 
 class Trader(Citizen):
     UNIT_COST = 2
@@ -74,7 +76,7 @@ class Trader(Citizen):
             )
             price = math.floor(price[1] - (price[1] - price[0]) * self.risk_factor)
 
-            if city_amount >= amount:
+            if city_amount-CITY_SELL_LOCK >= amount:
                 amount_to_buy = min(self.capacity, amount)
                 self.target_city = city
                 self.good_to_buy = good
@@ -203,9 +205,9 @@ class Trader(Citizen):
         path, cost = find_path(self.city.world, (home_x, home_y), (target_x, target_y))
         if len(path) == 0:
             return
-        print(
-            f"    Handlarz planuje podróż z miasta {self.city} do miasta {self.target_city.name} kosztem {int(cost)}"
-        )
+        # print(
+        #     f"    Handlarz planuje podróż z miasta {self.city} do miasta {self.target_city.name} kosztem {int(cost)}"
+        # )
 
         self.last_path = path
         self.target_city_distance = int(cost)
