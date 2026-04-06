@@ -1,4 +1,5 @@
 import json
+import math
 import os
 import sqlite3
 
@@ -66,7 +67,26 @@ def plot_logs(img_path: str, filter_city=None, filter_resources=None, figsize=(1
         print("No matching logs found.")
         return
 
-    fig, axes = plt.subplots(2, 3, figsize=figsize)
+    # Pre-parse culture traits to determine dynamic grid size
+    df_culture = df[df["log_type"] == "culture"].copy()
+    num_traits = 0
+    if not df_culture.empty and "traits" in df_culture.columns:
+
+        def parse_traits(val):
+            if pd.isna(val):
+                return []
+            try:
+                return json.loads(val)
+            except:
+                return []
+
+        df_culture["traits"] = df_culture["traits"].apply(parse_traits)
+        if not df_culture.empty:
+            num_traits = df_culture["traits"].apply(len).max()
+
+    total_plots = 5 + num_traits
+    rows = max(2, math.ceil(total_plots / 3))
+    fig, axes = plt.subplots(rows, 3, figsize=(figsize[0], 5 * rows))
     axes = axes.flatten()
 
     # 1. Resource amount over time (only specific log types)
@@ -154,62 +174,29 @@ def plot_logs(img_path: str, filter_city=None, filter_resources=None, figsize=(1
         axes[4].set_ylabel("Origin")
 
     # 6. Culture traits over time
-    df_culture = df[df["log_type"] == "culture"].copy()
-    if not df_culture.empty and "traits" in df_culture.columns:
+    if not df_culture.empty and num_traits > 0:
+        for i in range(num_traits):
+            ax_idx = 5 + i
+            dim_col = f"Trait {i}"
+            df_culture[dim_col] = df_culture["traits"].apply(
+                lambda t: t[i] if len(t) > i else None
+            )
 
-        def parse_traits(val):
-            if pd.isna(val):
-                return []
-            try:
-                return json.loads(val)
-            except:
-                return []
+            sns.lineplot(
+                data=df_culture,
+                x="turn",
+                y=dim_col,
+                hue="city",
+                ax=axes[ax_idx],
+                legend=False,
+            )
+            axes[ax_idx].set_title(f"Culture Trait {i} Over Time")
+            axes[ax_idx].set_xlabel("Turn")
+            axes[ax_idx].set_ylabel(f"Value (Dim {i})")
 
-        df_culture["traits"] = df_culture["traits"].apply(parse_traits)
-
-        # Map the vector space to 2D (using the first two trait dimensions)
-        df_culture["Trait X"] = df_culture["traits"].apply(
-            lambda t: t[0] if len(t) > 0 else 0
-        )
-        df_culture["Trait Y"] = df_culture["traits"].apply(
-            lambda t: t[1] if len(t) > 1 else 0
-        )
-
-        # Sort by turn to draw a proper sequence path over time
-        df_culture = df_culture.sort_values(by=["city", "turn"])
-
-        # Connect the points chronologically to show trajectory
-        sns.lineplot(
-            data=df_culture,
-            x="Trait X",
-            y="Trait Y",
-            hue="city",
-            sort=False,
-            alpha=0.6,
-            legend=False,
-            ax=axes[5],
-        )
-
-        # Plot dots ONLY for the first and last turns
-        df_first = df_culture.drop_duplicates(subset=["city"], keep="first")
-        df_last = df_culture.drop_duplicates(subset=["city"], keep="last")
-        df_endpoints = pd.concat([df_first, df_last]).drop_duplicates(
-            subset=["city", "turn"]
-        )
-
-        sns.scatterplot(
-            data=df_endpoints,
-            x="Trait X",
-            y="Trait Y",
-            hue="city",
-            s=100,
-            ax=axes[5],
-            legend=False,
-        )
-
-        axes[5].set_title("Culture Vector Space Trajectory")
-        axes[5].set_xlabel("Trait Dimension 0")
-        axes[5].set_ylabel("Trait Dimension 1")
+    # Hide any unused subplots
+    for i in range(total_plots, len(axes)):
+        axes[i].set_visible(False)
 
     plt.tight_layout()
     script_dir = os.path.dirname(os.path.abspath(__file__))
@@ -225,4 +212,3 @@ if __name__ == "__main__":
     plot_logs(db_path)
     # plot_logs("log.sqlite", "Prosperidad")
     # plot_logs("log.sqlite", None, ["food", "wood"])
-
