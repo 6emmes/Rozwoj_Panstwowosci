@@ -6,6 +6,8 @@ FUSION_STEP = 0.02
 FUSION_THRESHOLD = 0.1
 NO_TRAITS = 4
 
+ISOLATIONISM_STRENGTH = 1.5
+
 
 @dataclass
 class Culture:
@@ -47,16 +49,14 @@ def distance(c1: Culture, c2: Culture) -> float:
     return math.sqrt(sqrs)
 
 
-def fuse_cultures(c1: Culture, c2: Culture):
+def fuse_cultures(active: Culture, passive: Culture):
     i = randint(0, NO_TRAITS - 1)
-    delta = abs(c1.traits[i] - c2.traits[i])
+    delta = abs(active.traits[i] - passive.traits[i])
     if delta <= FUSION_THRESHOLD:
         return
 
     fusion = FUSION_STEP * delta
-    if c1.traits[i] < c2.traits[i]:
-        c1.traits[i] += fusion
-        c2.traits[i] -= fusion
+    if active.traits[i] < passive.traits[i]:
+        active.traits[i] += fusion
     else:
-        c1.traits[i] -= fusion
-        c2.traits[i] += fusion
+        active.traits[i] -= fusion

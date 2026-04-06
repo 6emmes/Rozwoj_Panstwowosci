@@ -6,7 +6,7 @@ from city import City
 if TYPE_CHECKING:
     from world import World
 
-from culture import Culture
+from culture import ISOLATIONISM_STRENGTH, Culture
 from resources import RAW_RESOURCES
 
 if TYPE_CHECKING:
@@ -38,7 +38,7 @@ class State:
         return self.cities[0].culture
 
     def update_tarrif(self):
-        self.tariff += self.culture.isolationism / 5
+        self.tariff += self.culture.isolationism * ISOLATIONISM_STRENGTH
 
     def add_city(self, city: City) -> None:
         city.state = self

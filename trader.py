@@ -5,7 +5,7 @@ import random
 from typing import TYPE_CHECKING
 
 from citizen import Citizen
-from culture import fuse_cultures
+from culture import ISOLATIONISM_STRENGTH, fuse_cultures
 from resources import Resource
 from utils.log import LogEvent
 
@@ -139,7 +139,10 @@ class Trader(Citizen):
 
             total_cost = good_cost + travel_cost
             if self.target_city not in self.city.state.cities:
-                isolationism_modifier = 1 + self.city.culture.isolationism / 2
+                isolationism_modifier = (
+                    1 + self.city.culture.isolationism * ISOLATIONISM_STRENGTH
+                )
+
             total_cost *= isolationism_modifier
 
             if total_cost > self.city.gold:
