@@ -5,7 +5,6 @@ import random
 from typing import TYPE_CHECKING
 
 from buildings import FACTORIES, PASSIVE_BUILDINGS, Building
-from citizen import Citizen
 from culture import Culture, random_culture
 from resources import (
     ALL_RESOURCES,
@@ -56,12 +55,12 @@ class City:
         self.x: int = x
         self.y: int = y
         self.name: str = name
-        self.citizens: list[Citizen] = []
+        self.citizens: int = 0
         self.buildings: dict[BuildingType, int] = {build: 0 for build in BUILDINGS}
         # startowa farma żeby miasto nie umarło z głodu zanim zdąży cokolwiek zbudować
         self.buildings[BuildingType.FARM] = 1
         self.building_queue: list[tuple[object, int]] = []
-        self.traders: list[Trader] = []  # Trader to też citizen
+        self.traders: list[Trader] = []
         self.table_of_weights: list[object] = []
         self.religious_value: object = None
         self.gold: int = 500
@@ -125,10 +124,6 @@ class City:
         else:
             print(f"Miasto {self.name} ma dostęp do oceanu o id {self.ocean_id}")
 
-    def add_citizen(self, citizen) -> None:
-        citizen.city = self
-        self.citizens.append(citizen)
-
     def debug_resources(self):
         rounded_resources = {
             key: (
@@ -141,19 +136,14 @@ class City:
         }
         print(f"{self.name}: {rounded_resources}")
 
-    def create_citizen(self):
-        citizen = Citizen()
-        self.add_citizen(citizen)
-        return citizen
-
     def create_trader(self):
         try:
-            self.citizens.pop()
+            self.citizens -= 1
         except IndexError:
             raise IndexError("No citizen avaiable to swap to trader")
         trader = Trader()
-        self.add_citizen(trader)
         self.traders.append(trader)
+        trader.city = self
         return trader
 
     def _get_resource_delta(self, resource: RawResource) -> float:
@@ -205,7 +195,7 @@ class City:
     def calculate_use_rate(self):
         for r in RESOURCES:
             self.use_rate[r] = 0.0
-        self.use_rate[ResourceType.FOOD] = len(self.citizens) * 1.0
+        self.use_rate[ResourceType.FOOD] = self.citizens * 1.0
         for b in self.buildings:
             count = self.buildings[b]
             if count > 0 and b in FACTORIES:
@@ -337,7 +327,7 @@ class City:
 
         logsPop = [
             LogPopulation(
-                turn=self.world.turn, location=self.name, population=len(self.citizens)
+                turn=self.world.turn, location=self.name, population=self.citizens
             )
         ]
 
@@ -364,7 +354,7 @@ class City:
         )
 
     def turn(self):
-        if len(self.citizens) == 0:
+        if self.citizens == 0:
             return
 
         self.calculate_priorities()
@@ -380,7 +370,7 @@ class City:
 
         # Population control
         if self.resources[ResourceType.FOOD][0] == 0:
-            self.citizens.pop()
+            self.citizens -= 1
         elif self.resources[ResourceType.FOOD][0] >= POP_GROWTH_COST + BUFFER:
             self._grow_population()
         self._log()
@@ -413,7 +403,7 @@ class City:
                         )
 
     def _turn_mining(self):
-        self.unemployed = len(self.citizens)
+        self.unemployed = self.citizens
         farm_employed = min(self.buildings[BuildingType.FARM] * 10, self.unemployed)
         self.unemployed = self.unemployed - farm_employed
 
@@ -484,7 +474,7 @@ class City:
             passive_building_count += sum(
                 1 for b in self.building_queue if b[0] == building
             )
-            citizens = len(self.citizens)
+            citizens = self.citizens
             if (
                 passive_building_count * PASSIVE_BUILDINGS[building].citizen_capacity
                 < citizens
@@ -556,9 +546,9 @@ class City:
     def _grow_population(self):
         if self.unemployed > 5:
             return  # no jobs for new people
-        for _ in range(0, int(math.sqrt(len(self.citizens)))):
+        for _ in range(0, int(math.sqrt(self.citizens))):
             if self.resources[ResourceType.FOOD][0] >= POP_GROWTH_COST + BUFFER:
-                self.create_citizen()
+                self.citizens += 1
                 amount, cost = self.resources[ResourceType.FOOD]
                 self.resources[ResourceType.FOOD] = amount - POP_GROWTH_COST, cost
             else:
@@ -573,4 +563,6 @@ class City:
         self.state.score += tax
 
     def __repr__(self):
-        return f"Miasto({self.name}, mieszkańcy: {len(self.citizens)}), kultura: {self.culture}"
+        return (
+            f"Miasto({self.name}, mieszkańcy: {self.citizens}), kultura: {self.culture}"
+        )

@@ -167,8 +167,7 @@ class World:
             # Move to the best neighbor
             x_curr, y_curr = best_pos
         new_city = City(x_curr, y_curr, name, self, culture)
-        for _ in range(no_citizens):
-            new_city.create_citizen()
+        new_city.citizens += no_citizens
 
         new_city.create_trader()
         new_city.calculate_use_rate()
@@ -190,8 +189,7 @@ class World:
         if len(state.city_names) == 0:
             return None
         new_city = City(x, y, state.city_names.pop(), self, deepcopy(state.culture))
-        for _ in range(no_citizens):
-            new_city.create_citizen()
+        new_city.citizens = no_citizens
 
         new_city.create_trader()
         new_city.calculate_use_rate()
@@ -291,12 +289,12 @@ class World:
         }
 
         for state_name, state in self.states.items():
-            total_population = sum(len(city.citizens) for city in state.cities)
+            total_population = sum(city.citizens for city in state.cities)
             is_true_state = len(state.cities) >= 3 and total_population >= 50
 
             for city in state.cities:
                 if is_true_state:
-                    base_influence = 30.0 + (len(city.citizens) * POPULATION_PREMIUM)
+                    base_influence = 30.0 + (city.citizens * POPULATION_PREMIUM)
                 else:
                     base_influence = 30.0
 

@@ -4,7 +4,6 @@ import math
 import random
 from typing import TYPE_CHECKING
 
-from citizen import Citizen
 from culture import ISOLATIONISM_STRENGTH, fuse_cultures
 from resources import Resource
 from utils.log import LogEvent
@@ -20,7 +19,7 @@ CAPACITY_MAX = 50
 TURBO = False
 
 
-class Trader(Citizen):
+class Trader:
     UNIT_COST = 2
     SCAN_CITIES = 3
 
@@ -28,6 +27,7 @@ class Trader(Citizen):
         super().__init__()
         # self.x: int = super().miasto.x
         # self.y: int = super().miasto.y # wymagałoby wykonania algorytmu znajdowania drogogi na razie działam na odległosciach
+        self.city: City | None = None
         self.target_city_distance: int = 0
         self.home_city_distance: int = 0
         self.good_to_buy: Resource | None = None
@@ -59,7 +59,7 @@ class Trader(Citizen):
         self, good: Resource, amount: int
     ) -> tuple[float | None, float | None]:
         valid_cities = self.get_valid_targets(good)
-        
+
         for city in valid_cities:
             if city in self.trade_partners:
                 fog = self.trade_partners[city]
@@ -82,7 +82,7 @@ class Trader(Citizen):
                 self.last_path = path
                 self.target_city_distance = int(cost)
                 self.home_city_distance = 0
-                
+
                 if len(self.last_path) == 0:  # Path is unavaiable
                     continue
                 self.trade_efficiency = math.ceil(
@@ -217,14 +217,16 @@ class Trader(Citizen):
         home_y = self.city.y
         target_x = self.target_city.x
         target_y = self.target_city.y
-        sail_cost = float('inf')
-        walk_cost = float('inf')
-        
+        sail_cost = float("inf")
+        walk_cost = float("inf")
+
         # if self.target_city.ocean_id == self.city.ocean_id and self.city.ocean_id != None:
-            # zegluj
-            # sail_path, sail_cost = sailing(self.city.world, (home_x, home_y), (target_x, target_y))
+        # zegluj
+        # sail_path, sail_cost = sailing(self.city.world, (home_x, home_y), (target_x, target_y))
         if self.target_city.land_id == self.city.land_id:
-            walk_path, walk_cost = find_path(self.city.world, (home_x, home_y), (target_x, target_y))
+            walk_path, walk_cost = find_path(
+                self.city.world, (home_x, home_y), (target_x, target_y)
+            )
         # if sail_cost < walk_cost:
         #     cost = sail_cost
         #     path = sail_path
@@ -295,7 +297,7 @@ class Trader(Citizen):
 
     def get_valid_targets(self, good: Resource) -> list[City]:
         valid_targets = []
-        
+
         for city in self.city.world.cities:
             if city == self.city:
                 continue
@@ -309,7 +311,7 @@ class Trader(Citizen):
                         can_reach = True  # can sail
             if not can_reach:
                 continue
-            
+
             # Check if city has the resource
             city_amount, _ = city.get_resource(good)
             if city_amount[0] > 0:
@@ -318,11 +320,9 @@ class Trader(Citizen):
         valid_targets.sort(key=lambda c: self._calculate_path_cost_sqrd(c))
         return valid_targets
 
-
     def _calculate_path_cost_sqrd(self, target_city: City) -> float:
-        cost = (self.city.x-target_city.x) ** 2 + (self.city.y-target_city.y) ** 2
+        cost = (self.city.x - target_city.x) ** 2 + (self.city.y - target_city.y) ** 2
         return cost
-
 
     def __str__(self):
         return f"Handlarz z miasta {self.city.name} (cel: {self.target_city.name if self.target_city else 'brak'}, towar: {self.good_to_buy}, ilość: {self.amount_of_good_to_buy}, złoto: {self.gold})"
