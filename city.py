@@ -438,12 +438,12 @@ class City:
                 res_obj = MANUFACTURED_RESOURCES[res]
             factory_count = available_buildings[res_obj.factory]
             self.unemployed = self.unemployed - min(factory_count * 10, workers)
-            self.accumulation_rate[res] = res_obj.extract(
-                self.world, self.x, self.y, factory_count, workers
+            self.accumulation_rate[res] = (
+                res_obj.extract(self.world, self.x, self.y, factory_count, workers) * 1
+                + self.culture.hard_working / 2
             )
 
             resources, price = self.resources[res]
-            resources *= 1 + self.culture.hard_working / 2
             price *= 1 + self.culture.avarice / 2
             self.resources[res] = (resources + self.accumulation_rate[res], price)
 
