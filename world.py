@@ -105,7 +105,7 @@ class World:
             print(f"Layer '{name}' has shape {arr.shape}")
             self.width, self.height = arr.shape
         with open(filename, "rb") as f:
-            f.seek(-2, 2)   # move 2 bytes before the end (2 = end of file)
+            f.seek(-2, 2)  # move 2 bytes before the end (2 = end of file)
             last_two = f.read(2)
             self.top_latitude = int(last_two[0])
             self.bot_latitude = int(last_two[1])
@@ -132,7 +132,7 @@ class World:
         self, count: int, no_citizens: int, cultures: list[Culture] | None = None
     ):
         assert cultures is None or len(cultures) == count
-        print(no_citizens)
+        # print(no_citizens)
         for i in range(count):
             state_name = self.avaiable_states.pop()
             filename = self.state_names[state_name]
