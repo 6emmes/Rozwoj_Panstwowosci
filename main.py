@@ -5,7 +5,7 @@ from world import World
 
 PYGAME = True
 
-random.seed(10)
+random.seed(65)
 
 
 def main() -> None:

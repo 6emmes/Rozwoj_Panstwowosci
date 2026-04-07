@@ -46,6 +46,11 @@ STATIC_RANGE = 10
 INFLUENCE_THRESHOLD = 15.0
 POPULATION_PREMIUM = 2.0
 
+CARDINAL = [(1,0), (-1,0), (0,1), (0,-1)]
+DIAGONAL = [(1,1), (1,-1), (-1,1), (-1,-1)]
+EIGHT = CARDINAL + DIAGONAL
+EIGHT_COSTS = [1.0] * 4 + [1.41] * 4
+
 
 class World:
     def __init__(self) -> None:
@@ -63,8 +68,10 @@ class World:
         self.sailing_cache = {}
         self.sailing_cache_start = {}
         self.load_state_names()
+        self.ter_scale = 2
+        self.influence_grid = [[0.0 for _ in range(self.width//self.ter_scale)] for _ in range(self.height//self.ter_scale)]
         self.territory_map = [
-            [None for _ in range(self.width)] for _ in range(self.height)
+            [None for _ in range(self.width//self.ter_scale)] for _ in range(self.height//self.ter_scale)
         ]
 
         # TODO: zamienić to na państwa po skończeniu dema
@@ -122,7 +129,7 @@ class World:
         if self.turn % 150 == 0:
             self.road_decay()
         if self.turn % 10 == 0:
-            self.update_territories()
+            self.update_territories_cel()
         self.turn += 1
 
     def manhattan(self, x1, y1, x2, y2):
@@ -206,7 +213,7 @@ class World:
         return new_city
 
     def settle(self, state: State, no_citizens, x, y):
-        owner = self.territory_map[x][y]
+        owner = self.territory_map[x//self.ter_scale][y//self.ter_scale]
         if owner is not None and owner != state.name:
             return None
 
@@ -332,86 +339,71 @@ class World:
                 return lerp_vec2(v0, v1, t)
         return (0.0, 0.0)
     
-    def update_territories(self):
-        directions = [
-            (-1, 0),
-            (1, 0),
-            (0, -1),
-            (0, 1),
-            (-1, -1),
-            (-1, 1),
-            (1, -1),
-            (1, 1),
-        ]
-        influence_grid = {
-            state_name: [[0.0 for _ in range(self.width)] for _ in range(self.height)]
-            for state_name in self.states.keys()
-        }
+
+    def update_territories_cel(self):
+        map_scale = self.ter_scale
 
         for state_name, state in self.states.items():
             total_population = sum(city.citizens for city in state.cities)
             is_true_state = len(state.cities) >= 3 and total_population >= 50
-
             for city in state.cities:
                 if is_true_state:
                     base_influence = 30.0 + (city.citizens * POPULATION_PREMIUM)
                 else:
-                    base_influence = 30.0
-
+                    base_influence = 30.0 + (len(city.citizens) / POPULATION_PREMIUM)
                 if base_influence <= 0:
                     continue
+                cx = int(city.x/map_scale)
+                cy = int(city.y/map_scale)
+                self.influence_grid[cx][cy] = base_influence
+                self.territory_map[cx][cy] = state_name
 
-                queue = [(-base_influence, city.x, city.y)]
-                visited = set()
+        for x in range(0, self.width//map_scale):
+            for y in range(0, self.height//map_scale):
+                if self.layers["height_map"][x*map_scale][y*map_scale] == 0:
+                    continue
 
-                while queue:
-                    current_influence_neg, cx, cy = heapq.heappop(queue)
-                    current_influence = -current_influence_neg
+                terrain_cost = 3.0 + (self.layers["height_map"][x*map_scale][y*map_scale] * 10.0)
+                road_level = self.roads[x*map_scale][y*map_scale]
+                next_influence = {}
+                for (dx, dy), base_cost in zip(EIGHT, EIGHT_COSTS):
+                    nx = x + dx
+                    ny = y + dy
+                    if 0 <= nx < self.width/map_scale and 0 <= ny < self.height/map_scale:
+                        if self.territory_map[nx][ny] is not None:
+                            owner = self.territory_map[nx][ny]
+                            step_cost = terrain_cost * (1.0 - (road_level * 0.5)) * base_cost * self.ter_scale
+                            if owner not in next_influence:
+                                next_influence[owner] = self.influence_grid[nx][ny] - step_cost
+                            else:
+                                next_influence[owner] = max(next_influence[owner], self.influence_grid[nx][ny] - step_cost)
 
-                    if (cx, cy) in visited:
-                        continue
-                    visited.add((cx, cy))
+                for owner, inf in next_influence.items():
+                    if inf > INFLUENCE_THRESHOLD and self.influence_grid[x][y] < inf:
+                        self.influence_grid[x][y] = inf
+                        self.territory_map[x][y] = owner
 
-                    influence_grid[state_name][cx][cy] += current_influence
+        for x in reversed(range(0, self.width//map_scale)):
+            for y in reversed(range(0, self.height//map_scale)):
+                if self.layers["height_map"][x*map_scale][y*map_scale] == 0:
+                    continue
 
-                    for dx, dy in directions:
-                        nx, ny = cx + dx, cy + dy
+                terrain_cost = 3.0 + (self.layers["height_map"][x*map_scale][y*map_scale] * 10.0)
+                road_level = self.roads[x*map_scale][y*map_scale]
+                next_influence = {}
+                for (dx, dy), base_cost in zip(EIGHT, EIGHT_COSTS):
+                    nx = x + dx
+                    ny = y + dy
+                    if 0 <= nx < self.width/map_scale and 0 <= ny < self.height/map_scale:
+                        if self.territory_map[nx][ny] is not None:
+                            owner = self.territory_map[nx][ny]
+                            step_cost = terrain_cost * (1.0 - (road_level * 0.5)) * base_cost * self.ter_scale
+                            if owner not in next_influence:
+                                next_influence[owner] = self.influence_grid[nx][ny] - step_cost
+                            else:
+                                next_influence[owner] = max(next_influence[owner], self.influence_grid[nx][ny] - step_cost)
 
-                        if 0 <= nx < self.width and 0 <= ny < self.height:
-                            if (nx, ny) not in visited:
-                                if self.layers["water_map"][nx][ny] == 0.0:
-                                    continue
-
-                                height = self.layers["height_map"][nx][ny]
-                                terrain_cost = 3.0 + (height * 10.0)
-                                road_level = self.roads[nx][ny]
-
-                                step_cost = terrain_cost * (1.0 - (road_level * 0.5))
-
-                                if dx != 0 and dy != 0:
-                                    step_cost *= 1.414
-
-                                next_influence = current_influence - step_cost
-
-                                if next_influence > 0.1:
-                                    heapq.heappush(queue, (-next_influence, nx, ny))
-
-        for state_name, state in self.states.items():
-            for city in state.cities:
-                for dx in range(-STATIC_RANGE, STATIC_RANGE + 1):
-                    for dy in range(-STATIC_RANGE, STATIC_RANGE + 1):
-                        if dx**2 + dy**2 <= pow(STATIC_RANGE, 2):
-                            nx, ny = city.x + dx, city.y + dy
-                            if 0 <= nx < self.width and 0 <= ny < self.height:
-                                if self.layers["water_map"][nx][ny] != 0.0:
-                                    influence_grid[state_name][nx][ny] = float("inf")
-
-        for x in range(0, self.width, 2):
-            for y in range(0, self.height, 2):
-                best_state = None
-                max_inf = INFLUENCE_THRESHOLD
-                for state_name, grid in influence_grid.items():
-                    if grid[x][y] > max_inf:
-                        max_inf = grid[x][y]
-                        best_state = state_name
-                self.territory_map[x][y] = best_state
+                for owner, inf in next_influence.items():
+                    if inf > INFLUENCE_THRESHOLD and self.influence_grid[x][y] < inf:
+                        self.influence_grid[x][y] = inf
+                        self.territory_map[x][y] = owner
