@@ -1,5 +1,8 @@
 import sqlite3
 from dataclasses import asdict, dataclass
+from collections import defaultdict
+
+MAX_CACHE = 32
 
 
 @dataclass(slots=True)
@@ -72,6 +75,7 @@ class Logger:
     locations_cache = {}
     resources_cache = {}
     type_cache = {}
+    log_cache = defaultdict(list)
 
     def __init__(self, name):
         self.filename = name + ".sqlite"
@@ -146,7 +150,8 @@ class Logger:
 
     def _normalize_log(self, log_obj: LogGeneric):
         data = asdict(log_obj)
-        data["type"] = self._get_type_id(log_obj)  # add the log type explicitly
+        data["type"] = self._get_type_id(
+            log_obj)  # add the log type explicitly
         data["location"] = self._get_location_id(
             log_obj.location
         )  # convert location to ID
@@ -165,15 +170,7 @@ class Logger:
         return data
 
     def save_log(self, log_obj: LogGeneric):
-        data = self._normalize_log(log_obj)
-        columns = ", ".join(data.keys())
-        placeholders = ", ".join("?" for _ in data)
-        values = tuple(data.values())
-
-        self.conn.execute(
-            f"INSERT INTO logs ({columns}) VALUES ({placeholders})", values
-        )
-        self.conn.commit()
+        self.log_cache[type(log_obj).__name__].append(log_obj)
 
     def save_log_est(self, log: LogCityEstablishment):
         location_id = self._get_location_id(log.location)
@@ -184,13 +181,39 @@ class Logger:
         self.conn.commit()
 
     def save_logs(self, log_list: list[LogGeneric]):
+        touched_logs = []
         for log_obj in log_list:
-            data = self._normalize_log(log_obj)
-            columns = ", ".join(data.keys())
-            placeholders = ", ".join("?" for _ in data)
-            values = tuple(data.values())
+            log_type = type(log_obj).__name__
+            if log_type not in touched_logs:
+                touched_logs.append(log_type)
+            self.log_cache[log_type].append(log_obj)
+        for log_type in touched_logs:
+            if len(self.log_cache[log_type]) > MAX_CACHE:
+                values = []
+                for log_obj in self.log_cache[log_type]:
+                    data = self._normalize_log(log_obj)
+                    columns = ", ".join(data.keys())
+                    placeholders = ", ".join("?" for _ in data)
+                    values.append(tuple(data.values()))
+                self.conn.executemany(
+                    f"INSERT INTO logs ({columns}) VALUES ({placeholders})", values
+                )
+                self.conn.commit()
+                self.log_cache[log_type] = []
 
-            self.conn.execute(
-                f"INSERT INTO logs ({columns}) VALUES ({placeholders})", values
-            )
-        self.conn.commit()
+    def __del__(self):
+        for log_type, logs in self.log_cache.items():
+            if logs:
+                values = []
+                for log_obj in logs:
+                    data = self._normalize_log(log_obj)
+                    values.append(tuple(data.values()))
+
+                columns = ", ".join(data.keys())
+                placeholders = ", ".join("?" for _ in data)
+
+                self.conn.executemany(
+                    f"INSERT INTO logs ({columns}) VALUES ({placeholders})", values
+                )
+                self.conn.commit()
+        self.conn.close()

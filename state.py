@@ -1,6 +1,5 @@
 from typing import TYPE_CHECKING
 
-from army import Army
 from city import City
 
 if TYPE_CHECKING:
@@ -22,7 +21,6 @@ class State:
         self.hue: int = hue
         self.city_names: list[str] = namelist
         self.cities: list[City] = []
-        self.armies: list[Army] = []
         self.objectives: list[object] = []
         self.ruler: object = None
         self.diplomacy: list[object] = []
@@ -43,9 +41,6 @@ class State:
     def add_city(self, city: City) -> None:
         city.state = self
         self.cities.append(city)
-
-    def add_army(self, army: Army) -> None:
-        self.armies.append(army)
 
     def turn(self):
         for c in self.cities:

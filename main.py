@@ -35,7 +35,7 @@ def main() -> None:
     if PYGAME:
         display_obj.save()
     for c in sim_world.cities:
-        print(c.name, c.gold, len(c.citizens), c.buildings)
+        print(c.name, c.gold, c.citizens, c.buildings)
 
 
 if __name__ == "__main__":

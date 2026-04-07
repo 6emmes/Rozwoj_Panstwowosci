@@ -112,7 +112,7 @@ class World:
             print(f"Layer '{name}' has shape {arr.shape}")
             self.width, self.height = arr.shape
         with open(filename, "rb") as f:
-            f.seek(-2, 2)   # move 2 bytes before the end (2 = end of file)
+            f.seek(-2, 2)  # move 2 bytes before the end (2 = end of file)
             last_two = f.read(2)
             self.top_latitude = int(last_two[0])
             self.bot_latitude = int(last_two[1])
@@ -139,7 +139,7 @@ class World:
         self, count: int, no_citizens: int, cultures: list[Culture] | None = None
     ):
         assert cultures is None or len(cultures) == count
-        print(no_citizens)
+        # print(no_citizens)
         for i in range(count):
             state_name = self.avaiable_states.pop()
             filename = self.state_names[state_name]
@@ -205,8 +205,7 @@ class World:
             # Move to the best neighbor
             x_curr, y_curr = best_pos
         new_city = City(x_curr, y_curr, name, self, culture)
-        for _ in range(no_citizens):
-            new_city.create_citizen()
+        new_city.citizens += no_citizens
 
         new_city.create_trader()
         new_city.calculate_use_rate()
@@ -228,8 +227,7 @@ class World:
         if len(state.city_names) == 0:
             return None
         new_city = City(x, y, state.city_names.pop(), self, deepcopy(state.culture))
-        for _ in range(no_citizens):
-            new_city.create_citizen()
+        new_city.citizens = no_citizens
 
         new_city.create_trader()
         new_city.calculate_use_rate()
@@ -346,11 +344,11 @@ class World:
         map_scale = self.ter_scale
 
         for state_name, state in self.states.items():
-            total_population = sum(len(city.citizens) for city in state.cities)
+            total_population = sum(city.citizens for city in state.cities)
             is_true_state = len(state.cities) >= 3 and total_population >= 50
             for city in state.cities:
                 if is_true_state:
-                    base_influence = 30.0 + (len(city.citizens) * POPULATION_PREMIUM)
+                    base_influence = 30.0 + (city.citizens * POPULATION_PREMIUM)
                 else:
                     base_influence = 30.0 + (len(city.citizens) / POPULATION_PREMIUM)
                 if base_influence <= 0:
