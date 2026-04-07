@@ -1,6 +1,7 @@
 import heapq
 import os
 import random
+import math
 from copy import deepcopy
 
 import tifffile
@@ -10,13 +11,36 @@ from culture import Culture
 from state import State
 from utils.definitions import Grid, Point
 from utils.log import Logger
-
-SETTLERSTEPCOUNT = 32
+SETTLERSTEPCOUNT = 48
 
 ROAD_K = 0.04
 
 FRIENDLY_CITY_DENSITY = 32
 HOSTILE_CITY_DENSITY = 64
+ROOT2 = math.sqrt(0.5)
+
+RAMP = [
+    (-90.0,  ( ROOT2,  ROOT2)),   # Polar Easterlies
+    (-60.0,  ( 0.0,    0.0   )),  # Subpolar Low
+    (-45.0,  (-ROOT2, -ROOT2)),   # Westerlies
+    (-30.0,  ( 0.0,    0.0   )),  # Subtropical High
+    (-15.0,  ( ROOT2,  ROOT2)),   # SE Trade
+    (  0.0,  ( 1.0,    0.0   )),  # ITCZ
+    ( 15.0,  ( ROOT2, -ROOT2)),   # NE Trade
+    ( 30.0,  ( 0.0,    0.0   )),  # Subtropical High
+    ( 45.0,  (-ROOT2,  ROOT2)),   # Westerlies
+    ( 60.0,  ( 0.0,    0.0   )),  # Subpolar Low
+    ( 90.0,  ( ROOT2, -ROOT2)),   # Polar Easterlies
+]
+
+def lerp(a, b, t):
+    return a + (b - a) * t
+
+def lerp_vec2(v1, v2, t):
+    return (
+        lerp(v1[0], v2[0], t),
+        lerp(v1[1], v2[1], t)
+    )
 
 STATIC_RANGE = 10
 INFLUENCE_THRESHOLD = 15.0
@@ -38,9 +62,11 @@ class World:
         self.avaiable_states: list[str] = []
         self.turn: int = 0
         self.layers = {}
-        self.compatibility(self.load_new_map8("maps/m_continent.tiff"))
+        self.compatibility(self.load_new_map8("maps/m_isles.tiff"))
         self.path_cache = {}
         self.path_cache_start = {}
+        self.sailing_cache = {}
+        self.sailing_cache_start = {}
         self.load_state_names()
         self.ter_scale = 2
         self.influence_grid = [[0.0 for _ in range(self.width//self.ter_scale)] for _ in range(self.height//self.ter_scale)]
@@ -67,10 +93,10 @@ class World:
         self.water = layers["water_map"]
         self.silver = layers["silver_map"]
 
-    def load_new_map8(self, name):
+    def load_new_map8(self, filename):
         MAX = 255
 
-        with tifffile.TiffFile(name) as tif:
+        with tifffile.TiffFile(filename) as tif:
             for i, page in enumerate(tif.pages):
                 page_name = page.tags.get("PageName")
                 if page_name is not None:
@@ -85,6 +111,11 @@ class World:
         for name, arr in self.layers.items():
             print(f"Layer '{name}' has shape {arr.shape}")
             self.width, self.height = arr.shape
+        with open(filename, "rb") as f:
+            f.seek(-2, 2)   # move 2 bytes before the end (2 = end of file)
+            last_two = f.read(2)
+            self.top_latitude = int(last_two[0])
+            self.bot_latitude = int(last_two[1])
         return self.layers
 
     def build_road(self, path: list[Point]):
@@ -230,22 +261,30 @@ class World:
                 ):
                     continue
                 if self.heightmap[cur_pos[0]][cur_pos[1]] == 0.0:
-                    return self.layers["id_map"][cur_pos[0]][cur_pos[1]]
-        return None
-
+                    return self.layers["id_map"][cur_pos[0]][cur_pos[1]], cur_pos
+        return None, None
+    
     def check_path_cache(self, line):
         if line not in self.path_cache:
             return False
         cache_value_age = self.turn - self.path_cache[line][2]
         cache_age = self.turn - self.path_cache_start[line]
-        if cache_value_age < 0.5 * cache_age:
-            return True
-        return False
+        return cache_value_age < 0.5 * cache_age
 
     def write_path_cache(self, line, value):
         if line not in self.path_cache:
             self.path_cache_start[line] = self.turn
         self.path_cache[line] = value
+
+
+    def check_sailing_cache(self, line):
+        return line in self.sailing_cache
+
+    def write_sailing_path_cache(self, line, value):
+        if line not in self.sailing_cache:
+            self.sailing_cache_start[line] = self.turn
+        self.sailing_cache[line] = value
+        
 
     def update_prices(self):
         self.prices = {}
@@ -281,6 +320,27 @@ class World:
     def cities_pos(self):
         self.cities_map = [(c.x, c.y) for c in self.cities]
 
+    def get_wind(self, pos: Point):
+        x, y = pos
+        if not (0 <= x < self.width and 0 <= y < self.height):
+            return (0.0, 0.0)
+
+        lat_delta = self.top_latitude - self.bot_latitude
+        latitude = self.top_latitude - (lat_delta * (y / self.height))
+
+        if latitude <= RAMP[0][0]:
+            return RAMP[0][1]
+        if latitude >= RAMP[-1][0]:
+            return RAMP[-1][1]
+
+        for i in range(len(RAMP) - 1):
+            lat0, v0 = RAMP[i]
+            lat1, v1 = RAMP[i + 1]
+            if lat0 <= latitude <= lat1:
+                t = (latitude - lat0) / (lat1 - lat0)
+                return lerp_vec2(v0, v1, t)
+        return (0.0, 0.0)
+    
 
     def update_territories_cel(self):
         map_scale = self.ter_scale

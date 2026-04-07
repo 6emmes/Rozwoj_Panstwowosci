@@ -5,6 +5,7 @@ import numpy as np
 COLOR_PATH = [120, 120, 120]
 COLOR_GROUND = [0, 250, 0]
 COLOR_WATER = [0, 0, 250]
+COLOR_SAIL = [0, 128, 255]
 COLOR_BLACK = [0, 0, 0]
 
 
@@ -15,6 +16,7 @@ class Display:
         self.camera_offset = pygame.Vector2(0, 0)
         self.zoom_speed = 0.1
         self.pan_speed = 20
+        self.sailing_drawn = {}
 
     def pygame_init(self):
         pygame.init()
@@ -45,6 +47,7 @@ class Display:
         self.terrain_surface = pygame.surfarray.make_surface(terrain_array)
         self.ter_scale = self.world.ter_scale
         self.territory_surface = pygame.Surface((self.world.width//self.ter_scale, self.world.height//self.ter_scale), pygame.SRCALPHA)
+        self.sailing_rgba = np.zeros((self.world.width, self.world.height, 4), dtype=np.uint8)
 
         self.font = pygame.font.SysFont('Verdana', 16)
         self.text_surface = self.font.render('Some Text', False, (128, 128, 128))
@@ -60,13 +63,23 @@ class Display:
             road_rgba.transpose((1, 0, 2)).copy(), (w, h), "RGBA"
         ).convert_alpha()
 
+        for k in self.world.sailing_cache.keys():
+            if k not in self.sailing_drawn:
+                path, _, _ = self.world.sailing_cache[k]
+                for x, y in path:
+                    self.sailing_rgba[x, y] = COLOR_SAIL + [255]
+                self.sailing_drawn[k] = True
+        self.sailing_surface = pygame.image.frombuffer(
+            self.sailing_rgba.transpose((1, 0, 2)).copy(), (w, h), "RGBA"
+        ).convert_alpha()
+
         territory_rgba = np.zeros((self.world.width, self.world.height, 4), dtype=np.uint8)
 
         # Słownik do szybkiego wyszukiwania koloru państwa
         color_map = {}
         for state_name, state in self.world.states.items():
             c = pygame.Color(0)
-            c.hsva = (state.hue % 360, 70, 90,
+            c.hsva = (state.hue % 360, 100, 60,
                       100)  # Saturacja 70, Value 90. Ostatnia wartość w hsva nie kontroluje alphy bezpośrednio
             # Tworzymy krotkę RGBA (z alphą ustawioną na 100/255 -> półprzezroczystość)
             color_map[state_name] = (c.r, c.g, c.b, 100)
@@ -139,6 +152,22 @@ class Display:
                 int(self.world.height * self.camera_scale * self.ter_scale),
             ),
         )
+        
+        sailing_scaled = pygame.transform.scale(
+            self.sailing_surface,
+            (
+                int(self.world.width * self.camera_scale * self.ter_scale),
+                int(self.world.height * self.camera_scale * self.ter_scale),
+            ),
+        )
+        
+        sailing_scaled = pygame.transform.scale(
+            self.sailing_surface,
+            (
+                int(self.world.width * self.camera_scale),
+                int(self.world.height * self.camera_scale),
+            ),
+        )
 
         # Clear screen
         self.screen.fill((0, 0, 0))
@@ -147,6 +176,7 @@ class Display:
         self.screen.blit(terrain_scaled, self.camera_offset)
         self.screen.blit(territory_scaled, self.camera_offset)
         self.screen.blit(roads_scaled, self.camera_offset)
+        self.screen.blit(sailing_scaled, self.camera_offset)
 
         # Draw cities (scaled + offset)
         state_color = pygame.Color(0)
