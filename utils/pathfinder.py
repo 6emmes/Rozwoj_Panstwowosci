@@ -6,9 +6,13 @@ from utils.definitions import Grid, Point
 from world import World
 
 SQRT_2 = np.sqrt(2)
-PATH_BEAUTY = 25
+PATH_BEAUTY = 15
 PATH_COST_SCALE = 0.9
 
+CARDINAL = [(1,0), (-1,0), (0,1), (0,-1)]
+DIAGONAL = [(1,1), (1,-1), (-1,1), (-1,-1)]
+EIGHT = CARDINAL + DIAGONAL
+EIGHT_COSTS = [1.0] * 4 + [SQRT_2] * 4
 
 def _cost(world: World, xold: int, yold: int, x: int, y: int) -> float:
     if world.water[x][y] == 0:
@@ -22,8 +26,7 @@ def _cost(world: World, xold: int, yold: int, x: int, y: int) -> float:
     if (x, y) in world.cities_map:
         height /= 2
     cost = river + height - world.roads[x][y]
-    cost = max(0.1, cost * PATH_COST_SCALE)
-    return cost
+    return max(0.1, cost * PATH_COST_SCALE)
 
 
 def _reconstruct_path(parents: Grid[Point], start: Point, end: Point) -> list[Point]:
@@ -112,30 +115,16 @@ def find_path(world: World, start: Point, end: Point) -> tuple[list[Point], floa
                 path_to_store = list(reversed(partial_path))
             world.write_path_cache(key, (path_to_store, cost, world.turn))
 
-        neighbours = [(x - 1, y), (x + 1, y), (x, y - 1), (x, y + 1)]
-        for nx, ny in neighbours:
+        for (dx, dy), base_cost in zip(EIGHT, EIGHT_COSTS):
+            nx = x + dx
+            ny = y + dy
             if not (0 <= nx < world.width and 0 <= ny < world.height):
                 continue
-            p_cost = _cost(world, x, y, nx, ny)
+            p_cost = _cost(world, x, y, nx, ny) * base_cost
             new_cost = current_cost + p_cost
             if new_cost < min_distance[nx][ny]:
                 min_distance[nx][ny] = new_cost
                 parents[nx][ny] = (x, y)
                 heapq.heappush(pq, (new_cost, nx, ny))
 
-        neighbours_diag = [
-            (x - 1, y - 1),
-            (x - 1, y + 1),
-            (x + 1, y - 1),
-            (x + 1, y + 1),
-        ]
-        for nx, ny in neighbours_diag:
-            if not (0 <= nx < world.width and 0 <= ny < world.height):
-                continue
-            p_cost = SQRT_2 * _cost(world, x, y, nx, ny)
-            new_cost = current_cost + p_cost
-            if new_cost < min_distance[nx][ny]:
-                min_distance[nx][ny] = new_cost
-                parents[nx][ny] = (x, y)
-                heapq.heappush(pq, (new_cost, nx, ny))
     return [], 0

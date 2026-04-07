@@ -14,7 +14,7 @@ def main() -> None:
         display_obj = Display(sim_world)
         display_obj.pygame_init()
 
-    sim_world.spawn_states(3, 5)
+    sim_world.spawn_states(7, 5, 34)
 
     turns = 1_000
     # Główna pętla symulacji
@@ -22,7 +22,7 @@ def main() -> None:
         if i % 100 == 0:
             print(f"turn{i}")
             sim_world.update_prices()
-            print(sim_world.prices)
+            # print(sim_world.prices)
 
         sim_world.next_turn()
 
