@@ -14,7 +14,7 @@ def main() -> None:
         display_obj = Display(sim_world)
         display_obj.pygame_init()
 
-    sim_world.spawn_states(7, 5, 34)
+    sim_world.spawn_states(7, 5)
 
     turns = 1_000
     # Główna pętla symulacji
@@ -35,7 +35,7 @@ def main() -> None:
     if PYGAME:
         display_obj.save()
     for c in sim_world.cities:
-        print(c.name, c.gold, len(c.citizens), c.buildings)
+        print(c.name, c.gold, c.citizens, c.buildings)
 
 
 if __name__ == "__main__":

@@ -13,6 +13,5 @@ class Settler:
     def settle(self, city_name: str):
         # TODO: dodać sprawdzanie czy miasto nie jest za blisko innego miasta
         city = City(self.x, self.y, city_name, self.world)
-        for _ in range(self.no_citizens):
-            city.create_citizen()
+        city.citizens = self.no_citizens
         return city
