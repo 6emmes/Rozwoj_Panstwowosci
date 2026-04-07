@@ -5,7 +5,7 @@ from world import World
 
 PYGAME = True
 
-random.seed(10)
+random.seed(65)
 
 
 def main() -> None:
@@ -14,7 +14,7 @@ def main() -> None:
         display_obj = Display(sim_world)
         display_obj.pygame_init()
 
-    sim_world.spawn_states(7, 5, 34)
+    sim_world.spawn_states(7, 5)
 
     turns = 1_000
     # Główna pętla symulacji
