@@ -1,9 +1,12 @@
-from world import World
+import random
+
 from utils.display import Display
-from utils.sim_types import BuildingType, ResourceType
 from world import World
 
 PYGAME = True
+
+random.seed(10)
+
 
 def main() -> None:
     sim_world = World()
