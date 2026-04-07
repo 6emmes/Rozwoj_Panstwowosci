@@ -27,6 +27,7 @@ class LogTrade(LogGenericResource):
     price: float
     destination: str
     travel_time: int
+    walking: int
     TYPE = "trade"
 
 
@@ -90,7 +91,7 @@ class Logger:
                         (location INTEGER, land_id FLOAT, ocean_id FLOAT, X INTEGER, Y INTEGER,
                         FOREIGN KEY(location) REFERENCES locations(id))""")
         self.conn.execute("""CREATE TABLE IF NOT EXISTS logs
-                        (type INTEGER, turn INTEGER, location INTEGER, resource INTEGER, price FLOAT, amount FLOAT, destination TEXT, travel_time INTEGER, population INTEGER, description TEXT, traits TEXT,
+                        (type INTEGER, turn INTEGER, location INTEGER, resource INTEGER, price FLOAT, amount FLOAT, destination TEXT, travel_time INTEGER, walking INTEGER, population INTEGER, description TEXT, traits TEXT,
                         FOREIGN KEY(type) REFERENCES types(id),
                         FOREIGN KEY(resource) REFERENCES resources(id),
                         FOREIGN KEY(location) REFERENCES locations(id))""")

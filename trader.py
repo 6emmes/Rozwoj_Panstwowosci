@@ -207,7 +207,8 @@ class Trader:
         return cost
 
     def plan_travel(self) -> tuple[list[Point], int]:
-        # from utils.sailor import sailing
+        from utils.sailor import sailing
+
         if TURBO:
             from utils.turbofinder import find_path
         else:
@@ -220,22 +221,24 @@ class Trader:
         sail_cost = float("inf")
         walk_cost = float("inf")
 
-        # if self.target_city.ocean_id == self.city.ocean_id and self.city.ocean_id != None:
-        # zegluj
-        # sail_path, sail_cost = sailing(self.city.world, (home_x, home_y), (target_x, target_y))
+        if (
+            self.target_city.ocean_id == self.city.ocean_id
+            and self.city.ocean_id != None
+        ):
+            sail_path, sail_cost = sailing(
+                self.city.world, (home_x, home_y), (target_x, target_y)
+            )
         if self.target_city.land_id == self.city.land_id:
             walk_path, walk_cost = find_path(
                 self.city.world, (home_x, home_y), (target_x, target_y)
             )
-        # if sail_cost < walk_cost:
-        #     cost = sail_cost
-        #     path = sail_path
-        # else:
-        cost = walk_cost
-        path = walk_path
+        if sail_cost < walk_cost:
+            cost = sail_cost
+            path = sail_path
+        else:
+            cost = walk_cost
+            path = walk_path
 
-        if cost == 0:
-            return
         return path, cost
 
     def sell_good(self):  # Handlarz nie sprzedaje zasobów, tylko kupuje od miasta
