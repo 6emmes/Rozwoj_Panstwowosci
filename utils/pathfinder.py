@@ -9,10 +9,11 @@ SQRT_2 = np.sqrt(2)
 PATH_BEAUTY = 15
 PATH_COST_SCALE = 0.9
 
-CARDINAL = [(1,0), (-1,0), (0,1), (0,-1)]
-DIAGONAL = [(1,1), (1,-1), (-1,1), (-1,-1)]
+CARDINAL = [(1, 0), (-1, 0), (0, 1), (0, -1)]
+DIAGONAL = [(1, 1), (1, -1), (-1, 1), (-1, -1)]
 EIGHT = CARDINAL + DIAGONAL
 EIGHT_COSTS = [1.0] * 4 + [SQRT_2] * 4
+
 
 def _cost(world: World, xold: int, yold: int, x: int, y: int) -> float:
     if world.water[x][y] == 0:
@@ -24,7 +25,7 @@ def _cost(world: World, xold: int, yold: int, x: int, y: int) -> float:
         ** 3
     )
     if (x, y) in world.cities_map:
-        height /= 2
+        return 0.1
     cost = river + height - world.roads[x][y]
     return max(0.1, cost * PATH_COST_SCALE)
 
