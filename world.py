@@ -1,7 +1,7 @@
 import heapq
+import math
 import os
 import random
-import math
 from copy import deepcopy
 
 import tifffile
@@ -11,6 +11,7 @@ from culture import Culture
 from state import State
 from utils.definitions import Grid, Point
 from utils.log import Logger
+
 SETTLERSTEPCOUNT = 48
 
 ROAD_K = 0.04
@@ -20,34 +21,34 @@ HOSTILE_CITY_DENSITY = 64
 ROOT2 = math.sqrt(0.5)
 
 RAMP = [
-    (-90.0,  ( ROOT2,  ROOT2)),   # Polar Easterlies
-    (-60.0,  ( 0.0,    0.0   )),  # Subpolar Low
-    (-45.0,  (-ROOT2, -ROOT2)),   # Westerlies
-    (-30.0,  ( 0.0,    0.0   )),  # Subtropical High
-    (-15.0,  ( ROOT2,  ROOT2)),   # SE Trade
-    (  0.0,  ( 1.0,    0.0   )),  # ITCZ
-    ( 15.0,  ( ROOT2, -ROOT2)),   # NE Trade
-    ( 30.0,  ( 0.0,    0.0   )),  # Subtropical High
-    ( 45.0,  (-ROOT2,  ROOT2)),   # Westerlies
-    ( 60.0,  ( 0.0,    0.0   )),  # Subpolar Low
-    ( 90.0,  ( ROOT2, -ROOT2)),   # Polar Easterlies
+    (-90.0, (ROOT2, ROOT2)),  # Polar Easterlies
+    (-60.0, (0.0, 0.0)),  # Subpolar Low
+    (-45.0, (-ROOT2, -ROOT2)),  # Westerlies
+    (-30.0, (0.0, 0.0)),  # Subtropical High
+    (-15.0, (ROOT2, ROOT2)),  # SE Trade
+    (0.0, (1.0, 0.0)),  # ITCZ
+    (15.0, (ROOT2, -ROOT2)),  # NE Trade
+    (30.0, (0.0, 0.0)),  # Subtropical High
+    (45.0, (-ROOT2, ROOT2)),  # Westerlies
+    (60.0, (0.0, 0.0)),  # Subpolar Low
+    (90.0, (ROOT2, -ROOT2)),  # Polar Easterlies
 ]
+
 
 def lerp(a, b, t):
     return a + (b - a) * t
 
+
 def lerp_vec2(v1, v2, t):
-    return (
-        lerp(v1[0], v2[0], t),
-        lerp(v1[1], v2[1], t)
-    )
+    return (lerp(v1[0], v2[0], t), lerp(v1[1], v2[1], t))
+
 
 STATIC_RANGE = 10
 INFLUENCE_THRESHOLD = 15.0
 POPULATION_PREMIUM = 2.0
 
-CARDINAL = [(1,0), (-1,0), (0,1), (0,-1)]
-DIAGONAL = [(1,1), (1,-1), (-1,1), (-1,-1)]
+CARDINAL = [(1, 0), (-1, 0), (0, 1), (0, -1)]
+DIAGONAL = [(1, 1), (1, -1), (-1, 1), (-1, -1)]
 EIGHT = CARDINAL + DIAGONAL
 EIGHT_COSTS = [1.0] * 4 + [1.41] * 4
 
@@ -69,9 +70,13 @@ class World:
         self.sailing_cache_start = {}
         self.load_state_names()
         self.ter_scale = 2
-        self.influence_grid = [[0.0 for _ in range(self.width//self.ter_scale)] for _ in range(self.height//self.ter_scale)]
+        self.influence_grid = [
+            [0.0 for _ in range(self.width // self.ter_scale)]
+            for _ in range(self.height // self.ter_scale)
+        ]
         self.territory_map = [
-            [None for _ in range(self.width//self.ter_scale)] for _ in range(self.height//self.ter_scale)
+            [None for _ in range(self.width // self.ter_scale)]
+            for _ in range(self.height // self.ter_scale)
         ]
 
         # TODO: zamienić to na państwa po skończeniu dema
@@ -213,7 +218,7 @@ class World:
         return new_city
 
     def settle(self, state: State, no_citizens, x, y):
-        owner = self.territory_map[x//self.ter_scale][y//self.ter_scale]
+        owner = self.territory_map[x // self.ter_scale][y // self.ter_scale]
         if owner is not None and owner != state.name:
             return None
 
@@ -261,7 +266,7 @@ class World:
                 if self.heightmap[cur_pos[0]][cur_pos[1]] == 0.0:
                     return self.layers["id_map"][cur_pos[0]][cur_pos[1]], cur_pos
         return None, None
-    
+
     def check_path_cache(self, line):
         if line not in self.path_cache:
             return False
@@ -274,7 +279,6 @@ class World:
             self.path_cache_start[line] = self.turn
         self.path_cache[line] = value
 
-
     def check_sailing_cache(self, line):
         return line in self.sailing_cache
 
@@ -282,7 +286,6 @@ class World:
         if line not in self.sailing_cache:
             self.sailing_cache_start[line] = self.turn
         self.sailing_cache[line] = value
-        
 
     def update_prices(self):
         self.prices = {}
@@ -338,7 +341,6 @@ class World:
                 t = (latitude - lat0) / (lat1 - lat0)
                 return lerp_vec2(v0, v1, t)
         return (0.0, 0.0)
-    
 
     def update_territories_cel(self):
         map_scale = self.ter_scale
@@ -350,60 +352,91 @@ class World:
                 if is_true_state:
                     base_influence = 30.0 + (city.citizens * POPULATION_PREMIUM)
                 else:
-                    base_influence = 30.0 + (len(city.citizens) / POPULATION_PREMIUM)
+                    base_influence = 30.0 + (city.citizens / POPULATION_PREMIUM)
                 if base_influence <= 0:
                     continue
-                cx = int(city.x/map_scale)
-                cy = int(city.y/map_scale)
+                cx = int(city.x / map_scale)
+                cy = int(city.y / map_scale)
                 self.influence_grid[cx][cy] = base_influence
                 self.territory_map[cx][cy] = state_name
 
-        for x in range(0, self.width//map_scale):
-            for y in range(0, self.height//map_scale):
-                if self.layers["height_map"][x*map_scale][y*map_scale] == 0:
+        for x in range(0, self.width // map_scale):
+            for y in range(0, self.height // map_scale):
+                if self.layers["height_map"][x * map_scale][y * map_scale] == 0:
                     continue
 
-                terrain_cost = 3.0 + (self.layers["height_map"][x*map_scale][y*map_scale] * 10.0)
-                road_level = self.roads[x*map_scale][y*map_scale]
+                terrain_cost = 3.0 + (
+                    self.layers["height_map"][x * map_scale][y * map_scale] * 10.0
+                )
+                road_level = self.roads[x * map_scale][y * map_scale]
                 next_influence = {}
                 for (dx, dy), base_cost in zip(EIGHT, EIGHT_COSTS):
                     nx = x + dx
                     ny = y + dy
-                    if 0 <= nx < self.width/map_scale and 0 <= ny < self.height/map_scale:
+                    if (
+                        0 <= nx < self.width / map_scale
+                        and 0 <= ny < self.height / map_scale
+                    ):
                         if self.territory_map[nx][ny] is not None:
                             owner = self.territory_map[nx][ny]
-                            step_cost = terrain_cost * (1.0 - (road_level * 0.5)) * base_cost * self.ter_scale
+                            step_cost = (
+                                terrain_cost
+                                * (1.0 - (road_level * 0.5))
+                                * base_cost
+                                * self.ter_scale
+                            )
                             if owner not in next_influence:
-                                next_influence[owner] = self.influence_grid[nx][ny] - step_cost
+                                next_influence[owner] = (
+                                    self.influence_grid[nx][ny] - step_cost
+                                )
                             else:
-                                next_influence[owner] = max(next_influence[owner], self.influence_grid[nx][ny] - step_cost)
+                                next_influence[owner] = max(
+                                    next_influence[owner],
+                                    self.influence_grid[nx][ny] - step_cost,
+                                )
 
                 for owner, inf in next_influence.items():
                     if inf > INFLUENCE_THRESHOLD and self.influence_grid[x][y] < inf:
                         self.influence_grid[x][y] = inf
                         self.territory_map[x][y] = owner
 
-        for x in reversed(range(0, self.width//map_scale)):
-            for y in reversed(range(0, self.height//map_scale)):
-                if self.layers["height_map"][x*map_scale][y*map_scale] == 0:
+        for x in reversed(range(0, self.width // map_scale)):
+            for y in reversed(range(0, self.height // map_scale)):
+                if self.layers["height_map"][x * map_scale][y * map_scale] == 0:
                     continue
 
-                terrain_cost = 3.0 + (self.layers["height_map"][x*map_scale][y*map_scale] * 10.0)
-                road_level = self.roads[x*map_scale][y*map_scale]
+                terrain_cost = 3.0 + (
+                    self.layers["height_map"][x * map_scale][y * map_scale] * 10.0
+                )
+                road_level = self.roads[x * map_scale][y * map_scale]
                 next_influence = {}
                 for (dx, dy), base_cost in zip(EIGHT, EIGHT_COSTS):
                     nx = x + dx
                     ny = y + dy
-                    if 0 <= nx < self.width/map_scale and 0 <= ny < self.height/map_scale:
+                    if (
+                        0 <= nx < self.width / map_scale
+                        and 0 <= ny < self.height / map_scale
+                    ):
                         if self.territory_map[nx][ny] is not None:
                             owner = self.territory_map[nx][ny]
-                            step_cost = terrain_cost * (1.0 - (road_level * 0.5)) * base_cost * self.ter_scale
+                            step_cost = (
+                                terrain_cost
+                                * (1.0 - (road_level * 0.5))
+                                * base_cost
+                                * self.ter_scale
+                            )
                             if owner not in next_influence:
-                                next_influence[owner] = self.influence_grid[nx][ny] - step_cost
+                                next_influence[owner] = (
+                                    self.influence_grid[nx][ny] - step_cost
+                                )
                             else:
-                                next_influence[owner] = max(next_influence[owner], self.influence_grid[nx][ny] - step_cost)
+                                next_influence[owner] = max(
+                                    next_influence[owner],
+                                    self.influence_grid[nx][ny] - step_cost,
+                                )
 
                 for owner, inf in next_influence.items():
                     if inf > INFLUENCE_THRESHOLD and self.influence_grid[x][y] < inf:
                         self.influence_grid[x][y] = inf
                         self.territory_map[x][y] = owner
+
