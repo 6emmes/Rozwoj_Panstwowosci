@@ -1,10 +1,12 @@
-from world import World
-import pygame
 import numpy as np
+import pygame
+
+from world import World
 
 COLOR_PATH = [120, 120, 120]
 COLOR_GROUND = [0, 250, 0]
 COLOR_WATER = [0, 0, 250]
+COLOR_SAIL = [0, 128, 255]
 COLOR_BLACK = [0, 0, 0]
 
 
@@ -15,6 +17,7 @@ class Display:
         self.camera_offset = pygame.Vector2(0, 0)
         self.zoom_speed = 0.1
         self.pan_speed = 20
+        self.sailing_drawn = {}
 
     def pygame_init(self):
         pygame.init()
@@ -43,11 +46,16 @@ class Display:
         terrain_array *= shade_factor[..., None]
         terrain_array = np.clip(terrain_array, 0, 255).astype(np.uint8)
         self.terrain_surface = pygame.surfarray.make_surface(terrain_array)
+        self.ter_scale = self.world.ter_scale
+        self.territory_surface = pygame.Surface(
+            (self.world.width//self.ter_scale, self.world.height//self.ter_scale), pygame.SRCALPHA
+        )
+        self.sailing_rgba = np.zeros(
+            (self.world.width, self.world.height, 4), dtype=np.uint8
+        )
 
-        self.territory_surface = pygame.Surface((self.world.width, self.world.height), pygame.SRCALPHA)
-
-        self.font = pygame.font.SysFont('Verdana', 16)
-        self.text_surface = self.font.render('Some Text', False, (128, 128, 128))
+        self.font = pygame.font.SysFont("Verdana", 16)
+        self.text_surface = self.font.render("Some Text", False, (128, 128, 128))
 
     def pygame_sync(self):
         road_array = np.array(self.world.roads, dtype=np.float32)
@@ -60,21 +68,37 @@ class Display:
             road_rgba.transpose((1, 0, 2)).copy(), (w, h), "RGBA"
         ).convert_alpha()
 
-        territory_rgba = np.zeros((self.world.width, self.world.height, 4), dtype=np.uint8)
+        for k in self.world.sailing_cache.keys():
+            if k not in self.sailing_drawn:
+                path, _, _ = self.world.sailing_cache[k]
+                for x, y in path:
+                    self.sailing_rgba[x, y] = COLOR_SAIL + [255]
+                self.sailing_drawn[k] = True
+        self.sailing_surface = pygame.image.frombuffer(
+            self.sailing_rgba.transpose((1, 0, 2)).copy(), (w, h), "RGBA"
+        ).convert_alpha()
+
+        territory_rgba = np.zeros(
+            (self.world.width, self.world.height, 4), dtype=np.uint8
+        )
 
         # Słownik do szybkiego wyszukiwania koloru państwa
         color_map = {}
         for state_name, state in self.world.states.items():
             c = pygame.Color(0)
-            c.hsva = (state.hue % 360, 70, 90,
-                      100)  # Saturacja 70, Value 90. Ostatnia wartość w hsva nie kontroluje alphy bezpośrednio
+            c.hsva = (
+                state.hue % 360,
+                100,
+                60,
+                100,
+            )  # Saturacja 70, Value 90. Ostatnia wartość w hsva nie kontroluje alphy bezpośrednio
             # Tworzymy krotkę RGBA (z alphą ustawioną na 100/255 -> półprzezroczystość)
             color_map[state_name] = (c.r, c.g, c.b, 100)
 
             # Sprawdzamy, czy world ma już territory_map (dla bezpieczeństwa pierwszych tur)
-        if hasattr(self.world, 'territory_map'):
-            for x in range(self.world.width):
-                for y in range(self.world.height):
+        if hasattr(self.world, "territory_map"):
+            for x in range(self.world.width//self.ter_scale):
+                for y in range(self.world.height//self.ter_scale):
                     owner = self.world.territory_map[x][y]
                     if owner is not None and owner in color_map:
                         territory_rgba[x, y] = color_map[owner]
@@ -85,7 +109,9 @@ class Display:
             territory_rgba.transpose((1, 0, 2)).copy(), (w_t, h_t), "RGBA"
         ).convert_alpha()
 
-        self.text_surface = self.font.render(str(self.world.turn), False, (128, 128, 128))
+        self.text_surface = self.font.render(
+            str(self.world.turn), False, (128, 128, 128)
+        )
 
     def pygame_loop(self):
         for event in pygame.event.get():
@@ -132,8 +158,24 @@ class Display:
             ),
         )
 
-        territory_scaled = pygame.transform.scale(
+        territory_scaled = pygame.transform.smoothscale (
             self.territory_surface,
+            (
+                int(self.world.width * self.camera_scale * self.ter_scale),
+                int(self.world.height * self.camera_scale * self.ter_scale),
+            ),
+        )
+        
+        sailing_scaled = pygame.transform.scale(
+            self.sailing_surface,
+            (
+                int(self.world.width * self.camera_scale * self.ter_scale),
+                int(self.world.height * self.camera_scale * self.ter_scale),
+            ),
+        )
+
+        sailing_scaled = pygame.transform.scale(
+            self.sailing_surface,
             (
                 int(self.world.width * self.camera_scale),
                 int(self.world.height * self.camera_scale),
@@ -147,23 +189,26 @@ class Display:
         self.screen.blit(terrain_scaled, self.camera_offset)
         self.screen.blit(territory_scaled, self.camera_offset)
         self.screen.blit(roads_scaled, self.camera_offset)
+        self.screen.blit(sailing_scaled, self.camera_offset)
 
         # Draw cities (scaled + offset)
         state_color = pygame.Color(0)
         for st in self.world.states.values():
             state_color.hsva = (st.hue, 100, 100, 100)
             for index, city in enumerate(st.cities):
-                pos = pygame.Vector2(city.x, city.y) * \
-                self.camera_scale + self.camera_offset
+                pos = (
+                    pygame.Vector2(city.x, city.y) * self.camera_scale
+                    + self.camera_offset
+                )
 
                 if index == 0:
                     pygame.draw.circle(self.screen, COLOR_BLACK, pos, 5)
                 else:
                     pygame.draw.circle(self.screen, COLOR_BLACK, pos, 4)
-                if len(city.citizens) > 0:
+                if city.citizens > 0:
                     pygame.draw.circle(self.screen, state_color, pos, 3)
 
-        self.screen.blit(self.text_surface, (0,0))
+        self.screen.blit(self.text_surface, (0, 0))
         pygame.display.flip()
         # pygame.time.wait(8) #should be 16 for 60fps but simulation is bottleneck here
         return True

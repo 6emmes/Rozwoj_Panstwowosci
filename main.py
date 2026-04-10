@@ -1,8 +1,12 @@
+import random
+
 from utils.display import Display
-from utils.sim_types import BuildingType, ResourceType
 from world import World
 
 PYGAME = True
+
+random.seed(65)
+
 
 def main() -> None:
     sim_world = World()
@@ -10,7 +14,7 @@ def main() -> None:
         display_obj = Display(sim_world)
         display_obj.pygame_init()
 
-    sim_world.spawn_states(1, 5, 67)
+    sim_world.spawn_states(7, 5)
 
     turns = 1_000
     # Główna pętla symulacji

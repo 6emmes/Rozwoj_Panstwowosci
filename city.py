@@ -5,8 +5,7 @@ import random
 from typing import TYPE_CHECKING
 
 from buildings import FACTORIES, PASSIVE_BUILDINGS, Building
-from citizen import Citizen
-from utils.log import LogCityEstablishment, LogConsumption, LogGenericResource, LogPopulation, LogProduction, LogResource, LogTrade
+from culture import Culture, random_culture
 from resources import (
     ALL_RESOURCES,
     MANUFACTURED_RESOURCES,
@@ -15,6 +14,16 @@ from resources import (
     Resource,
 )
 from trader import Trader
+from utils.log import (
+    LogCityEstablishment,
+    LogConsumption,
+    LogCulture,
+    LogGenericResource,
+    LogPopulation,
+    LogProduction,
+    LogResource,
+    LogTrade,
+)
 from utils.sim_types import (
     BUILDINGS,
     RESOURCES,
@@ -40,11 +49,13 @@ SETTLER_SCOUTING_RANGE = (32, 128)
 
 
 class City:
-    def __init__(self, x: int, y: int, name: str, world: World) -> None:
+    def __init__(
+        self, x: int, y: int, name: str, world: World, culture: Culture = None
+    ) -> None:
         self.x: int = x
         self.y: int = y
         self.name: str = name
-        self.citizens: list[Citizen] = []
+        self.citizens: int = 0
         self.basic_pop_cap = 25
         self.pop_cap = 25
         self.buildings: dict[BuildingType, int] = {build: 0 for build in BUILDINGS}
@@ -54,7 +65,7 @@ class City:
         self.building_plan: BuildingType|None = None
         self.unique_buildings = []
         self.factory_limit = 8
-        self.traders: list[Trader] = []  # Trader to też citizen
+        self.traders: list[Trader] = []
         self.table_of_weights: list[object] = []
         self.religious_value: object = None
         self.gold: int = 500
@@ -78,6 +89,8 @@ class City:
         }
         self.priorities: dict = {resource: 0.0 for resource in RESOURCES}
         self.settle_candidates: dict = {}
+        self.culture: Culture = culture if culture is not None else random_culture()
+        self.culture.noise()
         self.world: World = world  # placeholder attribute
         self.state = None
         self.DEBUG_bankruptcy = 0
@@ -106,21 +119,15 @@ class City:
                 print(f"Miasto {self.name} znajduje się na wodzie!")
                 raise ValueError("City cannot be placed on water")
         except ValueError:
-            a = self.land_id = self.world.layers["id_map"][self.x+2][self.y+2]
-            b = self.land_id = self.world.layers["id_map"][self.x-2][self.y-2]
-            self.land_id = max(a,b)
-            
+            a = self.land_id = self.world.layers["id_map"][self.x + 2][self.y + 2]
+            b = self.land_id = self.world.layers["id_map"][self.x - 2][self.y - 2]
+            self.land_id = max(a, b)
 
-
-        self.ocean_id: float = self.world.find_ocean((self.x, self.y))
+        self.ocean_id, self.ocean_pos = self.world.find_ocean((self.x, self.y))
         if self.ocean_id is None:
             print(f"Miasto {self.name} nie ma dostępu do oceanu")
         else:
             print(f"Miasto {self.name} ma dostęp do oceanu o id {self.ocean_id}")
-
-    def add_citizen(self, citizen) -> None:
-        citizen.city = self
-        self.citizens.append(citizen)
 
     def debug_resources(self):
         rounded_resources = {
@@ -134,19 +141,14 @@ class City:
         }
         print(f"{self.name}: {rounded_resources}")
 
-    def create_citizen(self):
-        citizen = Citizen()
-        self.add_citizen(citizen)
-        return citizen
-
     def create_trader(self):
         try:
-            self.citizens.pop()
+            self.citizens -= 1
         except IndexError:
             raise IndexError("No citizen avaiable to swap to trader")
         trader = Trader()
-        self.add_citizen(trader)
         self.traders.append(trader)
+        trader.city = self
         return trader
 
     def _get_resource_delta(self, resource: RawResource) -> float:
@@ -196,13 +198,15 @@ class City:
         elif resource in MANUFACTURED_RESOURCES:
             production_rate = 0
             for input in MANUFACTURED_RESOURCES[resource].input_resources:
-                production_rate = max(production_rate, self.accumulation_rate[input])/5
+                production_rate = (
+                    max(production_rate, self.accumulation_rate[input]) / 5
+                )
         return global_price * production_rate
 
     def calculate_use_rate(self):
         for r in RESOURCES:
             self.use_rate[r] = 0.0
-        self.use_rate[ResourceType.FOOD] = len(self.citizens) * 1.0
+        self.use_rate[ResourceType.FOOD] = self.citizens * 1.0
         for b in self.buildings:
             count = self.buildings[b]
             if count > 0 and b in FACTORIES:
@@ -239,7 +243,7 @@ class City:
                 if self.gold < 0:
                     self.gold = 0
                 amount = 0
-                self.DEBUG_bankruptcy +=1
+                self.DEBUG_bankruptcy += 1
                 # print(f"No {resource}")
             self.resources[resource] = (amount, price)
 
@@ -287,48 +291,65 @@ class City:
         amount_to_get = min(amount, self.gold)
         self.gold -= amount_to_get
         return amount
-    
+
     def _log(self):
         if self.world.turn % 25 != 0:
             return
-        
-        logsProd = [LogProduction(
+
+        logsProd = [
+            LogProduction(
                 turn=self.world.turn,
                 location=self.name,
                 resource=acc.value,
-                amount=self.accumulation_rate[acc]
-            ) for acc in self.accumulation_rate.keys()]
-        
-        logsCons = [LogConsumption(
+                amount=self.accumulation_rate[acc],
+            )
+            for acc in self.accumulation_rate.keys()
+        ]
+
+        logsCons = [
+            LogConsumption(
                 turn=self.world.turn,
                 location=self.name,
                 resource=acc.value,
-                amount=self.use_rate[acc]
-            ) for acc in self.use_rate.keys()]
-        
-        logsRes = [LogResource(
+                amount=self.use_rate[acc],
+            )
+            for acc in self.use_rate.keys()
+        ]
+
+        logsRes = [
+            LogResource(
                 turn=self.world.turn,
                 location=self.name,
                 resource=acc.value,
                 amount=self.resources[acc][0],
-                price=self.resources[acc][1]
-            ) for acc in self.resources.keys()]
-        
-        logsGold = [LogGenericResource(
+                price=self.resources[acc][1],
+            )
+            for acc in self.resources.keys()
+        ]
+
+        logsGold = [
+            LogGenericResource(
                 turn=self.world.turn,
                 location=self.name,
                 resource="gold",
                 amount=self.gold,
-            )]
+            )
+        ]
 
-        logsPop = [LogPopulation(
-                turn=self.world.turn,
-                location=self.name,
-                population=len(self.citizens)
-            )]
+        logsPop = [
+            LogPopulation(
+                turn=self.world.turn, location=self.name, population=self.citizens
+            )
+        ]
+
+        logsCulture = [
+            LogCulture(
+                turn=self.world.turn, location=self.name, traits=self.culture.traits
+            )
+        ]
 
         self.world.logger.save_logs(
-            logsProd + logsCons + logsRes + logsPop + logsGold
+            logsProd + logsCons + logsRes + logsPop + logsGold + logsCulture
         )
 
     def _log_city_establishment(self):
@@ -339,12 +360,12 @@ class City:
                 land_id=self.land_id,
                 ocean_id=self.ocean_id,
                 X=self.x,
-                Y=self.y
+                Y=self.y,
             )
         )
 
     def turn(self):
-        if len(self.citizens) == 0:
+        if self.citizens == 0:
             return
 
         self.calculate_priorities()
@@ -360,7 +381,7 @@ class City:
 
         # Population control
         if self.resources[ResourceType.FOOD][0] == 0:
-            self.citizens.pop()
+            self.citizens -= 1
         elif self.resources[ResourceType.FOOD][0] >= POP_GROWTH_COST + BUFFER:
             self._grow_population()
         self._log()
@@ -380,16 +401,21 @@ class City:
                             LogTrade(
                                 turn=self.world.turn,
                                 location=self.name,
-                                destination=trader.target_city.name if trader.target_city else None,
-                                travel_time=trader.target_city_distance/trader.speed if trader.target_city_distance else None,
+                                destination=trader.target_city.name
+                                if trader.target_city
+                                else None,
+                                travel_time=trader.target_city_distance / trader.speed
+                                if trader.target_city_distance
+                                else None,
+                                walking=1 if trader.target_city.land_id==self.land_id else 0,
                                 resource=resource.value,
                                 amount=amount,
-                                price=price
+                                price=price,
                             )
                         )
 
     def _turn_mining(self):
-        self.unemployed = len(self.citizens)
+        self.unemployed = self.citizens
         farm_employed = min(self.buildings[BuildingType.FARM] * 10, self.unemployed)
         self.unemployed = self.unemployed - farm_employed
 
@@ -424,11 +450,13 @@ class City:
                 res_obj = MANUFACTURED_RESOURCES[res]
             factory_count = available_buildings[res_obj.factory]
             self.unemployed = self.unemployed - min(factory_count * 10, workers)
-            self.accumulation_rate[res] = res_obj.extract(
-                self.world, self.x, self.y, factory_count, workers
+            self.accumulation_rate[res] = (
+                res_obj.extract(self.world, self.x, self.y, factory_count, workers) * 1
+                + self.culture.hard_working / 2
             )
 
             resources, price = self.resources[res]
+            price *= 1 + self.culture.avarice / 2
             self.resources[res] = (resources + self.accumulation_rate[res], price)
 
     def _turn_building(self):
@@ -452,8 +480,11 @@ class City:
                 # should be even more
                 if self.production_priorities[res] < 1.0:
                     continue
-                if res == ResourceType.FOOD and self.buildings[BuildingType.FARM] > factory_count * 0.5:
-                    continue    #keep farms less than 50% of buildings
+                if (
+                    res == ResourceType.FOOD
+                    and self.buildings[BuildingType.FARM] > factory_count * 0.5
+                ):
+                    continue  # keep farms less than 50% of buildings
                 if res in RAW_RESOURCES:
                     building = RAW_RESOURCES[res].factory
                 elif res in MANUFACTURED_RESOURCES:
@@ -505,17 +536,23 @@ class City:
                     self.building_plan = None
                     
 
-
     def _turn_settle(self):
-        if self.world.turn%10 > 0: #execute only sometimes
+        if self.world.turn % 10 > 0:  # execute only sometimes
             return
         PI = 3.14159265359
-        #settle spot exploration:
+        # settle spot exploration:
         sample_angle = random.uniform(0.0, 2 * PI)
-        sample_radius = random.uniform(*SETTLER_SCOUTING_RANGE)
+        sample_radius = random.uniform(*SETTLER_SCOUTING_RANGE) * (
+            1 + self.culture.expansionism
+        )
         sample_x = int(sample_radius * math.cos(sample_angle)) + self.x
         sample_y = int(sample_radius * math.sin(sample_angle)) + self.y
-        if sample_x < 0 or sample_x >= self.world.width or sample_y < 0 or sample_y >= self.world.height:
+        if (
+            sample_x < 0
+            or sample_x >= self.world.width
+            or sample_y < 0
+            or sample_y >= self.world.height
+        ):
             return
         if self.world.heightmap[sample_x][sample_y] == 0:
             return
@@ -524,19 +561,20 @@ class City:
             if RAW_RESOURCES[res].map_layer is None:
                 map_value[res] = 0.25
             else:
-                map_value[res] = self.world.layers[RAW_RESOURCES[res].map_layer][sample_x][sample_y]
+                map_value[res] = self.world.layers[RAW_RESOURCES[res].map_layer][
+                    sample_x
+                ][sample_y]
                 map_value[res] = map_value[res] * RAW_RESOURCES[res].map_flat_scale
 
         self.state.update_settle_candidates(map_value, sample_x, sample_y)
 
-
     def _grow_population(self):
         if self.unemployed > 5:
-            return #no jobs for new people
+            return  # no jobs for new people
         if len(self.citizens) < self.pop_cap:
-            for _ in range(0, int(math.sqrt(len(self.citizens)))):
+            for _ in range(0, int(math.sqrt(self.citizens))):
                 if self.resources[ResourceType.FOOD][0] >= POP_GROWTH_COST + BUFFER:
-                    self.create_citizen()
+                    self.citizens += 1
                     amount, cost = self.resources[ResourceType.FOOD]
                     self.resources[ResourceType.FOOD] = amount - POP_GROWTH_COST, cost
                 else:
@@ -551,4 +589,6 @@ class City:
         self.state.score += tax
 
     def __repr__(self):
-        return f"Miasto({self.name}, mieszkańcy: {len(self.citizens)})"
+        return (
+            f"Miasto({self.name}, mieszkańcy: {self.citizens}), kultura: {self.culture}"
+        )
