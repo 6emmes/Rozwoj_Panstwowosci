@@ -1,6 +1,8 @@
 import sqlite3
 from dataclasses import asdict, dataclass
 from collections import defaultdict
+from utils.sim_types import ResourceType
+from resources import RAW_RESOURCES
 
 MAX_CACHE = 32
 
@@ -103,7 +105,7 @@ class Logger:
         self.conn.execute("""CREATE TABLE IF NOT EXISTS locations
                         (id INTEGER PRIMARY KEY AUTOINCREMENT, location TEXT UNIQUE)""")
         self.conn.execute("""CREATE TABLE IF NOT EXISTS resources
-                        (id INTEGER PRIMARY KEY AUTOINCREMENT, resource TEXT UNIQUE)""")
+                        (id INTEGER PRIMARY KEY AUTOINCREMENT, resource TEXT UNIQUE, tier INTEGER)""")
         self.conn.execute("""CREATE TABLE city_locations
                         (location INTEGER, land_id FLOAT, ocean_id FLOAT, X INTEGER, Y INTEGER,
                         FOREIGN KEY(location) REFERENCES locations(id))""")
@@ -152,12 +154,12 @@ class Logger:
             """SELECT id from resources where resource=?""", (resource,)
         ).fetchone()
         if resource_id is None:
-            self.conn.execute(
-                """INSERT INTO resources (resource) VALUES (?)""", (resource,)
-            )
-            resource_id = self.conn.execute(
-                """SELECT id from resources where resource=?""", (resource,)
-            ).fetchone()
+            if resource == "gold" or resource == "score":
+                tier = -1
+            else:
+                tier = 0 if ResourceType(resource) in RAW_RESOURCES else 1
+            self.conn.execute('''INSERT INTO resources (resource, tier) VALUES (?, ?)''', (resource, tier))
+            resource_id = self.conn.execute('''SELECT id from resources where resource=?''', (resource,)).fetchone()
         self.resources_cache[resource] = resource_id[0]
         return resource_id[0]
 

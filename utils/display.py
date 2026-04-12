@@ -214,4 +214,8 @@ class Display:
         return True
 
     def save(self):
+        self.camera_offset.x = 0
+        self.camera_offset.y = 0
+        self.camera_scale = 1.0
+        self.pygame_loop()
         pygame.image.save(self.screen, "visualization/simulation_snapshot.png")

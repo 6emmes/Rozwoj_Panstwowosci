@@ -93,10 +93,6 @@ class City:
         self.state = None
         self.DEBUG_bankruptcy = 0
         self.id_init()
-        print(f"land id: {self.land_id}")
-        # self._randomize_initial_recources()  # Do celów testowych
-        if self.world.layers["height_map"][self.x][self.y] == 0:
-            print("Miasto tonie!")
         self._log_city_establishment()
 
     def _randomize_initial_recources(self):
@@ -122,10 +118,10 @@ class City:
             self.land_id = max(a, b)
 
         self.ocean_id, self.ocean_pos = self.world.find_ocean((self.x, self.y))
-        if self.ocean_id is None:
-            print(f"Miasto {self.name} nie ma dostępu do oceanu")
-        else:
-            print(f"Miasto {self.name} ma dostęp do oceanu o id {self.ocean_id}")
+        # if self.ocean_id is None:
+        #     print(f"Miasto {self.name} nie ma dostępu do oceanu")
+        # else:
+        #     print(f"Miasto {self.name} ma dostęp do oceanu o id {self.ocean_id}")
 
     def debug_resources(self):
         rounded_resources = {
@@ -301,7 +297,7 @@ class City:
         return amount
 
     def _log(self):
-        if self.world.turn % 5 != 0:
+        if self.world.turn % 25 != 0:
             return
 
         logsProd = [
