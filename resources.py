@@ -84,13 +84,13 @@ RAW_RESOURCES: dict[ResourceType, RawResource] = {
         factory=BuildingType.MARBLE_MINE,
         human_harvesting=0.1,
         factory_harvesting=1.0,
-        map_flat_scale=5.0,
+        map_flat_scale=1.0,
     ),
     ResourceType.SILVER: RawResource(
         map_layer="silver_map",
         factory=BuildingType.SILVER_MINE,
         human_harvesting=0.05,
-        factory_harvesting=3.0,
+        factory_harvesting=1.0,
         map_flat_scale=5.0,
     ),
 }
@@ -138,7 +138,7 @@ MANUFACTURED_RESOURCES: dict[ResourceType, ManufacturedResource] = {
     ),
     ResourceType.BRICKS: ManufacturedResource(
         factory=BuildingType.KILN,
-        human_production=0.5,
+        human_production=0.2,
         factory_production=1.0,
         input_resources={ResourceType.STONE: 1.0},
     ),
