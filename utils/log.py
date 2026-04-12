@@ -70,6 +70,21 @@ class LogCulture(LogGeneric):
     traits: list[float]
     TYPE = "culture"
 
+@dataclass(slots=True)
+class LogBankruptcy(LogGeneric):
+    description: str
+    TYPE = "bankruptcy"
+
+@dataclass(slots=True)
+class LogCityCollapse(LogGeneric):
+    description: str
+    TYPE = "city_collapse"
+
+@dataclass(slots=True)
+class LogFamine(LogGeneric):
+    description: str
+    TYPE = "famine"
+
 
 class Logger:
     locations_cache = {}

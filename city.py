@@ -23,6 +23,8 @@ from utils.log import (
     LogProduction,
     LogResource,
     LogTrade,
+    LogBankruptcy,
+    LogFamine
 )
 from utils.sim_types import (
     BUILDINGS,
@@ -44,6 +46,7 @@ MAX_FOG = 5
 
 BUFFER = 50
 POP_GROWTH_COST = 20
+STARVATION_SURVIVAL_RATE = 5.0
 
 SETTLER_SCOUTING_RANGE = (32, 128)
 
@@ -224,15 +227,31 @@ class City:
             )
 
     def use_resources(self):
+        self.starving_citizens = 0
         for resource, rate in self.use_rate.items():
             amount, price = self.resources[resource]
             amount -= rate
             if amount < 0:
-                self.gold -= amount
-                if self.gold < 0:
+                deficit = -amount
+                emergency_cost = deficit * price
+                self.gold -= emergency_cost
+                if self.gold < 0 and self.state is not None:
+                    needed_gold = abs(self.gold)
+                    subsidy = min(needed_gold, self.state.budget)
+                    if subsidy > 0:
+                        self.state.budget -= subsidy
+                        self.gold += subsidy
                     self.gold = 0
+                if self.gold < 0:
+                    unpaid_gold = -self.gold
+                    unbought_amount = unpaid_gold / price
+
+                    if resource == ResourceType.FOOD:
+                        self.starving_citizens = math.ceil(unbought_amount)
+
+                    self.gold = 0
+                    self.DEBUG_bankruptcy += 1
                 amount = 0
-                self.DEBUG_bankruptcy += 1
                 # print(f"No {resource}")
             self.resources[resource] = (amount, price)
 
@@ -368,9 +387,25 @@ class City:
         self.calculate_use_rate()
         self.use_resources()
 
-        # Population control
-        if self.resources[ResourceType.FOOD][0] == 0:
-            self.citizens -= 1
+        if self.starving_citizens > 0:
+            deaths = 0
+            for _ in range(self.starving_citizens):
+                if random.random() < (1.0 / STARVATION_SURVIVAL_RATE):
+                    deaths += 1
+
+            deaths = min(deaths, self.citizens)
+
+            self.citizens = self.citizens - deaths
+
+            if deaths > 0:
+                self.world.logger.save_logs([
+                    LogFamine(
+                        turn=self.world.turn,
+                        location=self.name,
+                        description=f"Klęska głodu! Z powodu braku żywności zmarło {deaths} obywateli."
+                    )
+                ])
+
         elif self.resources[ResourceType.FOOD][0] >= POP_GROWTH_COST + BUFFER:
             self._grow_population()
         self._log()
@@ -562,6 +597,21 @@ class City:
         self.gold -= tax
         self.state.budget += tax
         self.state.score += tax
+
+    def _handle_bankruptcy_consequences(self):
+        if self.gold <= 0:
+            for b_type in list(self.buildings.keys()):
+                if self.buildings[b_type] > 0 and b_type in FACTORIES:
+                    self.buildings[b_type] -= 1
+
+                    self.world.logger.save_logs([
+                        LogBankruptcy(
+                            turn=self.world.turn,
+                            location=self.name,
+                            description=f"Skarbiec świeci pustkami. Z braku funduszy na utrzymanie, popada w ruinę: {b_type.name}."
+                        )
+                    ])
+                    break
 
     def __repr__(self):
         return (
