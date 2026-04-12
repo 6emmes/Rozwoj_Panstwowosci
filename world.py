@@ -143,8 +143,7 @@ class World:
             self.logger.save_logs([
                 LogCityCollapse(
                     turn=self.turn,
-                    location=dead_city.name,
-                    description=f"Ostatni mieszkańcy opuścili {dead_city.name}. Miasto pochłonęła dzicz, pozostawiając jedynie zgliszcza dawnej świetności."
+                    location=dead_city.name
                 )
             ])
         self.turn += 1

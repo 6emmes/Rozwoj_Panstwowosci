@@ -402,7 +402,7 @@ class City:
                     LogFamine(
                         turn=self.world.turn,
                         location=self.name,
-                        description=f"Klęska głodu! Z powodu braku żywności zmarło {deaths} obywateli."
+                        amount=deaths
                     )
                 ])
 
@@ -607,8 +607,7 @@ class City:
                     self.world.logger.save_logs([
                         LogBankruptcy(
                             turn=self.world.turn,
-                            location=self.name,
-                            description=f"Skarbiec świeci pustkami. Z braku funduszy na utrzymanie, popada w ruinę: {b_type.name}."
+                            location=self.name
                         )
                     ])
                     break
