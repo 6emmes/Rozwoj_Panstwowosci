@@ -25,7 +25,7 @@ def _cost(world: World, xold: int, yold: int, x: int, y: int) -> float:
         ** 3
     )
     if (x, y) in world.cities_map:
-        return 0.1
+        return 0.0
     cost = river + height - world.roads[x][y]
     return max(0.1, cost * PATH_COST_SCALE)
 
