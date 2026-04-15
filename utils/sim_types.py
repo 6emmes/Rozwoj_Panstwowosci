@@ -7,14 +7,21 @@ class BuildingType(Enum):
     LUMBER_CAMP = "lumber_camp"
     MARBLE_MINE = "marble_mine"
     SILVER_MINE = "silver_mine"
+
     SAWMILL = "sawmill"
     KILN = "kiln"
+
     HOUSE = "house"
+    TOWN_HALL = "town_hall"
+    FORUM = "forum"
+    PALACE = "palace"
+    TRADING_POST = "trading_post"
+    TRADING_GUILD = "trading guild"
+
 
 
 class ResourceType(Enum):
     STONE = "stone"
-    # Zły pomosł mieć dwie zmienne -OOD
     FOOD = "food"
     MARBLE = "marble"
     WOOD_CONI = "wood_coni"

@@ -10,7 +10,7 @@ from city import City
 from culture import Culture
 from state import State
 from utils.definitions import Grid, Point
-from utils.log import Logger
+from utils.log import LogCityCollapse, Logger
 
 SETTLERSTEPCOUNT = 48
 
@@ -135,6 +135,17 @@ class World:
             self.road_decay()
         if self.turn % 10 == 0:
             self.update_territories_cel()
+
+        dead_cities = [city for city in self.cities if city.citizens == 0]
+        for dead_city in dead_cities:
+            self.cities.remove(dead_city)
+
+            if dead_city in dead_city.state.cities:
+                dead_city.state.cities.remove(dead_city)
+
+            self.logger.save_logs(
+                [LogCityCollapse(turn=self.turn, location=dead_city.name)]
+            )
         self.turn += 1
 
     def manhattan(self, x1, y1, x2, y2):
@@ -439,4 +450,3 @@ class World:
                     if inf > INFLUENCE_THRESHOLD and self.influence_grid[x][y] < inf:
                         self.influence_grid[x][y] = inf
                         self.territory_map[x][y] = owner
-

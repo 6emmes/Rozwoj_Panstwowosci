@@ -16,7 +16,9 @@ SPEED = 10
 CAPACITY_MIN = 30
 CAPACITY_MAX = 50
 
-TURBO = False
+CITY_SELL_LOCK = 200 # city wont sell everything it has
+
+TURBO = True
 
 
 class Trader:
@@ -72,7 +74,7 @@ class Trader:
             )
             price = math.floor(price[1] - (price[1] - price[0]) * self.risk_factor)
 
-            if city_amount >= amount:
+            if city_amount-CITY_SELL_LOCK >= amount:
                 amount_to_buy = min(self.capacity, amount)
                 self.target_city = city
                 self.good_to_buy = good

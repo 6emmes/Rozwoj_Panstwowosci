@@ -1,10 +1,7 @@
 from typing import TYPE_CHECKING
 
 from city import City
-
-if TYPE_CHECKING:
-    from world import World
-
+from utils.log import LogGenericResource
 from culture import ISOLATIONISM_STRENGTH, Culture
 from resources import RAW_RESOURCES
 
@@ -51,6 +48,17 @@ class State:
                 trader.trader_action()
         self._turn_settle()
         self._turn_diplomacy()
+
+        if self.world.turn % 10 == 0:
+            log_score = LogGenericResource(
+                turn=self.world.turn,
+                location=self.cities[0].name,
+                resource="score",
+                amount=self.score,
+            )
+
+            
+            self.world.logger.save_log(log_score)
 
     def update_settle_candidates(self, new, x, y):
         for res in new.keys():

@@ -23,6 +23,8 @@ from utils.log import (
     LogProduction,
     LogResource,
     LogTrade,
+    LogBankruptcy,
+    LogFamine
 )
 from utils.sim_types import (
     BUILDINGS,
@@ -44,6 +46,7 @@ MAX_FOG = 5
 
 BUFFER = 50
 POP_GROWTH_COST = 20
+STARVATION_SURVIVAL_RATE = 5.0
 
 SETTLER_SCOUTING_RANGE = (32, 128)
 
@@ -56,10 +59,15 @@ class City:
         self.y: int = y
         self.name: str = name
         self.citizens: int = 0
+        self.basic_pop_cap = 25
+        self.pop_cap = 25
         self.buildings: dict[BuildingType, int] = {build: 0 for build in BUILDINGS}
         # startowa farma żeby miasto nie umarło z głodu zanim zdąży cokolwiek zbudować
         self.buildings[BuildingType.FARM] = 1
         self.building_queue: list[tuple[object, int]] = []
+        self.building_plan: BuildingType|None = None
+        self.unique_buildings = []
+        self.factory_limit = 8
         self.traders: list[Trader] = []
         self.table_of_weights: list[object] = []
         self.religious_value: object = None
@@ -90,15 +98,11 @@ class City:
         self.state = None
         self.DEBUG_bankruptcy = 0
         self.id_init()
-        print(f"land id: {self.land_id}")
-        # self._randomize_initial_recources()  # Do celów testowych
-        if self.world.layers["height_map"][self.x][self.y] == 0:
-            print("Miasto tonie!")
         self._log_city_establishment()
 
     def _randomize_initial_recources(self):
         possible_resources = RESOURCES
-        max_resource = 100
+        max_resource = 250
         for zasob in possible_resources:
             # format zasoby[zasob] = (ilosc, cena)
             self.resources[zasob] = (
@@ -119,10 +123,10 @@ class City:
             self.land_id = max(a, b)
 
         self.ocean_id, self.ocean_pos = self.world.find_ocean((self.x, self.y))
-        if self.ocean_id is None:
-            print(f"Miasto {self.name} nie ma dostępu do oceanu")
-        else:
-            print(f"Miasto {self.name} ma dostęp do oceanu o id {self.ocean_id}")
+        # if self.ocean_id is None:
+        #     print(f"Miasto {self.name} nie ma dostępu do oceanu")
+        # else:
+        #     print(f"Miasto {self.name} ma dostęp do oceanu o id {self.ocean_id}")
 
     def debug_resources(self):
         rounded_resources = {
@@ -170,6 +174,12 @@ class City:
         use = self.use_rate[resource]
         acc = self.accumulation_rate[resource]
 
+    #plan:
+        if self.building_plan:
+            if resource in self.building_plan[1].build_cost:
+                #we want to collect all needed resources within 10 turns
+                use += self.building_plan[1].build_cost[resource]/20
+
         target = use * cruciality
         deficit = max(target - acc, 0.1)
 
@@ -180,7 +190,7 @@ class City:
         if resource in RAW_RESOURCES:
             map_layer = RAW_RESOURCES[resource].map_layer
             if map_layer is None:
-                production_rate = 0.25
+                production_rate = 0.2
             else:
                 production_rate = self.world.layers[map_layer][self.x][self.y]
             production_rate *= RAW_RESOURCES[resource].map_flat_scale
@@ -202,7 +212,7 @@ class City:
                 for res, rate in FACTORIES[b].upkeep_cost.items():
                     self.use_rate[res] += rate * count
             if count > 0 and b in PASSIVE_BUILDINGS:
-                for res, rate in PASSIVE_BUILDINGS[b].affected_resources.items():
+                for res, rate in PASSIVE_BUILDINGS[b].upkeep_cost.items():
                     self.use_rate[res] += rate * count
 
     def calculate_import_priorities(self) -> dict[ResourceType, float]:
@@ -224,15 +234,31 @@ class City:
             )
 
     def use_resources(self):
+        self.starving_citizens = 0
         for resource, rate in self.use_rate.items():
             amount, price = self.resources[resource]
             amount -= rate
             if amount < 0:
-                self.gold -= amount
-                if self.gold < 0:
+                deficit = -amount
+                emergency_cost = deficit * price
+                self.gold -= emergency_cost
+                if self.gold < 0 and self.state is not None:
+                    needed_gold = abs(self.gold)
+                    subsidy = min(needed_gold, self.state.budget)
+                    if subsidy > 0:
+                        self.state.budget -= subsidy
+                        self.gold += subsidy
                     self.gold = 0
+                if self.gold < 0:
+                    unpaid_gold = -self.gold
+                    unbought_amount = unpaid_gold / price
+
+                    if resource == ResourceType.FOOD:
+                        self.starving_citizens = math.ceil(unbought_amount)
+
+                    self.gold = 0
+                    self.DEBUG_bankruptcy += 1
                 amount = 0
-                self.DEBUG_bankruptcy += 1
                 # print(f"No {resource}")
             self.resources[resource] = (amount, price)
 
@@ -282,7 +308,7 @@ class City:
         return amount
 
     def _log(self):
-        if self.world.turn % 5 != 0:
+        if self.world.turn % 25 != 0:
             return
 
         logsProd = [
@@ -368,9 +394,25 @@ class City:
         self.calculate_use_rate()
         self.use_resources()
 
-        # Population control
-        if self.resources[ResourceType.FOOD][0] == 0:
-            self.citizens -= 1
+        if self.starving_citizens > 0:
+            deaths = 0
+            for _ in range(self.starving_citizens):
+                if random.random() < (1.0 / STARVATION_SURVIVAL_RATE):
+                    deaths += 1
+
+            deaths = min(deaths, self.citizens)
+
+            self.citizens = self.citizens - deaths
+
+            if deaths > 0:
+                self.world.logger.save_logs([
+                    LogFamine(
+                        turn=self.world.turn,
+                        location=self.name,
+                        amount=deaths
+                    )
+                ])
+
         elif self.resources[ResourceType.FOOD][0] >= POP_GROWTH_COST + BUFFER:
             self._grow_population()
         self._log()
@@ -411,7 +453,17 @@ class City:
         weights_map = {res: math.log(1 + p) for res, p in self.priorities.items()}
         weights_map[ResourceType.FOOD] = 0
 
-        total = sum(weights_map.values()) + 1e-3
+        total = 1e-3
+        for res, w in weights_map.items():
+            if res in MANUFACTURED_RESOURCES:
+                if self.buildings[MANUFACTURED_RESOURCES[res].factory] == 0:
+                    intput = MANUFACTURED_RESOURCES[res].input_resources
+                    max_input = max([self.resources[i][0] for i in intput])
+                    if max_input < self.resources[res][0]:
+                        weights_map[res] = 0
+                        w = 0
+            total += w
+
         weights_map = {res: p / total for res, p in weights_map.items()}
 
         # TODO: potentially off by one due to rounding - dont care tho
@@ -439,9 +491,20 @@ class City:
             self.resources[res] = (resources + self.accumulation_rate[res], price)
 
     def _turn_building(self):
+        self._turn_building_plan()
+        self._turn_building_progress()
+
+    def _turn_building_plan(self):
+        if self.building_plan is not None:
+            return
+        
+        if self.pop_cap - len(self.citizens) < 10:
+            self.building_plan = BuildingType.HOUSE, PASSIVE_BUILDINGS[BuildingType.HOUSE]
+            return
+        
         factory_count = sum(self.buildings[b] for b in self.buildings if b in FACTORIES)
         factory_count += sum(1 for b in self.building_queue if b in FACTORIES)
-        if factory_count < 8:
+        if factory_count < self.factory_limit:
             for res in sorted(
                 RESOURCES, key=self.production_priorities.get, reverse=True
             ):
@@ -454,63 +517,55 @@ class City:
                 ):
                     continue  # keep farms less than 50% of buildings
                 if res in RAW_RESOURCES:
-                    building = FACTORIES[RAW_RESOURCES[res].factory]
+                    building = RAW_RESOURCES[res].factory
                 elif res in MANUFACTURED_RESOURCES:
-                    building = FACTORIES[MANUFACTURED_RESOURCES[res].factory]
-                cost_satisfied = all(
-                    self.resources[r][0] >= build_cost + BUFFER
-                    for r, build_cost in building.build_cost.items()
-                )
-                if cost_satisfied:
-                    for r, build_cost in building.build_cost.items():
-                        amount, price = self.resources[r]
-                        self.resources[r] = (amount - build_cost, price)
-                    self.building_queue.append(
-                        (ALL_RESOURCES[res].factory, building.build_time)
-                    )
-                    break
+                    building = MANUFACTURED_RESOURCES[res].factory
+                self.building_plan = building, FACTORIES[building]
+                return
+        else:
+            if not self.building_queue:
+                building = random.choice(list(PASSIVE_BUILDINGS.keys()))
+                building_obj = PASSIVE_BUILDINGS[building]
+                if building_obj.unique and building in self.unique_buildings:
+                    return
+                if building_obj.prerequisite and self.buildings[building_obj.prerequisite] == 0:
+                    return
+                self.building_plan = building, building_obj
+                return
+    
+    def _turn_building_progress(self):
+        if self.building_queue:
+            new_queue = []
+            for building, i in self.building_queue:
+                if i == 0:
+                    self.buildings[building] += 1
+                    if building in PASSIVE_BUILDINGS and PASSIVE_BUILDINGS[building].effect:
+                        PASSIVE_BUILDINGS[building].effect(self)
+                        if PASSIVE_BUILDINGS[building].unique:
+                            self.unique_buildings.append(building)
+                else:
+                    new_queue.append((building, i - 1))
 
-        for building in PASSIVE_BUILDINGS:
-            passive_building_count = self.buildings[building]
-            passive_building_count += sum(
-                1 for b in self.building_queue if b[0] == building
-            )
-            citizens = self.citizens
-            if (
-                passive_building_count * PASSIVE_BUILDINGS[building].citizen_capacity
-                < citizens
-            ):
-                for _ in range(
-                    0,
-                    citizens
-                    - passive_building_count
-                    * PASSIVE_BUILDINGS[building].citizen_capacity,
-                ):
-                    cost_satisfied = all(
-                        self.resources[r][0] >= build_cost + BUFFER
-                        for r, build_cost in PASSIVE_BUILDINGS[
-                            building
-                        ].build_cost.items()
-                    )
-                    if not cost_satisfied:
+            self.building_queue = new_queue
+        else:
+            if self.building_plan:
+                cost_satisfied = True
+
+                for r, build_cost in self.building_plan[1].build_cost.items():
+                    if self.resources[r][0] < build_cost + BUFFER:
+                        cost_satisfied = False
+
+
                         break
-
-                    for r, build_cost in PASSIVE_BUILDINGS[building].build_cost.items():
+                if cost_satisfied:
+                    for r, build_cost in self.building_plan[1].build_cost.items():
                         amount, price = self.resources[r]
                         self.resources[r] = (amount - build_cost, price)
                     self.building_queue.append(
-                        (building, PASSIVE_BUILDINGS[building].build_time)
+                        (self.building_plan[0], self.building_plan[1].build_time)
                     )
-
-        # Building
-        new_queue = []
-        for building, i in self.building_queue:
-            if i == 0:
-                self.buildings[building] += 1
-            else:
-                new_queue.append((building, i - 1))
-
-        self.building_queue = new_queue
+                    self.building_plan = None
+                    
 
     def _turn_settle(self):
         if self.world.turn % 10 > 0:  # execute only sometimes
@@ -547,13 +602,14 @@ class City:
     def _grow_population(self):
         if self.unemployed > 5:
             return  # no jobs for new people
-        for _ in range(0, int(math.sqrt(self.citizens))):
-            if self.resources[ResourceType.FOOD][0] >= POP_GROWTH_COST + BUFFER:
-                self.citizens += 1
-                amount, cost = self.resources[ResourceType.FOOD]
-                self.resources[ResourceType.FOOD] = amount - POP_GROWTH_COST, cost
-            else:
-                return
+        if len(self.citizens) < self.pop_cap:
+            for _ in range(0, int(math.sqrt(self.citizens))):
+                if self.resources[ResourceType.FOOD][0] >= POP_GROWTH_COST + BUFFER:
+                    self.citizens += 1
+                    amount, cost = self.resources[ResourceType.FOOD]
+                    self.resources[ResourceType.FOOD] = amount - POP_GROWTH_COST, cost
+                else:
+                    return
 
     def _turn_tax(self):
         if self.gold < 250:
@@ -562,6 +618,20 @@ class City:
         self.gold -= tax
         self.state.budget += tax
         self.state.score += tax
+
+    def _handle_bankruptcy_consequences(self):
+        if self.gold <= 0:
+            for b_type in list(self.buildings.keys()):
+                if self.buildings[b_type] > 0 and b_type in FACTORIES:
+                    self.buildings[b_type] -= 1
+
+                    self.world.logger.save_logs([
+                        LogBankruptcy(
+                            turn=self.world.turn,
+                            location=self.name
+                        )
+                    ])
+                    break
 
     def __repr__(self):
         return (
