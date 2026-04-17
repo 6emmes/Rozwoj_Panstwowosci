@@ -498,7 +498,7 @@ class City:
         if self.building_plan is not None:
             return
         
-        if self.pop_cap - len(self.citizens) < 10:
+        if self.pop_cap - self.citizens < 10:
             self.building_plan = BuildingType.HOUSE, PASSIVE_BUILDINGS[BuildingType.HOUSE]
             return
         
@@ -602,7 +602,7 @@ class City:
     def _grow_population(self):
         if self.unemployed > 5:
             return  # no jobs for new people
-        if len(self.citizens) < self.pop_cap:
+        if self.citizens < self.pop_cap:
             for _ in range(0, int(math.sqrt(self.citizens))):
                 if self.resources[ResourceType.FOOD][0] >= POP_GROWTH_COST + BUFFER:
                     self.citizens += 1

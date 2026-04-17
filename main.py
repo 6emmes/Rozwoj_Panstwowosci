@@ -2,6 +2,7 @@ import random
 
 from utils.display import Display
 from world import World
+from utils.sim_types import ResourceType
 
 PYGAME = True
 
@@ -39,7 +40,7 @@ def main() -> None:
     # best_state = next(iter(sim_world.states.values()))
     print(f"Best state: {best_state.name} {best_state.hue} with score {best_state.score}")
     c = best_state.cities[0]
-    print(c.name, int(c.gold), len(c.citizens))
+    print(c.name, int(c.gold), c.citizens)
     for b in c.buildings.items():
         print((f"  {b[0]} : \t{b[1]}").expandtabs(35))
     print(c.building_plan)

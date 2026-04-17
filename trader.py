@@ -18,7 +18,7 @@ CAPACITY_MAX = 50
 
 CITY_SELL_LOCK = 200 # city wont sell everything it has
 
-TURBO = True
+TURBO = False
 
 
 class Trader:
@@ -72,7 +72,9 @@ class Trader:
             city_amount = math.floor(
                 city_amount[0] + (city_amount[1] - city_amount[0]) * self.risk_factor
             )
-            price = math.floor(price[1] - (price[1] - price[0]) * self.risk_factor)
+            price = math.floor(price[1] - (price[1] - price[0]) * self.risk_factor) * (
+                1 + city.state.tariff if self.city.state != city.state else 0
+            )
 
             if city_amount-CITY_SELL_LOCK >= amount:
                 amount_to_buy = min(self.capacity, amount)
@@ -120,7 +122,7 @@ class Trader:
                 city_amount[0] + (city_amount[1] - city_amount[0]) * self.risk_factor
             )
             price = math.floor(price[1] - (price[1] - price[0]) * self.risk_factor) * (
-                1 + city.state.tariff
+                1 + city.state.tariff if self.city.state != city.state else 0
             )
 
             trade_amount = min(self.capacity, city_amount)
@@ -255,7 +257,7 @@ class Trader:
             amount_s - amount,
             price_s,
         )
-        paid = amount * price_s
+        paid = amount * price_s * (1 + self.target_city.state.tariff if self.city.state != self.target_city.state else 0)
         if paid < 0:
             print(f"amout: {amount}, price_s: {price_s}, gold: {self.gold}")
         self.target_city.gold += paid
